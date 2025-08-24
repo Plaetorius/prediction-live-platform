@@ -28,8 +28,11 @@ export default function Home() {
   // console.log("MY CHANNEL", myChannel)
 
   async function messageReceived(payload: RealtimePayload) {
-    console.log(payload.payload.message)
-    setMessages([...messages, { content: payload.payload.message }])
+    if (!(payload.payload && typeof payload.payload === "object" && 'message' in payload.payload))
+      return;
+    const message = (payload.payload as { message: string }).message
+    console.log(message)
+    setMessages([...messages, { content: message }])
     console.log("MESSAGE RECEIVED TRIGGER")
     console.log(payload)
   }
