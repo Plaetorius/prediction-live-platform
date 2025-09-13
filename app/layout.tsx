@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Toaster } from "sonner";
+import Providers from "@/components/Providers";
+import Header from "@/components/Header";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -23,8 +25,10 @@ export default function RootLayout({
         {/* <script src="http://localhost:8097"></script> */}
       </head>
       <body>
-        {children}
-        <Toaster richColors />
+        <Providers>
+          <Header />
+          {children}
+        </Providers>
       </body>
     </html>
   );
