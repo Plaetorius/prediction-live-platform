@@ -9,8 +9,7 @@ interface Message {
 }
 
 export default function Home() {
-  const testMessage: Message = { content: "I am a test message" }
-  const [messages, setMessages] = useState<Message[]>([testMessage])
+  const [messages, setMessages] = useState<Message[]>([])
 
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY)
     return <>Unable to create Supabase client</>
