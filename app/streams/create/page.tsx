@@ -6,10 +6,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod'
 import { createSupabaseClient } from '@/lib/supabase/client';
 import { toast } from 'sonner'
-import Loading from '@/components/loading';
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import Loading from '@/components/Loading';
 
 const streamFormSchema = z.object({
   url: z.string().min(5, "URL is too short").max(200, "URL is too long"),
