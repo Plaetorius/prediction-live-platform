@@ -16,6 +16,11 @@ export default function Header() {
             Streams
           </Link>
         </Button>
+        <Button asChild variant="default">
+          <Link href="/profiles">
+            Profiles
+          </Link>
+        </Button>
       </nav>
     </header>
   )

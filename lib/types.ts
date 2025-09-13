@@ -13,3 +13,12 @@ export interface Stream {
   createdAt: Date
   updatedAt: Date
 }
+
+export interface Profile {
+  id: number
+  username: string
+  displayName: string
+  pictureUrl: string
+  createdAt: Date
+  updatedAt: Date
+}
