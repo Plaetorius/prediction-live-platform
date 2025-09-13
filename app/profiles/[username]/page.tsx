@@ -36,10 +36,11 @@ export default function ProfilePage() {
         return 
       }
       console.log("Retrieved profile data", data)
-      console.log("Picture URL:", data.pictureUrl)
+      console.log("Picture URL:", data.picture_url)
       console.log("All profile properties:", Object.keys(data))
       setProfile({
         ...data,
+        pictureUrl: data.picture_url,
         createdAt: new Date(data.created_at),
         updatedAt: new Date(data.updated_at)
       })
