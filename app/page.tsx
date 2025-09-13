@@ -1,6 +1,6 @@
 "use client"
 
-import { createClient } from "@supabase/supabase-js"
+import { createSupabaseClient } from "@/lib/supabase/client"
 import { RealtimePayload } from "@/lib/types"
 import { useState } from "react";
 
@@ -12,10 +12,10 @@ export default function Home() {
   const testMessage: Message = { content: "I am a test message" }
   const [messages, setMessages] = useState<Message[]>([testMessage])
 
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
-    return <>Unable to createJSClient</>
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY)
+    return <>Unable to create Supabase client</>
 
-  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+  const supabase = createSupabaseClient()
   
   const myChannel = supabase.channel("test-channel", {
     config: {
@@ -49,7 +49,7 @@ export default function Home() {
     myChannel.send({
       type: 'broadcast',
       event: 'shout',
-      payload: { message: "hi" },
+      payload: { message: "I am sending a new message from the test function" },
     })
   }
 
