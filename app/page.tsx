@@ -20,7 +20,8 @@ export default function Home() {
   const myChannel = supabase.channel("test-channel", {
     config: {
       broadcast: {
-        ack: true
+        ack: true,
+        self: true,
       }
     }
   })
@@ -49,7 +50,7 @@ export default function Home() {
     myChannel.send({
       type: 'broadcast',
       event: 'shout',
-      payload: { message: "I am sending a new message from the test function" },
+      payload: { message: "Salut Val" },
     })
   }
 
