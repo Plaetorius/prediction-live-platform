@@ -15,6 +15,7 @@ import Loading from '@/components/Loading'
 export default function Streams() {
   const [loading, setLoading] = useState<boolean>(false)
   const [streams, setStreams] = useState<Stream[]>([])
+  const [statuses, setStatuses] = useState<Record<string, { live: boolean; game?: string }>>({})
 
   useEffect(() => {
     async function getStreams() {
@@ -33,17 +34,74 @@ export default function Streams() {
         return 
       }
       console.log("Retrieved data", data)
-      setStreams(data.map((stream) => { 
+      const mapped = data.map((stream) => { 
         return {
           ...stream,
           createdAt: new Date(stream.created_at),
           updatedAt: new Date(stream.updated_at)
         }
-      }))
+      })
+      setStreams(mapped)
       setLoading(false)
+
+      // Fetch live statuses after we have streams
+      fetchStatuses(mapped)
     }
     getStreams()
   }, [])
+
+  async function fetchStatuses(items: Stream[]) {
+    const results: Record<string, { live: boolean; game?: string }> = {}
+
+    // Environment for Twitch API
+    const twitchClientId = process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID
+    const twitchToken = process.env.NEXT_PUBLIC_TWITCH_TOKEN
+
+    await Promise.all(items.map(async (s) => {
+      try {
+        if (s.platform.toLowerCase() === 'twitch' && twitchClientId && twitchToken) {
+          // Check live status
+          const res = await fetch(`https://api.twitch.tv/helix/streams?user_login=${encodeURIComponent(s.name)}`, {
+            headers: {
+              'Client-Id': twitchClientId,
+              'Authorization': `Bearer ${twitchToken}`,
+            },
+            cache: 'no-store',
+          })
+          if (!res.ok) throw new Error(`Twitch status HTTP ${res.status}`)
+          const json = await res.json() as { data: Array<{ type: string; game_id?: string }> }
+          const liveEntry = json.data?.[0]
+          if (liveEntry && liveEntry.type === 'live') {
+            let gameName: string | undefined
+            if (liveEntry.game_id) {
+              const g = await fetch(`https://api.twitch.tv/helix/games?id=${liveEntry.game_id}`, {
+                headers: {
+                  'Client-Id': twitchClientId,
+                  'Authorization': `Bearer ${twitchToken}`,
+                },
+                cache: 'no-store',
+              })
+              if (g.ok) {
+                const gJson = await g.json() as { data: Array<{ name: string }> }
+                gameName = gJson.data?.[0]?.name
+              }
+            }
+            results[s.id] = { live: true, game: gameName }
+          } else {
+            results[s.id] = { live: false }
+          }
+        } else {
+          // Other platforms not yet implemented -> default offline
+          results[s.id] = { live: false }
+        }
+      } catch (e) {
+        console.error('Status fetch error for', s.platform, s.name, e)
+        results[s.id] = { live: false }
+      }
+    }))
+
+    setStatuses(results)
+  }
 
   if (loading)
     return <Loading />
@@ -62,6 +120,7 @@ export default function Streams() {
       </div>
       <div className='grid grid-cols-4 gap-4'>
         {streams.map((stream) => {
+          const st = statuses[stream.id]
           return (
             <Card key={stream.id}>
               <CardHeader>
@@ -70,9 +129,19 @@ export default function Streams() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <Badge variant='outline'>
-                  League Of Legends
-                </Badge>
+                {st ? (
+                  st.live ? (
+                    <Badge className="bg-emerald-500/15 text-emerald-500 border-emerald-500/30">
+                      {st.game || 'Live'}
+                    </Badge>
+                  ) : (
+                    <Badge className="bg-red-500/15 text-red-500 border-red-500/30">
+                      Offline
+                    </Badge>
+                  )
+                ) : (
+                  <Badge variant='outline'>Checking status...</Badge>
+                )}
               </CardContent>
               <CardFooter>
                 <Button asChild>
