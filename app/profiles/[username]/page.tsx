@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { ArrowLeft, Calendar, User } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Progress } from '@/components/ui/progress'
 import Loading from '@/components/Loading'
 import { toast } from 'sonner'
 import { useParams } from 'next/navigation'
@@ -17,6 +18,31 @@ export default function ProfilePage() {
   const { username } = useParams<{ username: string }>()
   const [loading, setLoading] = useState<boolean>(false)
   const [profile, setProfile] = useState<Profile | null>(null)
+
+  function xpForLevel(level: number, base: number = 100, growth: number = 1.5): number {
+    if (level <= 1) return base
+    return base * Math.pow(growth, level - 1)
+  }
+
+  function calculateLevel(xp: number, base: number = 100, growth: number = 1.5) {
+    let level = 1
+    let totalXpSpent = 0
+
+    while (true) {
+      const requiredForNext = xpForLevel(level, base, growth)
+      if (xp < totalXpSpent + requiredForNext) {
+        const currentLevelXp = xp - totalXpSpent
+        const nextLevelXp = requiredForNext
+        const progressPercent = Math.max(0, Math.min(100, (currentLevelXp / nextLevelXp) * 100))
+        return { level, currentLevelXp, nextLevelXp, progressPercent }
+      }
+      totalXpSpent += requiredForNext
+      level += 1
+      if (level > 1000) {
+        return { level: 1000, currentLevelXp: 0, nextLevelXp: xpForLevel(1000, base, growth), progressPercent: 0 }
+      }
+    }
+  }
 
   useEffect(() => {
     async function getProfile() {
@@ -69,6 +95,10 @@ export default function ProfilePage() {
       </main>
     )
 
+  // Compute level and progress from xp (float8 in DB defaults to 0)
+  const xp: number = Number((profile as any)?.xp ?? 0)
+  const { level, currentLevelXp, nextLevelXp, progressPercent } = calculateLevel(xp)
+
   return (
     <main className='p-4'>
       <div className='mb-6'>
@@ -108,6 +138,19 @@ export default function ProfilePage() {
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
+            {/* XP Level and Progress */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Badge variant='outline'>Level {level}</Badge>
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {Math.floor(currentLevelXp)} / {Math.floor(nextLevelXp)} XP
+                </div>
+              </div>
+              <Progress value={progressPercent} />
+            </div>
+
             <div className="flex items-center gap-2">
               <User className="h-4 w-4" />
               <span className="font-medium">Username:</span>
