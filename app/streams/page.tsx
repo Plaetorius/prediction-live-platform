@@ -35,12 +35,13 @@ export default function Streams() {
       }
       console.log("Retrieved data", data)
       const mapped = data.map((stream) => { 
+        if (!stream) return null
         return {
           ...stream,
           createdAt: new Date(stream.created_at),
           updatedAt: new Date(stream.updated_at)
         }
-      })
+      }).filter((stream): stream is Stream => stream !== null)
       setStreams(mapped)
       setLoading(false)
 
@@ -58,6 +59,7 @@ export default function Streams() {
     const twitchToken = process.env.NEXT_PUBLIC_TWITCH_TOKEN
 
     await Promise.all(items.map(async (s) => {
+      if (!s) return
       try {
         if (s.platform.toLowerCase() === 'twitch' && twitchClientId && twitchToken) {
           // Check live status
@@ -120,6 +122,7 @@ export default function Streams() {
       </div>
       <div className='grid grid-cols-4 gap-4'>
         {streams.map((stream) => {
+          if (!stream) return null
           const st = statuses[stream.id]
           return (
             <Card key={stream.id}>
