@@ -63,7 +63,6 @@ export default function Streams() {
       <div className='grid grid-cols-4 gap-4'>
         {streams.map((stream) => {
           return (
-            // TODO use an iframe later
             <Card key={stream.id}>
               <CardHeader>
                 <CardTitle>

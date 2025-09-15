@@ -66,7 +66,7 @@ export default function Profiles() {
             <Card key={profile.id}>
               <CardHeader>
                 <CardTitle>
-                  {profile.displayName} / {profile.username}
+                  {profile.displayName} {profile.username}
                 </CardTitle>
               </CardHeader>
               <CardContent>
