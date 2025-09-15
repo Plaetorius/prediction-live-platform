@@ -6,19 +6,19 @@ export interface RealtimePayload {
   event: string;
 }
 
-export interface Stream {
+export type Stream = {
   id: string
   platform: string
   name: string
   createdAt: Date
   updatedAt: Date
-}
+} | null
 
-export interface Profile {
+export type Profile = {
   id: number
   username: string
   displayName: string
   pictureUrl: string
   createdAt: Date
   updatedAt: Date
-}
+} | null
