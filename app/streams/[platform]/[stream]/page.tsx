@@ -23,7 +23,6 @@ function setupListeners(channel: RealtimeChannel) {
   })
 }
 
-
 export default function StreamPage() {
   const { platform, stream } = useParams<{ platform: string; stream: string }>()
   const [loading, setLoading] = useState<boolean>(false)
@@ -97,21 +96,21 @@ export default function StreamPage() {
     }
   }
 
-  function sendShout() {
+  function sendBetTeam1() {
     if (streamChannelRef.current) {
       streamChannelRef.current.send({
         type: 'broadcast',
-        event: 'shout',
+        event: 'bet_team1',
         payload: {}
       })
     }
   }
 
-  function sendCry() {
+  function sendBetTeam2() {
     if (streamChannelRef.current) {
       streamChannelRef.current.send({
         type: 'broadcast',
-        event: 'cry',
+        event: 'bet_team2',
         payload: {}
       })
     }
@@ -243,11 +242,11 @@ export default function StreamPage() {
         </CardHeader>
         <CardContent className='bg-slate-100'>
           <div>
-            <Button onClick={sendShout}>
-              Send shout
+            <Button onClick={sendBetTeam1}>
+              Send Bet Team 1
             </Button>
-            <Button onClick={sendCry}>
-              Send cry
+            <Button onClick={sendBetTeam2}>
+              Send Bet Team 2
             </Button>
           </div>
           <div id='messages'>
