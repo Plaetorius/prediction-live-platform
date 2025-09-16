@@ -211,10 +211,10 @@ export default function StreamPage() {
         </CardHeader>
         <CardContent className='bg-slate-100'>
           <div>
-            <Button onClick={sendBetTeam1}>
+            <Button onClick={() => sendBetTeam1()}>
               Send Bet Team 1
             </Button>
-            <Button onClick={sendBetTeam2}>
+            <Button onClick={() => sendBetTeam2()}>
               Send Bet Team 2
             </Button>
           </div>

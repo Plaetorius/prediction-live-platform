@@ -4,7 +4,7 @@ import React from 'react'
 
 interface Props {
   children: React.ReactNode
-  params: { platform: string, name: string }
+  params: Promise<{ platform: string, name: string }>
 }
 
 const getStream = async (platform: string, name: string) => {
