@@ -58,6 +58,9 @@ export default function Streams() {
     const twitchClientId = process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID
     const twitchToken = process.env.NEXT_PUBLIC_TWITCH_TOKEN
 
+    // Environment for Kick API
+    const kickToken = process.env.NEXT_PUBLIC_KICK_TOKEN
+
     await Promise.all(items.map(async (s) => {
       if (!s) return
       try {
@@ -90,6 +93,58 @@ export default function Streams() {
             }
             results[s.id] = { live: true, game: gameName }
           } else {
+            results[s.id] = { live: false }
+          }
+        } else if (s.platform.toLowerCase() === 'kick' && kickToken) {
+          // Check Kick.com live status
+          try {
+            // Get user_id from username
+            const userRes = await fetch(`https://api.kick.com/public/v1/channels?slug=${encodeURIComponent(s.name)}`, {
+              headers: {
+                'Accept': 'application/json',
+                'Authorization': `Bearer ${kickToken}`,
+              },
+              cache: 'no-store',
+            })
+
+            if (!userRes.ok) {
+              results[s.id] = { live: false }
+              return
+            }
+
+            const userData = await userRes.json()
+            const userId = userData.data?.[0]?.broadcaster_user_id
+
+            if (!userId) {
+              results[s.id] = { live: false }
+              return
+            }
+
+            // Check livestream status
+            const streamRes = await fetch(`https://api.kick.com/public/v1/livestreams?broadcaster_user_id=${userId}`, {
+              headers: {
+                'Accept': 'application/json',
+                'Authorization': `Bearer ${kickToken}`,
+              },
+              cache: 'no-store',
+            })
+
+            if (!streamRes.ok) {
+              results[s.id] = { live: false }
+              return
+            }
+
+            const streamData = await streamRes.json()
+            const livestream = streamData.data?.[0]
+
+            if (livestream) {
+              const gameName = livestream.category?.name
+              results[s.id] = { live: true, game: gameName }
+            } else {
+              results[s.id] = { live: false }
+            }
+          } catch (e) {
+            console.error('Kick status fetch error for', s.name, e)
             results[s.id] = { live: false }
           }
         } else {
