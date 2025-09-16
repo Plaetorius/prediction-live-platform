@@ -23,6 +23,18 @@ export type Profile = {
   updatedAt: Date
 } | null
 
+export type RankName = 'Bronze' | 'Silver' | 'Gold' | 'Diamond'
+
+export type Rank = {
+  name: RankName
+  gradient: string
+  icon: React.ReactNode
+  iconBg: string
+  textClass: string
+  borderClass: string
+  weight: number
+}
+
 export type BetListeners = {
   onTeam1?: (payload: any) => void;
   onTeam2?: (payload: any) => void;
