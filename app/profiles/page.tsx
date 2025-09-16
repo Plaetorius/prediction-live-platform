@@ -34,12 +34,13 @@ export default function Profiles() {
         }
       console.log("Retrieved data", data)
       setProfiles(data.map((profile) => { 
+        if (!profile) return null
         return {
           ...profile,
           createdAt: new Date(profile.created_at),
           updatedAt: new Date(profile.updated_at)
         }
-      }))
+      }).filter((profile): profile is Profile => profile !== null))
       setLoading(false)
     }
     getProfiles()
@@ -62,6 +63,7 @@ export default function Profiles() {
       </div>
       <div className='grid grid-cols-4 gap-4'>
         {profiles.map((profile) => {
+          if (!profile) return null
           return (
             <Card key={profile.id}>
               <CardHeader>

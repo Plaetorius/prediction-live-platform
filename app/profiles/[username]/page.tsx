@@ -13,36 +13,13 @@ import Loading from '@/components/Loading'
 import { toast } from 'sonner'
 import { useParams } from 'next/navigation'
 import Image from 'next/image'
+import { calculateLevel, getRank } from '@/lib/rankUtils'
 
 export default function ProfilePage() {
   const { username } = useParams<{ username: string }>()
   const [loading, setLoading] = useState<boolean>(false)
   const [profile, setProfile] = useState<Profile | null>(null)
 
-  function xpForLevel(level: number, base: number = 100, growth: number = 1.5): number {
-    if (level <= 1) return base
-    return base * Math.pow(growth, level - 1)
-  }
-
-  function calculateLevel(xp: number, base: number = 100, growth: number = 1.5) {
-    let level = 1
-    let totalXpSpent = 0
-
-    while (true) {
-      const requiredForNext = xpForLevel(level, base, growth)
-      if (xp < totalXpSpent + requiredForNext) {
-        const currentLevelXp = xp - totalXpSpent
-        const nextLevelXp = requiredForNext
-        const progressPercent = Math.max(0, Math.min(100, (currentLevelXp / nextLevelXp) * 100))
-        return { level, currentLevelXp, nextLevelXp, progressPercent }
-      }
-      totalXpSpent += requiredForNext
-      level += 1
-      if (level > 1000) {
-        return { level: 1000, currentLevelXp: 0, nextLevelXp: xpForLevel(1000, base, growth), progressPercent: 0 }
-      }
-    }
-  }
 
   useEffect(() => {
     async function getProfile() {
@@ -98,6 +75,7 @@ export default function ProfilePage() {
   // Compute level and progress from xp (float8 in DB defaults to 0)
   const xp: number = Number((profile as any)?.xp ?? 0)
   const { level, currentLevelXp, nextLevelXp, progressPercent } = calculateLevel(xp)
+  const rank = getRank(level)
 
   return (
     <main className='p-4'>
@@ -114,22 +92,30 @@ export default function ProfilePage() {
         <Card>
           <CardHeader className="text-center">
             <div className="flex flex-col items-center gap-4">
-              <div className="w-24 h-24 rounded-full border-4 border-background shadow-lg overflow-hidden bg-muted flex items-center justify-center">
-                {profile.pictureUrl ? (
-                  <Image 
-                    src={profile.pictureUrl} 
-                    alt={profile.username}
-                    width={96}
-                    height={96}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      console.log("Image failed to load:", profile.pictureUrl)
-                      e.currentTarget.style.display = 'none'
-                    }}
-                  />
-                ) : (
-                  <User className="w-12 h-12 text-muted-foreground" />
-                )}
+              <div className="relative">
+                <div className={`p-[3px] rounded-full bg-gradient-to-tr ${rank.gradient} shadow-lg`}>
+                  <div className="w-24 h-24 rounded-full overflow-hidden bg-background flex items-center justify-center">
+                    {profile.pictureUrl ? (
+                      <Image 
+                        src={profile.pictureUrl} 
+                        alt={profile.username}
+                        width={96}
+                        height={96}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          console.log("Image failed to load:", profile.pictureUrl)
+                          e.currentTarget.style.display = 'none'
+                        }}
+                      />
+                    ) : (
+                      <User className="w-12 h-12 text-muted-foreground" />
+                    )}
+                  </div>
+                </div>
+                <div className={`absolute -bottom-1 -right-1 ${rank.iconBg} rounded-full p-1 shadow`}
+                  aria-label={`Rank ${rank.name}`}>
+                  {rank.icon}
+                </div>
               </div>
               <div>
                 <CardTitle className="text-3xl">{profile.displayName}</CardTitle>
@@ -143,6 +129,7 @@ export default function ProfilePage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Badge variant='outline'>Level {level}</Badge>
+                  <Badge variant='outline' className={`${rank.textClass} ${rank.borderClass}`}>{rank.name}</Badge>
                 </div>
                 <div className="text-sm text-muted-foreground">
                   {Math.floor(currentLevelXp)} / {Math.floor(nextLevelXp)} XP
