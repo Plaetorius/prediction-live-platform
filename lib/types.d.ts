@@ -22,3 +22,13 @@ export type Profile = {
   createdAt: Date
   updatedAt: Date
 } | null
+
+export type BetListeners = {
+  onTeam1?: (payload: any) => void;
+  onTeam2?: (payload: any) => void;
+}
+
+export type BetChannelOptions = {
+  broadcastSelf?: boolean;
+  kind?: 'all' | 'pool' | 'placement' | 'resolution';
+}
