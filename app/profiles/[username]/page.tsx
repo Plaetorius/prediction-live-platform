@@ -5,7 +5,7 @@ import { Profile } from '@/lib/types'
 import { createSupabaseClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Calendar, User, Medal, Trophy, Gem } from 'lucide-react'
+import { ArrowLeft, Calendar, User } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
@@ -13,86 +13,13 @@ import Loading from '@/components/Loading'
 import { toast } from 'sonner'
 import { useParams } from 'next/navigation'
 import Image from 'next/image'
+import { calculateLevel, getRank } from '@/lib/rankUtils'
 
 export default function ProfilePage() {
   const { username } = useParams<{ username: string }>()
   const [loading, setLoading] = useState<boolean>(false)
   const [profile, setProfile] = useState<Profile | null>(null)
 
-  function xpForLevel(level: number, base: number = 100, growth: number = 1.2
-  ): number {
-    if (level <= 1) return base
-    return base * Math.pow(growth, level - 1)
-  }
-
-  function calculateLevel(xp: number, base: number = 100, growth: number = 1.2) {
-    let level = 1
-    let totalXpSpent = 0
-
-    while (true) {
-      const requiredForNext = xpForLevel(level, base, growth)
-      if (xp < totalXpSpent + requiredForNext) {
-        const currentLevelXp = xp - totalXpSpent
-        const nextLevelXp = requiredForNext
-        const progressPercent = Math.max(0, Math.min(100, (currentLevelXp / nextLevelXp) * 100))
-        return { level, currentLevelXp, nextLevelXp, progressPercent }
-      }
-      totalXpSpent += requiredForNext
-      level += 1
-      if (level > 1000) {
-        return { level: 1000, currentLevelXp: 0, nextLevelXp: xpForLevel(1000, base, growth), progressPercent: 0 }
-      }
-    }
-  }
-
-  type RankName = 'Bronze' | 'Silver' | 'Gold' | 'Diamond'
-  function getRank(level: number): {
-    name: RankName,
-    gradient: string,
-    icon: React.ReactNode,
-    iconBg: string,
-    textClass: string,
-    borderClass: string
-  } {
-    if (level >= 50) {
-      return {
-        name: 'Diamond',
-        gradient: 'from-cyan-300 via-sky-400 to-blue-500',
-        icon: <Gem className="h-4 w-4 text-sky-600" />,
-        iconBg: 'bg-white',
-        textClass: 'text-sky-700',
-        borderClass: 'border-sky-600'
-      }
-    }
-    if (level >= 20) {
-      return {
-        name: 'Gold',
-        gradient: 'from-yellow-300 via-amber-400 to-orange-500',
-        icon: <Trophy className="h-4 w-4 text-amber-600" />,
-        iconBg: 'bg-white',
-        textClass: 'text-amber-700',
-        borderClass: 'border-amber-600'
-      }
-    }
-    if (level >= 10) {
-      return {
-        name: 'Silver',
-        gradient: 'from-zinc-200 via-neutral-300 to-stone-400',
-        icon: <Medal className="h-4 w-4 text-zinc-600" />,
-        iconBg: 'bg-white',
-        textClass: 'text-zinc-700',
-        borderClass: 'border-zinc-500'
-      }
-    }
-    return {
-      name: 'Bronze',
-      gradient: 'from-orange-300 via-amber-500 to-yellow-700',
-      icon: <Medal className="h-4 w-4 text-orange-700" />,
-      iconBg: 'bg-white',
-      textClass: 'text-orange-800',
-      borderClass: 'border-orange-600'
-    }
-  }
 
   useEffect(() => {
     async function getProfile() {

@@ -22,3 +22,15 @@ export type Profile = {
   createdAt: Date
   updatedAt: Date
 } | null
+
+export type RankName = 'Bronze' | 'Silver' | 'Gold' | 'Diamond'
+
+export type Rank = {
+  name: RankName
+  gradient: string
+  icon: React.ReactNode
+  iconBg: string
+  textClass: string
+  borderClass: string
+  weight: number
+}
