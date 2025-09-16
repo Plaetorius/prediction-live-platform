@@ -5,7 +5,7 @@ import { Profile } from '@/lib/types'
 import { createSupabaseClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Calendar, User } from 'lucide-react'
+import { ArrowLeft, Calendar, User, Medal, Trophy, Gem } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
@@ -19,12 +19,13 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState<boolean>(false)
   const [profile, setProfile] = useState<Profile | null>(null)
 
-  function xpForLevel(level: number, base: number = 100, growth: number = 1.5): number {
+  function xpForLevel(level: number, base: number = 100, growth: number = 1.2
+  ): number {
     if (level <= 1) return base
     return base * Math.pow(growth, level - 1)
   }
 
-  function calculateLevel(xp: number, base: number = 100, growth: number = 1.5) {
+  function calculateLevel(xp: number, base: number = 100, growth: number = 1.2) {
     let level = 1
     let totalXpSpent = 0
 
@@ -41,6 +42,55 @@ export default function ProfilePage() {
       if (level > 1000) {
         return { level: 1000, currentLevelXp: 0, nextLevelXp: xpForLevel(1000, base, growth), progressPercent: 0 }
       }
+    }
+  }
+
+  type RankName = 'Bronze' | 'Silver' | 'Gold' | 'Diamond'
+  function getRank(level: number): {
+    name: RankName,
+    gradient: string,
+    icon: React.ReactNode,
+    iconBg: string,
+    textClass: string,
+    borderClass: string
+  } {
+    if (level >= 50) {
+      return {
+        name: 'Diamond',
+        gradient: 'from-cyan-300 via-sky-400 to-blue-500',
+        icon: <Gem className="h-4 w-4 text-sky-600" />,
+        iconBg: 'bg-white',
+        textClass: 'text-sky-700',
+        borderClass: 'border-sky-600'
+      }
+    }
+    if (level >= 20) {
+      return {
+        name: 'Gold',
+        gradient: 'from-yellow-300 via-amber-400 to-orange-500',
+        icon: <Trophy className="h-4 w-4 text-amber-600" />,
+        iconBg: 'bg-white',
+        textClass: 'text-amber-700',
+        borderClass: 'border-amber-600'
+      }
+    }
+    if (level >= 10) {
+      return {
+        name: 'Silver',
+        gradient: 'from-zinc-200 via-neutral-300 to-stone-400',
+        icon: <Medal className="h-4 w-4 text-zinc-600" />,
+        iconBg: 'bg-white',
+        textClass: 'text-zinc-700',
+        borderClass: 'border-zinc-500'
+      }
+    }
+    return {
+      name: 'Bronze',
+      gradient: 'from-orange-300 via-amber-500 to-yellow-700',
+      icon: <Medal className="h-4 w-4 text-orange-700" />,
+      iconBg: 'bg-white',
+      textClass: 'text-orange-800',
+      borderClass: 'border-orange-600'
     }
   }
 
@@ -98,6 +148,7 @@ export default function ProfilePage() {
   // Compute level and progress from xp (float8 in DB defaults to 0)
   const xp: number = Number((profile as any)?.xp ?? 0)
   const { level, currentLevelXp, nextLevelXp, progressPercent } = calculateLevel(xp)
+  const rank = getRank(level)
 
   return (
     <main className='p-4'>
@@ -114,22 +165,30 @@ export default function ProfilePage() {
         <Card>
           <CardHeader className="text-center">
             <div className="flex flex-col items-center gap-4">
-              <div className="w-24 h-24 rounded-full border-4 border-background shadow-lg overflow-hidden bg-muted flex items-center justify-center">
-                {profile.pictureUrl ? (
-                  <Image 
-                    src={profile.pictureUrl} 
-                    alt={profile.username}
-                    width={96}
-                    height={96}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      console.log("Image failed to load:", profile.pictureUrl)
-                      e.currentTarget.style.display = 'none'
-                    }}
-                  />
-                ) : (
-                  <User className="w-12 h-12 text-muted-foreground" />
-                )}
+              <div className="relative">
+                <div className={`p-[3px] rounded-full bg-gradient-to-tr ${rank.gradient} shadow-lg`}>
+                  <div className="w-24 h-24 rounded-full overflow-hidden bg-background flex items-center justify-center">
+                    {profile.pictureUrl ? (
+                      <Image 
+                        src={profile.pictureUrl} 
+                        alt={profile.username}
+                        width={96}
+                        height={96}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          console.log("Image failed to load:", profile.pictureUrl)
+                          e.currentTarget.style.display = 'none'
+                        }}
+                      />
+                    ) : (
+                      <User className="w-12 h-12 text-muted-foreground" />
+                    )}
+                  </div>
+                </div>
+                <div className={`absolute -bottom-1 -right-1 ${rank.iconBg} rounded-full p-1 shadow`}
+                  aria-label={`Rank ${rank.name}`}>
+                  {rank.icon}
+                </div>
               </div>
               <div>
                 <CardTitle className="text-3xl">{profile.displayName}</CardTitle>
@@ -143,6 +202,7 @@ export default function ProfilePage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Badge variant='outline'>Level {level}</Badge>
+                  <Badge variant='outline' className={`${rank.textClass} ${rank.borderClass}`}>{rank.name}</Badge>
                 </div>
                 <div className="text-sm text-muted-foreground">
                   {Math.floor(currentLevelXp)} / {Math.floor(nextLevelXp)} XP

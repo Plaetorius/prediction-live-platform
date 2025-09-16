@@ -21,6 +21,11 @@ export default function Header() {
             Profiles
           </Link>
         </Button>
+        <Button asChild variant="default">
+          <Link href="/ranking">
+            Ranking
+          </Link>
+        </Button>
       </nav>
     </header>
   )
