@@ -5,7 +5,7 @@ import { Profile } from '@/lib/types'
 import { createSupabaseClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Calendar, User } from 'lucide-react'
+import { ArrowLeft, Calendar, User, Trophy } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
@@ -150,6 +150,18 @@ export default function ProfilePage() {
               <Badge variant='outline'>
                 {profile.createdAt.getFullYear()}-{String(profile.createdAt.getMonth() + 1).padStart(2, '0')}-{String(profile.createdAt.getDate()).padStart(2, '0')}
               </Badge>
+            </div>
+
+            <div className="pt-4 border-t">
+              <h3 className="font-semibold mb-4">Actions</h3>
+              <div className="space-y-2">
+                <Link href={`/profiles/${profile.username}/achievements`}>
+                  <Button variant="outline" className="w-full justify-start">
+                    <Trophy className="h-4 w-4 mr-2" />
+                    View Achievements
+                  </Button>
+                </Link>
+              </div>
             </div>
 
             <div className="pt-4 border-t">
