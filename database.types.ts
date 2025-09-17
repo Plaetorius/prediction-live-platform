@@ -14,25 +14,105 @@ export type Database = {
   }
   public: {
     Tables: {
+      markets: {
+        Row: {
+          answer_a: string
+          answer_b: string
+          created_at: string
+          duration: number
+          id: string
+          question: string
+          start_time: string
+          stream_id: string
+          updated_at: string
+        }
+        Insert: {
+          answer_a: string
+          answer_b: string
+          created_at?: string
+          duration?: number
+          id?: string
+          question: string
+          start_time: string
+          stream_id: string
+          updated_at?: string
+        }
+        Update: {
+          answer_a?: string
+          answer_b?: string
+          created_at?: string
+          duration?: number
+          id?: string
+          question?: string
+          start_time?: string
+          stream_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "markets_stream_id_fkey"
+            columns: ["stream_id"]
+            isOneToOne: false
+            referencedRelation: "streams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string
+          id: string
+          picture_url: string | null
+          updated_at: string
+          username: string
+          xp: number | null
+        }
+        Insert: {
+          created_at?: string
+          display_name: string
+          id?: string
+          picture_url?: string | null
+          updated_at?: string
+          username: string
+          xp?: number | null
+        }
+        Update: {
+          created_at?: string
+          display_name?: string
+          id?: string
+          picture_url?: string | null
+          updated_at?: string
+          username?: string
+          xp?: number | null
+        }
+        Relationships: []
+      }
       streams: {
         Row: {
           created_at: string
           id: string
+          metadata: Json | null
           name: string
+          online: boolean
           platform: string
           updated_at: string
         }
         Insert: {
           created_at?: string
           id?: string
+          metadata?: Json | null
           name: string
+          online?: boolean
           platform: string
           updated_at?: string
         }
         Update: {
           created_at?: string
           id?: string
+          metadata?: Json | null
           name?: string
+          online?: boolean
           platform?: string
           updated_at?: string
         }

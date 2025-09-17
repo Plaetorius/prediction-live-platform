@@ -44,3 +44,13 @@ export type BetChannelOptions = {
   broadcastSelf?: boolean;
   kind?: 'all' | 'pool' | 'placement' | 'resolution';
 }
+
+export type Market = {
+  id: string;
+  question: string;
+  answerA: string;
+  answerB: string;
+  startTime: Date;
+  duration: number; // Duration (in secs)
+  stream_id: string;
+}
