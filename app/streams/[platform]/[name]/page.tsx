@@ -42,6 +42,15 @@ export default function StreamPage() {
     }
   })
 
+  useEffect(() => {
+    setProgress((betInformation.amountA / (betInformation.amountA + betInformation.amountB)) * 100)
+    console.log("BET INFORMATION", betInformation)
+  }, [betInformation])
+
+  useEffect(() => {
+    console.log("PROGRESS", progress)
+  }, [progress])
+
 
   if (!stream)
     return (
@@ -59,15 +68,6 @@ export default function StreamPage() {
         </div>
       </main>
     )
-
-  useEffect(() => {
-    setProgress((betInformation.amountA / (betInformation.amountA + betInformation.amountB)) * 100)
-    console.log("BET INFORMATION", betInformation)
-  }, [betInformation])
-
-  useEffect(() => {
-    console.log("PROGRESS", progress)
-  }, [progress])
 
   const getEmbedUrl = (platform: string, streamName: string) => {
     // Get hostname safely (only in browser)
