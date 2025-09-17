@@ -14,9 +14,6 @@ export default function StreamAdmin() {
   const stream = useStream()
   const [logs, setLogs] = useState<any[]>([])
 
-  if (!stream)
-    return <Loading />
-
   const betListeners: BetListeners = {
     onTeam1: (payload: any) => { 
       console.log("onTeam1", payload)
@@ -33,13 +30,22 @@ export default function StreamAdmin() {
     kind: 'all' 
   }
 
-
+  // Always call hooks at the top level, before any early returns
   const { 
     channelRef,
     send,
     sendBetTeam1,
     sendBetTeam2
-  } = useBetChannel(stream.platform, stream.name, betListeners, realtimeOptions)
+  } = useBetChannel(
+    stream?.platform || '', 
+    stream?.name || '', 
+    betListeners, 
+    realtimeOptions
+  )
+
+  // Early return after all hooks have been called
+  if (!stream)
+    return <Loading />
 
   channelRef.current?.subscribe()
   

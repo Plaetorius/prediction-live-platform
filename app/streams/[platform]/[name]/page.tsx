@@ -28,24 +28,9 @@ export default function StreamPage() {
 
   const stream = useStream()
 
-  if (!stream)
-    return (
-      <main className='p-4'>
-        <div className='mb-6'>
-          <Button asChild variant="outline">
-            <Link href="/streams">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Streams
-            </Link>
-          </Button>
-        </div>
-        <div className="text-center py-8">
-          <p className="text-muted-foreground">Stream not found.</p>
-        </div>
-      </main>
-    )
-
   useEffect(() => {
+    if (!stream)
+      return
     const streamChannel = supabase.channel(`bets:${stream.platform}:${stream.name}`, {
       config: {
         broadcast: {
@@ -66,6 +51,23 @@ export default function StreamPage() {
       }
     }
   }, [stream, supabase])
+
+  if (!stream)
+    return (
+      <main className='p-4'>
+        <div className='mb-6'>
+          <Button asChild variant="outline">
+            <Link href="/streams">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Streams
+            </Link>
+          </Button>
+        </div>
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">Stream not found.</p>
+        </div>
+      </main>
+    )
 
   // Fonction pour générer l'URL d'embed selon la plateforme
   const getEmbedUrl = (platform: string, streamName: string) => {
@@ -171,7 +173,7 @@ export default function StreamPage() {
                 <h3 className="font-semibold mb-2">About this stream</h3>
                 <p className="text-muted-foreground text-sm">
                   This is a {stream.platform} stream by {stream.name}. 
-                  Enjoy watching and don't forget to follow for more content!
+                  Enjoy watching and don&apos;t forget to follow for more content!
                 </p>
               </div>
             </CardContent>
