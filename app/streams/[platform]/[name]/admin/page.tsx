@@ -20,10 +20,50 @@ export default function StreamAdmin() {
     onTeam1: (payload: any) => { 
       console.log("onTeam1", payload)
       setLogs(prevLogs => [...prevLogs, payload])
+      
+      // Update progress when receiving simulated bets through websocket
+      if (isSimulating && payload.betId?.includes('bet_')) {
+        setSimulationProgress(prev => {
+          const newCurrent = Math.min(prev.current + 1, prev.total)
+          
+          // Auto-complete simulation when all bets are received
+          if (newCurrent >= prev.total) {
+            setTimeout(() => {
+              setIsSimulating(false)
+              setSimulationProgress({ current: 0, total: 0 })
+            }, 1000) // Small delay to show completion
+          }
+          
+          return {
+            ...prev,
+            current: newCurrent
+          }
+        })
+      }
     },
     onTeam2: (payload: any) => {
       console.log("onTeam2", payload)
       setLogs(prevLogs => [...prevLogs, payload])
+      
+      // Update progress when receiving simulated bets through websocket
+      if (isSimulating && payload.betId?.includes('bet_')) {
+        setSimulationProgress(prev => {
+          const newCurrent = Math.min(prev.current + 1, prev.total)
+          
+          // Auto-complete simulation when all bets are received
+          if (newCurrent >= prev.total) {
+            setTimeout(() => {
+              setIsSimulating(false)
+              setSimulationProgress({ current: 0, total: 0 })
+            }, 1000) // Small delay to show completion
+          }
+          
+          return {
+            ...prev,
+            current: newCurrent
+          }
+        })
+      }
     },
   }
 
@@ -76,18 +116,22 @@ export default function StreamAdmin() {
         betId: `bet_${Date.now()}_${i}`
       }
       
-      // Send the bet
+      // Send the bet - progress will be updated via websocket listeners
       if (isTeam1) {
         sendBetTeam1(betPayload)
       } else {
         sendBetTeam2(betPayload)
       }
-      
-      setSimulationProgress({ current: i + 1, total: numBets })
     }
     
-    setIsSimulating(false)
-    setSimulationProgress({ current: 0, total: 0 })
+    // Set a timeout to end simulation if not all bets are received
+    // This handles cases where websocket might be slow or fail
+    setTimeout(() => {
+      if (isSimulating) {
+        setIsSimulating(false)
+        setSimulationProgress({ current: 0, total: 0 })
+      }
+    }, 35000) // 5 seconds after the last bet should be sent
   }, [isSimulating, sendBetTeam1, sendBetTeam2])
 
   if (!stream)
@@ -137,7 +181,7 @@ export default function StreamAdmin() {
             {isSimulating && (
               <div className='space-y-2'>
                 <div className='text-sm text-gray-600'>
-                  Simulating... {simulationProgress.current} / {simulationProgress.total} bets
+                  Simulating... {simulationProgress.current} / {simulationProgress.total} bets received
                 </div>
                 <div className='w-full bg-gray-200 rounded-full h-2'>
                   <div 
@@ -146,6 +190,9 @@ export default function StreamAdmin() {
                       width: `${(simulationProgress.current / simulationProgress.total) * 100}%` 
                     }}
                   />
+                </div>
+                <div className='text-xs text-gray-500'>
+                  Progress updates via websocket data
                 </div>
               </div>
             )}
