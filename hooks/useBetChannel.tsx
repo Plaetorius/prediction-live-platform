@@ -37,11 +37,13 @@ export function useBetChannel(
     channelRef.current = channel
 
     return () => {
-      if (channelRef.current)
+      if (channelRef.current) {
+        channelRef.current.unsubscribe()
         supabase.removeChannel(channelRef.current)
+      }
       channelRef.current = null
     }
-  }, [platform, name])
+  }, [platform, name, listeners.onTeam1, listeners.onTeam2, opts.kind, opts.broadcastSelf])
 
   function send<T = any>(event: string, payload: T) {
     const serializedPayload = JSON.parse(JSON.stringify(payload))

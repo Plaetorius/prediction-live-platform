@@ -1,30 +1,28 @@
 "use client"
 
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { createSupabaseClient } from '@/lib/supabase/client'
-import { RealtimeChannel } from '@supabase/supabase-js'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { MessageCircleCode, SquarePlus, ArrowLeft, Eye, Calendar } from 'lucide-react'
-import React, { useEffect, useRef, useState} from 'react'
+import React, { useEffect, useState} from 'react'
 import { Badge } from '@/components/ui/badge'
 import Loading from '@/components/Loading'
 import Link from 'next/link'
 import { useStream } from '@/providers/stream-providers'
+import { useBetChannel } from '@/hooks/useBetChannel'
+import { Progress } from '@/components/ui/progress'
 
-
-function setupListeners(channel: RealtimeChannel) {
-  channel.on('broadcast', { event: 'bet_team1'}, (payload) => {
-    console.log("BET TEAM1", payload)
-  })
-  channel.on('broadcast', { event: 'bet_team2' }, (payload) => {
-    console.log("BET TEAM2", payload)
-  })
+type BetInformation = {
+  amountA: number;
+  amountB: number;
 }
 
 export default function StreamPage() {
   const [loading, setLoading] = useState<boolean>(false)
-  const supabase = createSupabaseClient()
-  const streamChannelRef = useRef<any>(null)
+  const [betInformation, setBetInformation] = useState<BetInformation>({
+    amountA: 0,
+    amountB: 0
+  })
+  const [progress, setProgress] = useState<number>(0)
 
   const stream = useStream()
 
@@ -45,29 +43,31 @@ export default function StreamPage() {
       </main>
     )
 
-  useEffect(() => {
-    const streamChannel = supabase.channel(`bets:${stream.platform}:${stream.name}`, {
-      config: {
-        broadcast: {
-          self: true
-        }
-      }
-    })
-
-    setupListeners(streamChannel)
-    streamChannel.subscribe()
-
-    streamChannelRef.current = streamChannel
-
-    // Cleanup function
-    return () => {
-      if (streamChannelRef.current) {
-        supabase.removeChannel(streamChannelRef.current)
-      }
+  const {
+    channelRef,
+    send,
+    sendBetTeam1,
+    sendBetTeam2,
+  } = useBetChannel(stream.platform, stream.name, {
+    onTeam1: (payload) => {
+      setBetInformation({ ...betInformation, amountA: betInformation.amountA + payload.amount })
+      console.log("BET TEAM1", payload)
+    },
+    onTeam2: (payload) => {
+      console.log("BET TEAM2", payload)
+      setBetInformation({ ...betInformation, amountB: betInformation.amountB + payload.amount })
     }
-  }, [stream, supabase])
+  })
 
-  // Fonction pour générer l'URL d'embed selon la plateforme
+  useEffect(() => {
+    setProgress((betInformation.amountA / (betInformation.amountA + betInformation.amountB)) * 100)
+    console.log("BET INFORMATION", betInformation)
+  }, [betInformation])
+
+  useEffect(() => {
+    console.log("PROGRESS", progress)
+  }, [progress])
+
   const getEmbedUrl = (platform: string, streamName: string) => {
     // Get hostname safely (only in browser)
     const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
@@ -81,26 +81,6 @@ export default function StreamPage() {
         return `https://player.kick.com/${streamName}`
       default:
         return `https://player.twitch.tv/?channel=${streamName}&parent=${hostname}`
-    }
-  }
-
-  function sendBetTeam1() {
-    if (streamChannelRef.current) {
-      streamChannelRef.current.send({
-        type: 'broadcast',
-        event: 'bet_team1',
-        payload: {}
-      })
-    }
-  }
-
-  function sendBetTeam2() {
-    if (streamChannelRef.current) {
-      streamChannelRef.current.send({
-        type: 'broadcast',
-        event: 'bet_team2',
-        payload: {}
-      })
     }
   }
 
@@ -141,6 +121,32 @@ export default function StreamPage() {
                   className="w-full h-full"
                   title={`${stream.platform} stream - ${stream.name}`}
                 />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className='space-y-4'>
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                Predictions
+              </CardTitle>
+              <CardDescription>
+                Find the state of the predictions heres
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className='flex flex-row items-center'>
+                <div className='w-14 flex-1 flex justify-center'>
+                  Team A
+                </div>
+                <div className='w-40 flex-3'>
+                  <Progress className='w-[90%]' value={progress} />
+                </div>
+                <div className='w-14 flex-1 flex justify-center'>
+                  Team B
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -211,10 +217,10 @@ export default function StreamPage() {
         </CardHeader>
         <CardContent className='bg-slate-100'>
           <div>
-            <Button onClick={() => sendBetTeam1()}>
+            <Button onClick={() => sendBetTeam1({ amount: 1 })}>
               Send Bet Team 1
             </Button>
-            <Button onClick={() => sendBetTeam2()}>
+            <Button onClick={() => sendBetTeam2({ amount: 1})}>
               Send Bet Team 2
             </Button>
           </div>
