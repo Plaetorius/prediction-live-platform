@@ -4,6 +4,13 @@ import React from 'react'
 import { Medal, Trophy, Gem } from 'lucide-react'
 import { Rank, RankName } from './types'
 
+// Tailwind classes used in this file:
+// from-cyan-300 via-sky-400 to-blue-500 text-sky-600 text-sky-700 border-sky-600
+// from-yellow-300 via-amber-400 to-orange-500 text-amber-600 text-amber-700 border-amber-600
+// from-zinc-200 via-neutral-300 to-stone-400 text-zinc-600 text-zinc-700 border-zinc-500
+// from-orange-300 via-amber-500 to-yellow-700 text-orange-700 text-orange-800 border-orange-600
+// bg-white h-4 w-4
+
 export function xpForLevel(level: number, base: number = 100, growth: number = 1.2): number {
   if (level <= 1) return base
   return base * Math.pow(growth, level - 1)
