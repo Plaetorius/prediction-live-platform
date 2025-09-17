@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { createSupabaseClient } from '@/lib/supabase/client'
 import { BetListeners, BetChannelOptions, Stream } from '@/lib/types'
 import { useStream } from '@/providers/stream-providers'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { useBetChannel } from '@/hooks/useBetChannel'
 import { Button } from '@/components/ui/button'
 
@@ -13,6 +13,8 @@ export default function StreamAdmin() {
   const [loading, setLoading] = useState<boolean>(false)
   const stream = useStream()
   const [logs, setLogs] = useState<any[]>([])
+  const [isSimulating, setIsSimulating] = useState<boolean>(false)
+  const [simulationProgress, setSimulationProgress] = useState<{ current: number; total: number }>({ current: 0, total: 0 })
 
   const betListeners: BetListeners = {
     onTeam1: (payload: any) => { 
@@ -30,7 +32,6 @@ export default function StreamAdmin() {
     kind: 'all' 
   }
 
-  // Always call hooks at the top level, before any early returns
   const { 
     channelRef,
     send,
@@ -43,11 +44,54 @@ export default function StreamAdmin() {
     realtimeOptions
   )
 
-  // Early return after all hooks have been called
+  // Simulation function for betting waves
+  const simulateBettingWave = useCallback(async (numBets: number = 20) => {
+    if (isSimulating) return
+    
+    setIsSimulating(true)
+    setSimulationProgress({ current: 0, total: numBets })
+    
+    const duration = 30000 // 30 seconds
+    const interval = duration / numBets
+    
+    for (let i = 0; i < numBets; i++) {
+      // Random delay between 0.5x and 1.5x the calculated interval
+      const randomDelay = interval * (0.5 + Math.random())
+      
+      await new Promise(resolve => setTimeout(resolve, randomDelay))
+      
+      // Random team selection (50/50 chance)
+      const isTeam1 = Math.random() < 0.5
+      
+      // Random bet amount between $1 and $100
+      const amount = Math.floor(Math.random() * 100) + 1
+      
+      // Random user ID for simulation
+      const userId = `user_${Math.floor(Math.random() * 1000)}`
+      
+      const betPayload = {
+        amount,
+        userId,
+        timestamp: new Date().toISOString(),
+        betId: `bet_${Date.now()}_${i}`
+      }
+      
+      // Send the bet
+      if (isTeam1) {
+        sendBetTeam1(betPayload)
+      } else {
+        sendBetTeam2(betPayload)
+      }
+      
+      setSimulationProgress({ current: i + 1, total: numBets })
+    }
+    
+    setIsSimulating(false)
+    setSimulationProgress({ current: 0, total: 0 })
+  }, [isSimulating, sendBetTeam1, sendBetTeam2])
+
   if (!stream)
     return <Loading />
-
-  channelRef.current?.subscribe()
   
   return (
     <main className='m-4'>
@@ -61,14 +105,52 @@ export default function StreamAdmin() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className='grid grid-cols-4 gap-3'>
-            <Button onClick={() => sendBetTeam1({ 'bet': 'team1' })}>
+          <div className='grid grid-cols-2 gap-3 mb-4'>
+            <Button onClick={() => sendBetTeam1({ amount: 1 })}>
               Send bet team 1
             </Button>
-            <Button onClick={() => sendBetTeam2({ 'bet': 'team2' } )}>
+            <Button onClick={() => sendBetTeam2({ amount: 1 })}>
               Send bet team 2
             </Button>
           </div>
+          
+          {/* Simulation Controls */}
+          <div className='border-t pt-4 mb-4'>
+            <h4 className='text-lg font-semibold mb-3'>Betting Simulation</h4>
+            <div className='grid grid-cols-2 gap-3 mb-3'>
+              <Button 
+                onClick={() => simulateBettingWave(10)}
+                disabled={isSimulating}
+                variant="outline"
+              >
+                Simulate 10 bets (30s)
+              </Button>
+              <Button 
+                onClick={() => simulateBettingWave(100)}
+                disabled={isSimulating}
+                variant="outline"
+              >
+                Simulate 100 bets (30s)
+              </Button>
+            </div>
+            
+            {isSimulating && (
+              <div className='space-y-2'>
+                <div className='text-sm text-gray-600'>
+                  Simulating... {simulationProgress.current} / {simulationProgress.total} bets
+                </div>
+                <div className='w-full bg-gray-200 rounded-full h-2'>
+                  <div 
+                    className='bg-blue-600 h-2 rounded-full transition-all duration-300'
+                    style={{ 
+                      width: `${(simulationProgress.current / simulationProgress.total) * 100}%` 
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+          
           <div className='mt-4 '>
             <h4>
               Logs
