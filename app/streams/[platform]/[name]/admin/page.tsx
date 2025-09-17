@@ -113,7 +113,7 @@ export default function StreamAdmin() {
         amount,
         userId,
         timestamp: new Date().toISOString(),
-        betId: `bet_${Date.now()}_${i}`
+        betId: `bet_${Date.now()}_${userId}`
       }
       
       // Send the bet - progress will be updated via websocket listeners
