@@ -45,6 +45,24 @@ export type BetChannelOptions = {
   kind?: 'all' | 'pool' | 'placement' | 'resolution';
 }
 
+export type Achievement = {
+  id: string
+  name: string
+  description: string
+  icon: string
+  category: 'onboarding' | 'volume' | 'precision' | 'momentum' | 'diversity' | 'timing' | 'stream' | 'social' | 'resilience' | 'obsidian'
+  requirement: number
+  unlocked: boolean
+  unlockedAt?: Date
+}
+
+export type UserAchievement = {
+  id: string
+  userId: number
+  achievementId: string
+  unlockedAt: Date
+}
+
 export type Market = {
   id: string;
   question: string;
