@@ -14,15 +14,122 @@ export type Database = {
   }
   public: {
     Tables: {
+      bets: {
+        Row: {
+          created_at: string
+          id: string
+          market_id: string
+          profile_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          market_id: string
+          profile_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          market_id?: string
+          profile_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bets_market_id_fkey"
+            columns: ["market_id"]
+            isOneToOne: false
+            referencedRelation: "markets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bets_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cosmetics: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          name: string
+          rarity: Database["public"]["Enums"]["rarity"]
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          name: string
+          rarity: Database["public"]["Enums"]["rarity"]
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          name?: string
+          rarity?: Database["public"]["Enums"]["rarity"]
+        }
+        Relationships: []
+      }
+      lootboxes: {
+        Row: {
+          cosmetic_id: string | null
+          created_at: string
+          id: string
+          opened_at: string
+          profile_id: string
+          type: Database["public"]["Enums"]["lootboxes_rewards"] | null
+          xp_amount: number | null
+        }
+        Insert: {
+          cosmetic_id?: string | null
+          created_at?: string
+          id?: string
+          opened_at?: string
+          profile_id: string
+          type?: Database["public"]["Enums"]["lootboxes_rewards"] | null
+          xp_amount?: number | null
+        }
+        Update: {
+          cosmetic_id?: string | null
+          created_at?: string
+          id?: string
+          opened_at?: string
+          profile_id?: string
+          type?: Database["public"]["Enums"]["lootboxes_rewards"] | null
+          xp_amount?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lootboxes_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       markets: {
         Row: {
           answer_a: string
           answer_b: string
           created_at: string
           duration: number
+          est_end_time: string
           id: string
           question: string
+          real_end_time: string | null
           start_time: string
+          status: Database["public"]["Enums"]["market_status"]
           stream_id: string
           updated_at: string
         }
@@ -31,9 +138,12 @@ export type Database = {
           answer_b: string
           created_at?: string
           duration?: number
+          est_end_time: string
           id?: string
           question: string
+          real_end_time?: string | null
           start_time: string
+          status?: Database["public"]["Enums"]["market_status"]
           stream_id: string
           updated_at?: string
         }
@@ -42,9 +152,12 @@ export type Database = {
           answer_b?: string
           created_at?: string
           duration?: number
+          est_end_time?: string
           id?: string
           question?: string
+          real_end_time?: string | null
           start_time?: string
+          status?: Database["public"]["Enums"]["market_status"]
           stream_id?: string
           updated_at?: string
         }
@@ -126,7 +239,15 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      lootboxes_rewards: "xp" | "cosmetic" | "void"
+      market_status:
+        | "draft"
+        | "open"
+        | "timeout"
+        | "stopped"
+        | "error"
+        | "voided"
+      rarity: "common" | "rare" | "epic" | "legendary"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -253,6 +374,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      lootboxes_rewards: ["xp", "cosmetic", "void"],
+      market_status: ["draft", "open", "timeout", "stopped", "error", "voided"],
+      rarity: ["common", "rare", "epic", "legendary"],
+    },
   },
 } as const
