@@ -7,23 +7,31 @@ import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/
 import { Input } from '@/components/ui/input'
 import { createSupabaseClient } from '@/lib/supabase/client'
 import { Stream } from '@/lib/types'
+import { Constants } from '@/database.types'
 import { zodResolver } from '@hookform/resolvers/zod'
-import React, { useState } from 'react'
+import { RealtimeChannel } from '@supabase/supabase-js'
+import React, { useState, useEffect } from 'react'
 import { SubmitHandler, useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { formatTimestampForInput, parseInputToTimestamp, addDuration, secondsToMs, now } from '@/lib/timezoneUtils'
 
 interface MarketFormModalProps {
   isModalOpen: boolean
   setIsModalOpen: (open: boolean) => void
   stream: Stream | null
+  sendNewMarket: (payload: any) => void
 }
 
 const marketFormSchema = z.object({
   question: z.string().min(5, 'Question is too short!').max(256, 'Question is too long!'),
   answerA: z.string().min(1, 'Answer A is too short!').max(50, "Answer A is too long!"),
   answerB: z.string().min(1, 'Answer B is too short!').max(50, "Answer B is too long!"),
-  startTime: z.date(),
+  startTime: z.number().min(0, "Start time must be valid"),
+  estEndTime: z.number().min(0, "End time must be valid").optional(),
+  realEndTime: z.number().min(0, "Real end time must be valid").optional(),
+  status: z.enum(Constants.public.Enums.market_status).optional(),
   duration: z.number().min(10, "Duration must be at least 10 seconds").max(900, "Duration can't exceed 900 seconds"),
   streamId: z.string().min(1, 'Stream ID is required').max(256, 'Stream ID is too long!')
 })
@@ -33,21 +41,52 @@ type MarketFormSchema = z.infer<typeof marketFormSchema>
 export default function MarketFormModal({
   isModalOpen,
   setIsModalOpen,
-  stream
+  stream,
+  sendNewMarket,
 }: MarketFormModalProps) {
   const [loading, setLoading] = useState<boolean>(false)
 
   const form = useForm({
     resolver: zodResolver(marketFormSchema),
     defaultValues: {
-      question: '',
-      answerA: '',
-      answerB: '',
-      startTime: new Date(),
-      duration: 300,
-      streamId: stream?.id || ''
+      question: 'First blood?' + now(),
+      answerA: 'TH',
+      answerB: 'NAVI',
+      streamId: stream?.id || '',
+      startTime: now(),
+      duration: 300, // Duration in seconds
+      estEndTime: now() + secondsToMs(300), // Convert to milliseconds for calculation
+      status: 'draft'
     }
   })
+
+  // Watch for changes in startTime and duration to update estEndTime
+  const startTime = form.watch('startTime')
+  const duration = form.watch('duration')
+
+  // Reset form with current time when modal opens
+  useEffect(() => {
+    if (isModalOpen) {
+      const currentTime = now()
+      form.reset({
+        question: 'First blood?' + currentTime,
+        answerA: 'TH',
+        answerB: 'NAVI',
+        streamId: stream?.id || '',
+        startTime: currentTime,
+        duration: 300,
+        estEndTime: currentTime + secondsToMs(300),
+        status: 'draft'
+      })
+    }
+  }, [isModalOpen, form, stream?.id])
+
+  useEffect(() => {
+    if (startTime && duration) {
+      const endTime = addDuration(startTime, secondsToMs(duration))
+      form.setValue('estEndTime', endTime)
+    }
+  }, [startTime, duration, form])
 
   const onSubmit: SubmitHandler<MarketFormSchema> = async (data) => {
     setLoading(true)
@@ -60,8 +99,11 @@ export default function MarketFormModal({
           question: data.question,
           answer_a: data.answerA,
           answer_b: data.answerB,
-          start_time: data.startTime.toISOString(),
-          duration: data.duration,
+          start_time: data.startTime, // Send Unix timestamp directly
+          duration: data.duration, // Store duration in seconds (as expected by database)
+          est_end_time: data.estEndTime || data.startTime + secondsToMs(data.duration), // Calculate if not provided
+          real_end_time: data.realEndTime || null,
+          status: data.status,
           stream_id: data.streamId,
         })
         .select()
@@ -74,6 +116,17 @@ export default function MarketFormModal({
       }
 
       toast.success("Market created successfully!")
+      sendNewMarket({
+        id: marketData.id,
+        question: marketData.question,
+        answerA: marketData.answer_a,
+        answerB: marketData.answer_b,
+        startTime: marketData.start_time,
+        duration: marketData.duration,
+        estEndTime: marketData.est_end_time,
+        status: marketData.status,
+        streamId: marketData.stream_id
+      })
       form.reset()
       setIsModalOpen(false)
     } catch (error) {
@@ -139,7 +192,7 @@ export default function MarketFormModal({
                         </FormControl>
                       </FormItem>
                     )}
-                    />
+                  />
                   <FormField
                     control={form.control}
                     name='answerB'
@@ -157,57 +210,108 @@ export default function MarketFormModal({
                         </FormControl>
                       </FormItem>
                     )}
-                    />
+                  />
                 </div>
-                 <FormField
-                   control={form.control}
-                   name='startTime'
-                   render={({ field }) => (
-                     <FormItem>
-                       <FormLabel>
-                         Start Time
-                       </FormLabel>
-                       <FormControl>
+                <FormField
+                  control={form.control}
+                  name='startTime'
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Start Time
+                      </FormLabel>
+                      <FormControl>
                          <Input
                            id='startTime'
                            type='datetime-local'
+                           step='1'
                            {...field}
-                           value={field.value ? new Date(field.value.getTime() - field.value.getTimezoneOffset() * 60000).toISOString().slice(0, 16) : ''}
-                           onChange={(e) => field.onChange(new Date(e.target.value))}
+                           value={field.value ? formatTimestampForInput(field.value) : ''}
+                           onChange={(e) => field.onChange(parseInputToTimestamp(e.target.value))}
                          />
-                       </FormControl>
-                     </FormItem>
-                   )}
-                 />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name='estEndTime'
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        End Time
+                      </FormLabel>
+                      <FormControl>
+                         <Input
+                           id='estEndTime'
+                           type='datetime-local'
+                           step='1'
+                           {...field}
+                           value={field.value ? formatTimestampForInput(field.value) : ''}
+                           onChange={(e) => field.onChange(parseInputToTimestamp(e.target.value))}
+                           disabled
+                         />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name='duration'
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Duration (seconds)
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          id='duration'
+                          type='number'
+                          min='10'
+                          max='900'
+                          placeholder='300'
+                          {...field}
+                          onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
                  <FormField
                    control={form.control}
-                   name='duration'
+                   name='status'
                    render={({ field }) => (
                      <FormItem>
                        <FormLabel>
-                         Duration (seconds)
+                         Status
                        </FormLabel>
                        <FormControl>
-                         <Input
-                           id='duration'
-                           type='number'
-                           min='10'
-                           max='900'
-                           placeholder='300'
-                           {...field}
-                           onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                         />
+                         <Select onValueChange={field.onChange} value={field.value}>
+                           <SelectTrigger>
+                             <SelectValue placeholder='Select a status...' />
+                           </SelectTrigger>
+                           <SelectContent>
+                             <SelectGroup>
+                               <SelectItem value='draft' className='bg-gray-200 my-1'>Draft</SelectItem>
+                               <SelectItem value='open' className='bg-green-200 my-1'>Open</SelectItem>
+                               <SelectItem value='timeout' className='bg-blue-200 my-1'>Timeout</SelectItem>
+                               <SelectItem value='stopped' className='bg-orange-200 my-1'>Stopped</SelectItem>
+                               <SelectItem value='error' className='bg-red-200 my-1'>Error</SelectItem>
+                               <SelectItem value='voided' className='bg-slate-200 my-1'>Voided</SelectItem>
+                             </SelectGroup>
+                           </SelectContent>
+                         </Select>
                        </FormControl>
                      </FormItem>
                    )}
                  />
-                 <FormField
+                <FormField
                   control={form.control}
                   name='streamId'
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>
-                        Stream ID
+                        Stream ID ({stream?.platform} / {stream?.name})
                       </FormLabel>
                       <FormControl>
                         <Input
@@ -219,25 +323,25 @@ export default function MarketFormModal({
                     </FormItem>
                   )}
                 />
-                 <div className='flex gap-2 pt-4'>
-                   <Button 
-                     type='submit' 
-                     disabled={loading}
-                     className='flex-1'
-                   >
-                     {loading ? 'Creating...' : 'Create Market'}
-                   </Button>
-                   <Button 
-                     type='button' 
-                     variant='outline'
-                     onClick={() => setIsModalOpen(false)}
-                   >
-                     Cancel
-                   </Button>
-                 </div>
-               </div>
-             </form>
-           </Form>
+                <div className='flex gap-2 pt-4'>
+                  <Button 
+                    type='submit' 
+                    disabled={loading}
+                    className='flex-1'
+                  >
+                    {loading ? 'Creating...' : 'Create Market'}
+                  </Button>
+                  <Button 
+                    type='button' 
+                    variant='outline'
+                    onClick={() => setIsModalOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
     </div>

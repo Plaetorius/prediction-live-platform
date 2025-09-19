@@ -1,3 +1,4 @@
+import { Constants } from "@/database.types";
 import { REALTIME_LISTEN_TYPES } from "@supabase/supabase-js";
 
 export interface RealtimePayload {
@@ -38,6 +39,7 @@ export type Rank = {
 export type BetListeners = {
   onTeam1?: (payload: any) => void;
   onTeam2?: (payload: any) => void;
+  onNewMarket?: (payload: any) => void;
 }
 
 export type BetChannelOptions = {
@@ -68,7 +70,22 @@ export type Market = {
   question: string;
   answerA: string;
   answerB: string;
-  startTime: Date;
-  duration: number; // Duration (in secs)
-  stream_id: string;
+  startTime: number; // Unix timestamp in milliseconds
+  estEndTime: number; // Unix timestamp in milliseconds
+  realEndTime: number; // Unix timestamp in milliseconds
+  status: string; // Enum: Constants.public.Enums.market_status
+  duration: number; // Duration in seconds (as stored in database)
+  streamId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export type Bet = {
+  id: string;
+  profileId: string;
+  marketId: string;
+  isAnswerA: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  status:  string; // Enum: Constants.public.Enums.bets_status
 }

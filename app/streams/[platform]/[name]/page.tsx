@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { MessageCircleCode, SquarePlus, ArrowLeft, Eye, Calendar } from 'lucide-react'
 import React, { useEffect, useState} from 'react'
 import { Badge } from '@/components/ui/badge'
@@ -9,7 +9,13 @@ import Loading from '@/components/Loading'
 import Link from 'next/link'
 import { useStream } from '@/providers/stream-providers'
 import { useBetChannel } from '@/hooks/useBetChannel'
-import { Progress } from '@/components/ui/progress'
+import { Market } from '@/lib/types'
+import MarketDisplay from './MarketDisplay'
+import { isMarketActive } from '@/lib/timezoneUtils'
+
+type MarketWithProgress = Market & {
+  progress?: number;
+}
 
 type BetInformation = {
   amountA: number;
@@ -23,6 +29,8 @@ export default function StreamPage() {
     amountB: 0
   })
   const [progress, setProgress] = useState<number>(0)
+  const [markets, setMarkets] = useState<Market[]>([]) // Fetch when landing on page
+  const [openedMarkets, setOpenedMarkets] = useState<MarketWithProgress[]>([])
 
   const stream = useStream()
 
@@ -39,10 +47,35 @@ export default function StreamPage() {
     onTeam2: (payload) => {
       console.log("BET TEAM2", payload)
       setBetInformation({ ...betInformation, amountB: betInformation.amountB + payload.amount })
+    },
+    onNewMarket: (payload) => {
+      console.log("NEW MARKET RECEIVED", payload)
+      setMarkets(prev => { 
+        console.log("PREVIOUS MARKETS", prev)
+        const newMarket: Market = {
+          id: payload.id,
+          question: payload.question,
+          answerA: payload.answerA,
+          answerB: payload.answerB,
+          startTime: payload.startTime,
+          estEndTime: payload.estEndTime || Date.now(),
+          realEndTime: payload.realEndTime || Date.now(),
+          status: payload.status || 'draft',
+          duration: payload.duration,
+          streamId: payload.streamId,
+          createdAt: new Date(), // Date to match other tables, not used in delay calculation
+          updatedAt: new Date(),
+        }
+        console.log("NEW MARKET CREATED", newMarket)
+        const updatedMarkets = [...prev, newMarket]
+        console.log("UPDATED MARKETS", updatedMarkets)
+        return updatedMarkets
+      })
     }
   })
 
   useEffect(() => {
+    // TODO replace array by hashmap
     setProgress((betInformation.amountA / (betInformation.amountA + betInformation.amountB)) * 100)
     console.log("BET INFORMATION", betInformation)
   }, [betInformation])
@@ -50,6 +83,14 @@ export default function StreamPage() {
   useEffect(() => {
     console.log("PROGRESS", progress)
   }, [progress])
+
+  
+  useEffect(() => {
+    const activeMarkets = markets.filter((market) => isMarketActive(market.startTime, market.estEndTime))
+    setOpenedMarkets(activeMarkets)
+    
+    
+  }, [markets])
 
 
   if (!stream)
@@ -127,31 +168,11 @@ export default function StreamPage() {
           </Card>
         </div>
 
-        <div className='space-y-4'>
-          <Card>
-            <CardHeader>
-              <CardTitle>
-                Predictions
-              </CardTitle>
-              <CardDescription>
-                Find the state of the predictions heres
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className='flex flex-row items-center'>
-                <div className='w-14 flex-1 flex justify-center'>
-                  Team A
-                </div>
-                <div className='w-40 flex-3'>
-                  <Progress className='w-[90%]' value={progress} />
-                </div>
-                <div className='w-14 flex-1 flex justify-center'>
-                  Team B
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        {
+          markets.length === 0
+          ? (<div>No markets</div>)
+          : (<MarketDisplay markets={openedMarkets} progress={progress} />)
+        }
 
         {/* Stream Info */}
         <div className='space-y-4'>

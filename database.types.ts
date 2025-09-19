@@ -18,22 +18,28 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          is_answer_a: boolean
           market_id: string
           profile_id: string
+          status: Database["public"]["Enums"]["bets_status"]
           updated_at: string
         }
         Insert: {
           created_at?: string
           id?: string
+          is_answer_a: boolean
           market_id: string
           profile_id: string
+          status: Database["public"]["Enums"]["bets_status"]
           updated_at?: string
         }
         Update: {
           created_at?: string
           id?: string
+          is_answer_a?: boolean
           market_id?: string
           profile_id?: string
+          status?: Database["public"]["Enums"]["bets_status"]
           updated_at?: string
         }
         Relationships: [
@@ -124,11 +130,11 @@ export type Database = {
           answer_b: string
           created_at: string
           duration: number
-          est_end_time: string
+          est_end_time: number
           id: string
           question: string
-          real_end_time: string | null
-          start_time: string
+          real_end_time: number | null
+          start_time: number
           status: Database["public"]["Enums"]["market_status"]
           stream_id: string
           updated_at: string
@@ -138,11 +144,11 @@ export type Database = {
           answer_b: string
           created_at?: string
           duration?: number
-          est_end_time: string
+          est_end_time: number
           id?: string
           question: string
-          real_end_time?: string | null
-          start_time: string
+          real_end_time?: number | null
+          start_time: number
           status?: Database["public"]["Enums"]["market_status"]
           stream_id: string
           updated_at?: string
@@ -152,11 +158,11 @@ export type Database = {
           answer_b?: string
           created_at?: string
           duration?: number
-          est_end_time?: string
+          est_end_time?: number
           id?: string
           question?: string
-          real_end_time?: string | null
-          start_time?: string
+          real_end_time?: number | null
+          start_time?: number
           status?: Database["public"]["Enums"]["market_status"]
           stream_id?: string
           updated_at?: string
@@ -239,6 +245,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      bets_status: "draft" | "voided" | "win" | "lose" | "accepted" | "error"
       lootboxes_rewards: "xp" | "cosmetic" | "void"
       market_status:
         | "draft"
@@ -375,6 +382,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      bets_status: ["draft", "voided", "win", "lose", "accepted", "error"],
       lootboxes_rewards: ["xp", "cosmetic", "void"],
       market_status: ["draft", "open", "timeout", "stopped", "error", "voided"],
       rarity: ["common", "rare", "epic", "legendary"],

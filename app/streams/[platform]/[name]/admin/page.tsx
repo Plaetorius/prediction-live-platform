@@ -67,6 +67,9 @@ export default function StreamAdmin() {
         })
       }
     },
+    onNewMarket: (payload: any) => {
+      console.log("NEW MARKET", payload)
+    }
   }
 
   const realtimeOptions: BetChannelOptions = {
@@ -78,7 +81,8 @@ export default function StreamAdmin() {
     channelRef,
     send,
     sendBetTeam1,
-    sendBetTeam2
+    sendBetTeam2,
+    sendNewMarket
   } = useBetChannel(
     stream?.platform || '', 
     stream?.name || '', 
@@ -112,6 +116,7 @@ export default function StreamAdmin() {
       const userId = `user_${Math.floor(Math.random() * 1000)}`
       
       const betPayload = {
+        marketId: "e34898c0-dfb0-420b-9aab-ab977c1ebadf",
         amount,
         userId,
         timestamp: new Date().toISOString(),
@@ -205,6 +210,7 @@ export default function StreamAdmin() {
             isModalOpen={isModalOpen}
             setIsModalOpen={setIsModalOpen}
             stream={stream}
+            sendNewMarket={sendNewMarket}
           />
           
           <div className='mt-4 '>
