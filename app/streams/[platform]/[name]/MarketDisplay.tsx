@@ -1,9 +1,22 @@
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
+import { createBetClient } from '@/lib/bets/insertClient'
 import { isMarketActive, getTimeRemaining } from '@/lib/timezoneUtils'
 import { Market } from '@/lib/types'
 import React, { useEffect, useState } from 'react'
+import { toast } from 'sonner'
+
+async function handleBetting(marketId: string, isAnswerA: boolean, setBetLoading: React.Dispatch<React.SetStateAction<boolean>>) {
+  setBetLoading(true)
+  const bet = await createBetClient(marketId, '6c5b0e03-5ba0-447c-a495-aea397fba8f9', isAnswerA, 'draft')
+  setBetLoading(false)
+  if (!bet) {
+    toast.error('Error placing your bet. Please try again.')
+    return;
+  }
+  toast.success('Bet successfully placed!')
+} 
 
 // Timer component for individual market countdown
 function MarketTimer({ market }: { market: Market }) {
@@ -36,6 +49,8 @@ function MarketTimer({ market }: { market: Market }) {
 }
 
 export default function MarketDisplay({ markets, progress }: { markets: Market[], progress: number }) {
+  const [betLoading, setBetLoading] = useState<boolean>(false)
+
   return (
     <Card>
       <CardHeader>
@@ -44,25 +59,33 @@ export default function MarketDisplay({ markets, progress }: { markets: Market[]
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {markets.map((markets) => {
+        {markets.map((market) => {
           return (
-            <Card key={markets.id} className="mb-4">
+            <Card key={market.id} className="mb-4">
               <CardHeader>
                 <CardTitle>
-                  {markets.question}
+                  {market.question}
                 </CardTitle>
                 <CardDescription>
-                  <MarketTimer market={markets} />
+                  <MarketTimer market={market} />
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className='flex flex-row gap-2 justify-center items-center'>
-                  <Button className='w-[20%] bg-blue-700 hover:bg-blue-800'>
-                    {markets.answerA}
+                  <Button
+                    className='w-[20%] bg-blue-700 hover:bg-blue-800' 
+                    onClick={() => handleBetting(market.id, true, setBetLoading)}
+                    disabled={betLoading}
+                  >
+                    {market.answerA}
                   </Button>
                   <Progress className='w-[60%]' value={progress} />
-                  <Button className='w-[20%] bg-blue-700 hover:bg-blue-800'>
-                    {markets.answerB}
+                  <Button
+                    className='w-[20%] bg-blue-700 hover:bg-blue-800' 
+                    onClick={() => handleBetting(market.id, false, setBetLoading)}
+                    disabled={betLoading}
+                  >
+                    {market.answerB}
                   </Button>
                 </div>
               </CardContent>
