@@ -5,7 +5,7 @@ import { Profile } from '@/lib/types'
 import { createSupabaseClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Calendar, User, Trophy } from 'lucide-react'
+import { ArrowLeft, Calendar, User, Trophy, Gift } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
@@ -19,6 +19,8 @@ export default function ProfilePage() {
   const { username } = useParams<{ username: string }>()
   const [loading, setLoading] = useState<boolean>(false)
   const [profile, setProfile] = useState<Profile | null>(null)
+  const [canClaimLootbox, setCanClaimLootbox] = useState<boolean>(false)
+  const [claimingLootbox, setClaimingLootbox] = useState<boolean>(false)
 
 
   useEffect(() => {
@@ -38,19 +40,154 @@ export default function ProfilePage() {
         console.error(error)
         return 
       }
-      console.log("Retrieved profile data", data)
-      console.log("Picture URL:", data.picture_url)
-      console.log("All profile properties:", Object.keys(data))
       setProfile({
         ...data,
         pictureUrl: data.picture_url,
         createdAt: new Date(data.created_at),
-        updatedAt: new Date(data.updated_at)
+        updatedAt: new Date(data.updated_at),
+        xp: data.xp || 0
       })
+      
+      await checkLootboxEligibility(data.id)
       setLoading(false)
     }
     getProfile()
   }, [username])
+
+  async function checkLootboxEligibility(profileId: string) {
+    const supabase = createSupabaseClient()
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    
+    const { data, error } = await supabase
+      .from('lootboxes')
+      .select('created_at')
+      .eq('profile_id', profileId)
+      .gte('created_at', today.toISOString())
+      .order('created_at', { ascending: false })
+      .limit(1)
+    
+    if (error) {
+      console.error('Error checking lootbox eligibility:', error)
+      return
+    }
+    
+    setCanClaimLootbox(data.length === 0)
+  }
+
+  async function claimLootbox() {
+    if (!profile || claimingLootbox) return
+    
+    setClaimingLootbox(true)
+    const supabase = createSupabaseClient()
+    
+    try {
+      const rewardType = Math.random()
+      let lootboxData: any = {
+        profile_id: profile.id,
+        opened_at: new Date().toISOString()
+      }
+      let cosmeticData: any = null
+      
+      if (rewardType < 0.333) {
+        lootboxData.type = 'xp'
+        lootboxData.xp_amount = Math.floor(Math.random() * 151) + 50
+        lootboxData.cosmetic_id = null
+      } else if (rewardType < 0.666) {
+        lootboxData.type = 'cosmetic'
+        
+        const cosmeticId = crypto.randomUUID()
+        const rarityRoll = Math.random()
+        let randomRarity: 'common' | 'rare' | 'epic' | 'legendary'
+        
+        if (rarityRoll < 0.7) {
+          randomRarity = 'common'
+        } else if (rarityRoll < 0.9) {
+          randomRarity = 'rare'
+        } else if (rarityRoll < 0.97) {
+          randomRarity = 'epic'
+        } else {
+          randomRarity = 'legendary'
+        }
+        
+        cosmeticData = {
+          id: cosmeticId,
+          name: `Mystery Cosmetic`,
+          description: `A rare cosmetic item obtained from a lootbox!`,
+          image_url: null,
+          rarity: randomRarity
+        }
+        const { error: cosmeticError } = await supabase
+          .from('cosmetics')
+          .insert(cosmeticData)
+        
+        if (cosmeticError) {
+          console.error('Error creating cosmetic:', cosmeticError)
+          throw new Error('Failed to create cosmetic')
+        }
+        
+        lootboxData.cosmetic_id = cosmeticId
+        lootboxData.xp_amount = null
+      } else {
+        lootboxData.type = 'void'
+        lootboxData.cosmetic_id = null
+        lootboxData.xp_amount = null
+      }
+      
+      const { data, error } = await supabase
+        .from('lootboxes')
+        .insert(lootboxData)
+        .select()
+        .single()
+      
+      if (error) {
+        throw error
+      }
+      
+      if (lootboxData.type === 'xp' && lootboxData.xp_amount) {
+        const { error: xpError } = await supabase
+          .from('profiles')
+          .update({ 
+            xp: (profile.xp || 0) + lootboxData.xp_amount,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', profile.id)
+        
+        if (xpError) {
+          console.error('Error updating XP:', xpError)
+        } else {
+          setProfile(prev => prev ? {
+            ...prev,
+            xp: (prev.xp || 0) + lootboxData.xp_amount
+          } : null)
+        }
+      }
+      
+      setCanClaimLootbox(false)
+      
+      if (lootboxData.type === 'xp') {
+        toast.success(`🎉 You received ${lootboxData.xp_amount} XP!`)
+      } else if (lootboxData.type === 'cosmetic' && cosmeticData) {
+        const rarityEmojis: Record<string, string> = {
+          common: '⚪',
+          rare: '🔵', 
+          epic: '🟣',
+          legendary: '🟡'
+        }
+        const rarity = cosmeticData.rarity
+        toast.success(`🎁 You received a ${rarity} cosmetic item! ${rarityEmojis[rarity]}`)
+      } else {
+        toast.info(`📦 Empty lootbox... Better luck tomorrow!`)
+      }
+      
+    } catch (error) {
+      console.error('Error claiming lootbox:', error)
+      toast.error('Failed to claim lootbox. Please try again.')
+    } finally {
+      setClaimingLootbox(false)
+    }
+  }
+
 
   if (loading)
     return <Loading />
@@ -161,6 +298,24 @@ export default function ProfilePage() {
                     View Achievements
                   </Button>
                 </Link>
+                
+                <Button 
+                  onClick={claimLootbox}
+                  disabled={!canClaimLootbox || claimingLootbox}
+                  className={`w-full justify-start ${
+                    canClaimLootbox 
+                      ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white' 
+                      : 'opacity-50'
+                  }`}
+                >
+                  <Gift className="h-4 w-4 mr-2" />
+                  {claimingLootbox 
+                    ? 'Opening...' 
+                    : canClaimLootbox 
+                      ? 'Claim Daily Lootbox' 
+                      : 'Already claimed today'
+                  }
+                </Button>
               </div>
             </div>
 

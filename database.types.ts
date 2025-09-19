@@ -14,25 +14,224 @@ export type Database = {
   }
   public: {
     Tables: {
+      bets: {
+        Row: {
+          created_at: string
+          id: string
+          is_answer_a: boolean
+          market_id: string
+          profile_id: string
+          status: Database["public"]["Enums"]["bets_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_answer_a: boolean
+          market_id: string
+          profile_id: string
+          status: Database["public"]["Enums"]["bets_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_answer_a?: boolean
+          market_id?: string
+          profile_id?: string
+          status?: Database["public"]["Enums"]["bets_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bets_market_id_fkey"
+            columns: ["market_id"]
+            isOneToOne: false
+            referencedRelation: "markets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bets_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cosmetics: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          name: string
+          rarity: Database["public"]["Enums"]["rarity"]
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          name: string
+          rarity: Database["public"]["Enums"]["rarity"]
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          name?: string
+          rarity?: Database["public"]["Enums"]["rarity"]
+        }
+        Relationships: []
+      }
+      lootboxes: {
+        Row: {
+          cosmetic_id: string | null
+          created_at: string
+          id: string
+          opened_at: string
+          profile_id: string
+          type: Database["public"]["Enums"]["lootboxes_rewards"] | null
+          xp_amount: number | null
+        }
+        Insert: {
+          cosmetic_id?: string | null
+          created_at?: string
+          id?: string
+          opened_at?: string
+          profile_id: string
+          type?: Database["public"]["Enums"]["lootboxes_rewards"] | null
+          xp_amount?: number | null
+        }
+        Update: {
+          cosmetic_id?: string | null
+          created_at?: string
+          id?: string
+          opened_at?: string
+          profile_id?: string
+          type?: Database["public"]["Enums"]["lootboxes_rewards"] | null
+          xp_amount?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lootboxes_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      markets: {
+        Row: {
+          answer_a: string
+          answer_b: string
+          created_at: string
+          duration: number
+          est_end_time: number
+          id: string
+          question: string
+          real_end_time: number | null
+          start_time: number
+          status: Database["public"]["Enums"]["market_status"]
+          stream_id: string
+          updated_at: string
+        }
+        Insert: {
+          answer_a: string
+          answer_b: string
+          created_at?: string
+          duration?: number
+          est_end_time: number
+          id?: string
+          question: string
+          real_end_time?: number | null
+          start_time: number
+          status?: Database["public"]["Enums"]["market_status"]
+          stream_id: string
+          updated_at?: string
+        }
+        Update: {
+          answer_a?: string
+          answer_b?: string
+          created_at?: string
+          duration?: number
+          est_end_time?: number
+          id?: string
+          question?: string
+          real_end_time?: number | null
+          start_time?: number
+          status?: Database["public"]["Enums"]["market_status"]
+          stream_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "markets_stream_id_fkey"
+            columns: ["stream_id"]
+            isOneToOne: false
+            referencedRelation: "streams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string
+          id: string
+          picture_url: string | null
+          updated_at: string
+          username: string
+          xp: number | null
+        }
+        Insert: {
+          created_at?: string
+          display_name: string
+          id?: string
+          picture_url?: string | null
+          updated_at?: string
+          username: string
+          xp?: number | null
+        }
+        Update: {
+          created_at?: string
+          display_name?: string
+          id?: string
+          picture_url?: string | null
+          updated_at?: string
+          username?: string
+          xp?: number | null
+        }
+        Relationships: []
+      }
       streams: {
         Row: {
           created_at: string
           id: string
+          metadata: Json | null
           name: string
+          online: boolean
           platform: string
           updated_at: string
         }
         Insert: {
           created_at?: string
           id?: string
+          metadata?: Json | null
           name: string
+          online?: boolean
           platform: string
           updated_at?: string
         }
         Update: {
           created_at?: string
           id?: string
+          metadata?: Json | null
           name?: string
+          online?: boolean
           platform?: string
           updated_at?: string
         }
@@ -46,7 +245,16 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      bets_status: "draft" | "voided" | "win" | "lose" | "accepted" | "error"
+      lootboxes_rewards: "xp" | "cosmetic" | "void"
+      market_status:
+        | "draft"
+        | "open"
+        | "timeout"
+        | "stopped"
+        | "error"
+        | "voided"
+      rarity: "common" | "rare" | "epic" | "legendary"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -173,6 +381,11 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      bets_status: ["draft", "voided", "win", "lose", "accepted", "error"],
+      lootboxes_rewards: ["xp", "cosmetic", "void"],
+      market_status: ["draft", "open", "timeout", "stopped", "error", "voided"],
+      rarity: ["common", "rare", "epic", "legendary"],
+    },
   },
 } as const

@@ -108,7 +108,7 @@ export default function CreateStream() {
   return (
     <>
       <main>
-        <div>CreateStream</div>
+        <div>Create Stream</div>
         <div>
           Admin page to create new streams on PL
         </div>

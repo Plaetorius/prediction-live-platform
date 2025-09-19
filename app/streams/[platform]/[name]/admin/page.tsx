@@ -8,6 +8,7 @@ import { useStream } from '@/providers/stream-providers'
 import React, { useEffect, useState, useCallback } from 'react'
 import { useBetChannel } from '@/hooks/useBetChannel'
 import { Button } from '@/components/ui/button'
+import MarketFormModal from './MarketFormModal'
 
 export default function StreamAdmin() {
   const [loading, setLoading] = useState<boolean>(false)
@@ -15,6 +16,7 @@ export default function StreamAdmin() {
   const [logs, setLogs] = useState<any[]>([])
   const [isSimulating, setIsSimulating] = useState<boolean>(false)
   const [simulationProgress, setSimulationProgress] = useState<{ current: number; total: number }>({ current: 0, total: 0 })
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
 
   const betListeners: BetListeners = {
     onTeam1: (payload: any) => { 
@@ -65,6 +67,9 @@ export default function StreamAdmin() {
         })
       }
     },
+    onNewMarket: (payload: any) => {
+      console.log("NEW MARKET", payload)
+    }
   }
 
   const realtimeOptions: BetChannelOptions = {
@@ -76,7 +81,8 @@ export default function StreamAdmin() {
     channelRef,
     send,
     sendBetTeam1,
-    sendBetTeam2
+    sendBetTeam2,
+    sendNewMarket
   } = useBetChannel(
     stream?.platform || '', 
     stream?.name || '', 
@@ -110,10 +116,11 @@ export default function StreamAdmin() {
       const userId = `user_${Math.floor(Math.random() * 1000)}`
       
       const betPayload = {
+        marketId: "e34898c0-dfb0-420b-9aab-ab977c1ebadf",
         amount,
         userId,
         timestamp: new Date().toISOString(),
-        betId: `bet_${Date.now()}_${i}`
+        betId: `bet_${Date.now()}_${userId}`
       }
       
       // Send the bet - progress will be updated via websocket listeners
@@ -197,6 +204,14 @@ export default function StreamAdmin() {
               </div>
             )}
           </div>
+          
+          {/* Market Form Modal */}
+          <MarketFormModal 
+            isModalOpen={isModalOpen}
+            setIsModalOpen={setIsModalOpen}
+            stream={stream}
+            sendNewMarket={sendNewMarket}
+          />
           
           <div className='mt-4 '>
             <h4>
