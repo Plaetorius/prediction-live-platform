@@ -22,6 +22,7 @@ export type Profile = {
   pictureUrl: string
   createdAt: Date
   updatedAt: Date
+  xp: number
 } | null
 
 export type RankName = 'Bronze' | 'Silver' | 'Gold' | 'Diamond'
