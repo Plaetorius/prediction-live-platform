@@ -6,7 +6,7 @@ import { useAccount } from "wagmi"
 import { createSupabaseClient } from '@/lib/supabase/client'
 import { Profile } from '@/lib/types'
 import { calculateLevel, getRank } from '@/lib/rankUtils'
-import { Gift, User, Trophy, Star, Users, Camera } from 'lucide-react'
+import { Gift, User, Trophy, Users, Camera } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
@@ -17,20 +17,12 @@ import Link from 'next/link'
 export default function PersonalProfile() {
   const { userInfo } = useWeb3AuthUser()
   const { isConnected } = useWeb3AuthConnect()
-  const { address } = useAccount()
+  const { } = useAccount()
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
   const [canClaimLootbox, setCanClaimLootbox] = useState(true)
   const [claimingLootbox, setClaimingLootbox] = useState(false)
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
-
-  useEffect(() => {
-    if (isConnected && userInfo) {
-      fetchProfile()
-    } else {
-      setLoading(false)
-    }
-  }, [isConnected, userInfo])
 
   const fetchProfile = async () => {
     try {
@@ -48,19 +40,35 @@ export default function PersonalProfile() {
         return
       }
 
-      if (data) {
-        setProfile({
-          ...data,
-          xp: data.xp || 0
-        })
-        checkLootboxEligibility(data.id)
-      }
+          if (data) {
+            setProfile({
+              id: data.id,
+              username: data.username,
+              displayName: data.display_name,
+              pictureUrl: data.picture_url || '',
+              createdAt: new Date(data.created_at),
+              updatedAt: new Date(data.updated_at),
+              xp: data.xp || 0,
+              web3authId: data.web3auth_id || '',
+              email: data.email || '',
+              walletAddress: data.wallet_address || ''
+            })
+            checkLootboxEligibility(data.id)
+          }
     } catch (error) {
       console.error('Error:', error)
     } finally {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    if (isConnected && userInfo) {
+      fetchProfile()
+    } else {
+      setLoading(false)
+    }
+  }, [isConnected, userInfo])
 
   const checkLootboxEligibility = async (profileId: string) => {
     try {
@@ -96,7 +104,7 @@ export default function PersonalProfile() {
       const rewardTypes = ['xp', 'cosmetic', 'void']
       const randomType = rewardTypes[Math.floor(Math.random() * rewardTypes.length)]
       
-      let lootboxData: any = {
+           const lootboxData: Record<string, unknown> = {
         profile_id: profile.id,
         type: randomType,
         opened_at: new Date().toISOString()
@@ -190,7 +198,7 @@ export default function PersonalProfile() {
           return
         }
 
-        setProfile(prev => prev ? { ...prev, picture_url: pictureUrl } : null)
+        setProfile(prev => prev ? { ...prev, pictureUrl: pictureUrl } : null)
         toast.success('Profile picture updated successfully!')
       }
     } catch (error) {
@@ -232,7 +240,7 @@ export default function PersonalProfile() {
         <div className="text-center py-12">
           <User className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-white mb-2">Profile not found</h2>
-          <p className="text-gray-400 mb-6">Your profile hasn't been created yet. Please try connecting again.</p>
+               <p className="text-gray-400 mb-6">Your profile hasn&apos;t been created yet. Please try connecting again.</p>
           <Link href="/">
             <Button>Go to Homepage</Button>
           </Link>
@@ -278,9 +286,9 @@ export default function PersonalProfile() {
             <div className="text-center">
               <label className="text-sm text-muted-foreground mb-2 block">Profile Picture</label>
               <div className="relative inline-block">
-                {profile.picture_url ? (
+                {profile.pictureUrl ? (
                   <img
-                    src={profile.picture_url}
+                    src={profile.pictureUrl}
                     alt="Profile"
                     className="w-24 h-24 rounded-full object-cover border-2 border-gray-200"
                   />
@@ -303,7 +311,7 @@ export default function PersonalProfile() {
             </div>
             <div>
               <label className="text-sm text-muted-foreground">Display Name</label>
-              <p className="font-medium">{profile.display_name}</p>
+              <p className="font-medium">{profile.displayName}</p>
             </div>
             <div>
               <label className="text-sm text-muted-foreground">Username</label>
@@ -315,7 +323,7 @@ export default function PersonalProfile() {
             </div>
             <div>
               <label className="text-sm text-muted-foreground">Wallet Address</label>
-              <p className="font-mono text-sm">{profile.wallet_address || 'Not connected'}</p>
+              <p className="font-mono text-sm">{profile.walletAddress || 'Not connected'}</p>
             </div>
           </CardContent>
         </Card>

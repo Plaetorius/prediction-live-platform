@@ -1,4 +1,3 @@
-import { Constants } from "@/database.types";
 import { REALTIME_LISTEN_TYPES } from "@supabase/supabase-js";
 
 export interface RealtimePayload {
@@ -41,9 +40,9 @@ export type Rank = {
 }
 
 export type BetListeners = {
-  onTeam1?: (payload: any) => void;
-  onTeam2?: (payload: any) => void;
-  onNewMarket?: (payload: any) => void;
+  onTeam1?: (payload: RealtimePayload) => void;
+  onTeam2?: (payload: RealtimePayload) => void;
+  onNewMarket?: (payload: RealtimePayload) => void;
 }
 
 export type BetChannelOptions = {
