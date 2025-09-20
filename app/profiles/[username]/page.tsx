@@ -5,7 +5,7 @@ import { Profile } from '@/lib/types'
 import { createSupabaseClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Calendar, User, Trophy, Gift } from 'lucide-react'
+import { ArrowLeft, Calendar, User, Trophy, Gift, RotateCcw } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
@@ -40,6 +40,9 @@ export default function ProfilePage() {
         console.error(error)
         return 
       }
+      console.log("Retrieved profile data", data)
+      console.log("Picture URL:", data.picture_url)
+      console.log("All profile properties:", Object.keys(data))
       setProfile({
         ...data,
         pictureUrl: data.picture_url,
@@ -48,12 +51,14 @@ export default function ProfilePage() {
         xp: data.xp || 0
       })
       
+      // Check if user can claim lootbox today
       await checkLootboxEligibility(data.id)
       setLoading(false)
     }
     getProfile()
   }, [username])
 
+  // Check if user can claim lootbox today
   async function checkLootboxEligibility(profileId: string) {
     const supabase = createSupabaseClient()
     const today = new Date()
@@ -72,9 +77,11 @@ export default function ProfilePage() {
       return
     }
     
+    // Can claim if no lootbox was claimed today
     setCanClaimLootbox(data.length === 0)
   }
 
+  // Claim daily lootbox
   async function claimLootbox() {
     if (!profile || claimingLootbox) return
     
@@ -82,6 +89,7 @@ export default function ProfilePage() {
     const supabase = createSupabaseClient()
     
     try {
+      // Generate random reward
       const rewardType = Math.random()
       let lootboxData: any = {
         profile_id: profile.id,
@@ -90,33 +98,28 @@ export default function ProfilePage() {
       let cosmeticData: any = null
       
       if (rewardType < 0.333) {
+        // 33.3% chance for XP (50-200 XP)
         lootboxData.type = 'xp'
         lootboxData.xp_amount = Math.floor(Math.random() * 151) + 50
-        lootboxData.cosmetic_id = null
       } else if (rewardType < 0.666) {
+        // 33.3% chance for cosmetic
         lootboxData.type = 'cosmetic'
         
+        // Create a cosmetic item
         const cosmeticId = crypto.randomUUID()
-        const rarityRoll = Math.random()
-        let randomRarity: 'common' | 'rare' | 'epic' | 'legendary'
+        const cosmeticRarities = ['common', 'rare', 'epic', 'legendary'] as const
+        const randomRarity = cosmeticRarities[Math.floor(Math.random() * cosmeticRarities.length)]
         
-        if (rarityRoll < 0.7) {
-          randomRarity = 'common'
-        } else if (rarityRoll < 0.9) {
-          randomRarity = 'rare'
-        } else if (rarityRoll < 0.97) {
-          randomRarity = 'epic'
-        } else {
-          randomRarity = 'legendary'
-        }
-        
+        // Create cosmetic data
         cosmeticData = {
           id: cosmeticId,
           name: `Mystery Cosmetic`,
           description: `A rare cosmetic item obtained from a lootbox!`,
-          image_url: null,
+          image_url: null, // You can add default cosmetic images later
           rarity: randomRarity
         }
+        
+        // Insert cosmetic into database
         const { error: cosmeticError } = await supabase
           .from('cosmetics')
           .insert(cosmeticData)
@@ -127,11 +130,9 @@ export default function ProfilePage() {
         }
         
         lootboxData.cosmetic_id = cosmeticId
-        lootboxData.xp_amount = null
       } else {
+        // 33.3% chance for void (nothing)
         lootboxData.type = 'void'
-        lootboxData.cosmetic_id = null
-        lootboxData.xp_amount = null
       }
       
       const { data, error } = await supabase
@@ -144,6 +145,7 @@ export default function ProfilePage() {
         throw error
       }
       
+      // Update user XP if they got XP reward
       if (lootboxData.type === 'xp' && lootboxData.xp_amount) {
         const { error: xpError } = await supabase
           .from('profiles')
@@ -156,6 +158,7 @@ export default function ProfilePage() {
         if (xpError) {
           console.error('Error updating XP:', xpError)
         } else {
+          // Update local profile state
           setProfile(prev => prev ? {
             ...prev,
             xp: (prev.xp || 0) + lootboxData.xp_amount
@@ -165,16 +168,17 @@ export default function ProfilePage() {
       
       setCanClaimLootbox(false)
       
+      // Show success message
       if (lootboxData.type === 'xp') {
         toast.success(`🎉 You received ${lootboxData.xp_amount} XP!`)
-      } else if (lootboxData.type === 'cosmetic' && cosmeticData) {
+      } else if (lootboxData.type === 'cosmetic') {
         const rarityEmojis: Record<string, string> = {
           common: '⚪',
           rare: '🔵', 
           epic: '🟣',
           legendary: '🟡'
         }
-        const rarity = cosmeticData.rarity
+        const rarity = cosmeticData?.rarity || 'common'
         toast.success(`🎁 You received a ${rarity} cosmetic item! ${rarityEmojis[rarity]}`)
       } else {
         toast.info(`📦 Empty lootbox... Better luck tomorrow!`)
@@ -187,7 +191,6 @@ export default function ProfilePage() {
       setClaimingLootbox(false)
     }
   }
-
 
   if (loading)
     return <Loading />

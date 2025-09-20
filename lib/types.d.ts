@@ -23,6 +23,9 @@ export type Profile = {
   createdAt: Date
   updatedAt: Date
   xp: number
+  web3authId: string
+  email: string
+  walletAddress: string
 } | null
 
 export type RankName = 'Bronze' | 'Silver' | 'Gold' | 'Diamond'
