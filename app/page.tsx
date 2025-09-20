@@ -71,9 +71,9 @@ export default function Home() {
                     {disconnectLoading ? 'Disconnecting...' : 'Logout'}
                   </Button>
                   <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-700 text-white">
-                    <Link href="/profiles">
+                    <Link href="/profile">
                       <User className="mr-2 h-4 w-4" />
-                      View Profile
+                      My Profile
                     </Link>
                   </Button>
                 </div>
