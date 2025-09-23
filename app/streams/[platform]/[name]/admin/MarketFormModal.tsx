@@ -56,7 +56,7 @@ export default function MarketFormModal({
       startTime: now(),
       duration: 300, // Duration in seconds
       estEndTime: now() + secondsToMs(300), // Convert to milliseconds for calculation
-      status: 'draft'
+      status: 'open'
     }
   })
 
@@ -76,7 +76,7 @@ export default function MarketFormModal({
         startTime: currentTime,
         duration: 300,
         estEndTime: currentTime + secondsToMs(300),
-        status: 'draft'
+        status: 'open'
       })
     }
   }, [isModalOpen, form, stream?.id])
