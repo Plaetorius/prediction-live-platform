@@ -42,28 +42,28 @@ export default function StreamPage() {
     sendBetTeam2,
   } = useBetChannel(stream?.platform || '', stream?.name || '', {
     onTeam1: (payload) => {
-      setBetInformation({ ...betInformation, amountA: betInformation.amountA + payload.amount })
+      setBetInformation({ ...betInformation, amountA: betInformation.amountA + (payload.amount as number) })
       console.log("BET TEAM1", payload)
     },
     onTeam2: (payload) => {
       console.log("BET TEAM2", payload)
-      setBetInformation({ ...betInformation, amountB: betInformation.amountB + payload.amount })
+      setBetInformation({ ...betInformation, amountB: betInformation.amountB + (payload.amount as number) })
     },
     onNewMarket: (payload) => {
       console.log("NEW MARKET RECEIVED", payload)
       setMarkets(prev => { 
         console.log("PREVIOUS MARKETS", prev)
         const newMarket: Market = {
-          id: payload.id,
-          question: payload.question,
-          answerA: payload.answerA,
-          answerB: payload.answerB,
-          startTime: payload.startTime,
-          estEndTime: payload.estEndTime || Date.now(),
-          realEndTime: payload.realEndTime || Date.now(),
-          status: payload.status || 'draft',
-          duration: payload.duration,
-          streamId: payload.streamId,
+          id: payload.id as string,
+          question: payload.question as string,
+          answerA: payload.answerA as string,
+          answerB: payload.answerB as string,
+          startTime: payload.startTime as number,
+          estEndTime: (payload.estEndTime as number) || Date.now(),
+          realEndTime: (payload.realEndTime as number) || Date.now(),
+          status: (payload.status as string) || 'draft',
+          duration: payload.duration as number,
+          streamId: payload.streamId as string,
           createdAt: new Date(), // Date to match other tables, not used in delay calculation
           updatedAt: new Date(),
         }
