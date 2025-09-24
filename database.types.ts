@@ -186,6 +186,9 @@ export type Database = {
           updated_at: string
           username: string
           xp: number | null
+          web3auth_id: string | null
+          email: string | null
+          wallet_address: string | null
         }
         Insert: {
           created_at?: string
@@ -195,6 +198,9 @@ export type Database = {
           updated_at?: string
           username: string
           xp?: number | null
+          web3auth_id?: string | null
+          email?: string | null
+          wallet_address?: string | null
         }
         Update: {
           created_at?: string
@@ -204,6 +210,9 @@ export type Database = {
           updated_at?: string
           username?: string
           xp?: number | null
+          web3auth_id?: string | null
+          email?: string | null
+          wallet_address?: string | null
         }
         Relationships: []
       }
