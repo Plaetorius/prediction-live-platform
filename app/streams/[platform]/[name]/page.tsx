@@ -12,6 +12,7 @@ import { useBetChannel } from '@/hooks/useBetChannel'
 import { Market } from '@/lib/types'
 import MarketDisplay from './MarketDisplay'
 import { isMarketActive } from '@/lib/timezoneUtils'
+import { selectOpenMarkets } from '@/lib/markets/selectClient'
 
 type MarketWithProgress = Market & {
   progress?: number;
@@ -87,11 +88,26 @@ export default function StreamPage() {
   
   useEffect(() => {
     const activeMarkets = markets.filter((market) => isMarketActive(market.startTime, market.estEndTime))
-    setOpenedMarkets(activeMarkets)
-    
-    
+    setOpenedMarkets(prev => {
+      return [...prev, ...activeMarkets]
+    })
   }, [markets])
 
+
+  useEffect(() => {
+    const fetchOngoingMarkets = async (streamId: string | undefined) => {
+      if (!streamId)
+        return null
+      setLoading(true)
+      setOpenedMarkets(await selectOpenMarkets(streamId) || [])
+      setLoading(false)
+    }
+    fetchOngoingMarkets(stream?.id)
+  }, [])
+
+  useEffect(() => {
+    console.log("OPENED MARKETS", openedMarkets)
+  }, [openedMarkets])
 
   if (!stream)
     return (
@@ -169,9 +185,17 @@ export default function StreamPage() {
         </div>
 
         {
-          markets.length === 0
-          ? (<div>No markets</div>)
-          : (<MarketDisplay markets={openedMarkets} progress={progress} />)
+          openedMarkets.length === 0
+          ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle>
+                    No markets
+                  </CardTitle>
+                </CardHeader>
+              </Card>
+            )
+          : (<MarketDisplay markets={openedMarkets} setMarkets={setOpenedMarkets} progress={progress} />)
         }
 
         {/* Stream Info */}

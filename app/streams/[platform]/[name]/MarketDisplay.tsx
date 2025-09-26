@@ -19,7 +19,7 @@ async function handleBetting(marketId: string, isAnswerA: boolean, setBetLoading
 } 
 
 // Timer component for individual market countdown
-function MarketTimer({ market }: { market: Market }) {
+function MarketTimer({ market, setMarkets }: { market: Market, setMarkets: React.Dispatch<React.SetStateAction<Market[]>> }) {
   const [timeRemaining, setTimeRemaining] = useState(getTimeRemaining(market.estEndTime))
 
   useEffect(() => {
@@ -29,6 +29,15 @@ function MarketTimer({ market }: { market: Market }) {
 
     return () => clearInterval(interval)
   }, [market.estEndTime])
+
+  // Handle market expiration in useEffect to avoid setState during render
+  useEffect(() => {
+    if (timeRemaining.isExpired) {
+      setMarkets(prev => {
+        return prev.filter((m) => m.id !== market.id)
+      })
+    }
+  }, [timeRemaining.isExpired, market.id, setMarkets])
 
   if (timeRemaining.isExpired) {
     return <span className="text-red-500 font-semibold">Expired</span>
@@ -48,8 +57,19 @@ function MarketTimer({ market }: { market: Market }) {
   )
 }
 
-export default function MarketDisplay({ markets, progress }: { markets: Market[], progress: number }) {
+export default function MarketDisplay({
+  markets,
+  setMarkets,
+  progress
+}: {
+  markets: Market[],
+  setMarkets: React.Dispatch<React.SetStateAction<Market[]>>,
+  progress: number
+}) {
+  // TODO progress needs to be made independant
   const [betLoading, setBetLoading] = useState<boolean>(false)
+
+  console.log("MARKETS IN MARKETDISPLAY", markets)
 
   return (
     <Card>
@@ -67,7 +87,7 @@ export default function MarketDisplay({ markets, progress }: { markets: Market[]
                   {market.question}
                 </CardTitle>
                 <CardDescription>
-                  <MarketTimer market={market} />
+                  <MarketTimer market={market} setMarkets={setMarkets} />
                 </CardDescription>
               </CardHeader>
               <CardContent>
