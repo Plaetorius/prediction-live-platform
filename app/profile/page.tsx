@@ -39,22 +39,22 @@ export default function PersonalProfile() {
         console.error('Error fetching profile:', error)
         return
       }
-
-          if (data) {
-            setProfile({
-              id: data.id,
-              username: data.username,
-              displayName: data.display_name,
-              pictureUrl: data.picture_url || '',
-              createdAt: new Date(data.created_at),
-              updatedAt: new Date(data.updated_at),
-              xp: data.xp || 0,
-              web3authId: data.web3auth_id || '',
-              email: data.email || '',
-              walletAddress: data.wallet_address || ''
-            })
-            checkLootboxEligibility(data.id)
-          }
+      if (data) {
+        setProfile({
+          id: data.id,
+          username: data.username,
+          displayName: data.display_name,
+          pictureUrl: data.picture_url || '',
+          createdAt: new Date(data.created_at),
+          updatedAt: new Date(data.updated_at),
+          xp: data.xp || 0,
+          web3authId: data.web3auth_id || '',
+          email: data.email || '',
+          walletAddress: data.wallet_address || '',
+          currentChainId: data.current_chain_id || 0
+        })
+        checkLootboxEligibility(data.id)
+      }
     } catch (error) {
       console.error('Error:', error)
     } finally {
