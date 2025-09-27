@@ -90,5 +90,6 @@ export type Bet = {
   isAnswerA: boolean;
   createdAt: Date;
   updatedAt: Date;
+  amount: number;
   status:  string; // Enum: Constants.public.Enums.bets_status
 }

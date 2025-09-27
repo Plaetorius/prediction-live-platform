@@ -53,14 +53,18 @@ export default function BetFormModal({
       marketId,
       '6c5b0e03-5ba0-447c-a495-aea397fba8f9',
       isAnswerA,
+      data.amount,
       'draft'
     )
-    // TODO TX starts here
-    setLoading(false)
     if (!bet) {
       toast.error('Error placing bet. Please try again.')
       return
     }
+
+    
+
+    // TODO TX starts here
+    setLoading(false)
     toast.success("Bet placed successfully!")
     
   }
