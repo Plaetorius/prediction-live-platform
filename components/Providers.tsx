@@ -1,6 +1,7 @@
 import React from 'react'
 import { Toaster } from 'sonner'
 import Web3AuthProviderWrapper from './Web3AuthProvider'
+import { ProfileProvider } from '@/contexts/ProfileContext'
 
 export default function Providers({
   children
@@ -9,8 +10,10 @@ export default function Providers({
 }) {
   return (
     <Web3AuthProviderWrapper>
-      {children}
-      <Toaster richColors />
+      <ProfileProvider>
+        {children}
+        <Toaster richColors />
+      </ProfileProvider>
     </Web3AuthProviderWrapper>
   )
 }
