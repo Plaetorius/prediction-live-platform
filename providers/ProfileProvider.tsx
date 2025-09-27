@@ -3,10 +3,9 @@
 import { createSupabaseClient } from "@/lib/supabase/client";
 import { Profile } from "@/lib/types";
 import { useWeb3AuthConnect, useWeb3AuthUser } from "@web3auth/modal/react";
-import { createContext, useContext, useReducer, ReactNode, useState, useEffect, useMemo } from "react";
+import { createContext, useContext, useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
-import { useAccount, useDisconnect, useSignMessage, useBalance, type UseBalanceReturnType, useSwitchChain } from "wagmi";
-import { formatUnits } from "viem";
+import { useAccount, useDisconnect, useSignMessage, useBalance, useSwitchChain } from "wagmi";
 import { formatBalance } from "@/lib/utils";
 
 interface ProfileContextType {

@@ -1,5 +1,5 @@
 import { createSupabaseServerClient } from '@/lib/supabase/server'
-import { StreamProvider } from '@/providers/stream-providers'
+import { StreamProvider } from '@/providers/StreamProvider'
 import React from 'react'
 
 interface Props {
