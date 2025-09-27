@@ -6,17 +6,7 @@ import { isMarketActive, getTimeRemaining } from '@/lib/timezoneUtils'
 import { Market } from '@/lib/types'
 import React, { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-
-async function handleBetting(marketId: string, isAnswerA: boolean, setBetLoading: React.Dispatch<React.SetStateAction<boolean>>) {
-  setBetLoading(true)
-  const bet = await createBetClient(marketId, '6c5b0e03-5ba0-447c-a495-aea397fba8f9', isAnswerA, 'draft')
-  setBetLoading(false)
-  if (!bet) {
-    toast.error('Error placing your bet. Please try again.')
-    return;
-  }
-  toast.success('Bet successfully placed!')
-} 
+import BetFormModal from './BetFormModal'
 
 // Timer component for individual market countdown
 function MarketTimer({ market, setMarkets }: { market: Market, setMarkets: React.Dispatch<React.SetStateAction<Market[]>> }) {
@@ -67,9 +57,25 @@ export default function MarketDisplay({
   progress: number
 }) {
   // TODO progress needs to be made independant
-  const [betLoading, setBetLoading] = useState<boolean>(false)
+  // Create a state object to track modal states for each market and answer combination
+  const [modalStates, setModalStates] = useState<Record<string, { answerA: boolean, answerB: boolean }>>({})
 
   console.log("MARKETS IN MARKETDISPLAY", markets)
+
+  // Helper functions to manage modal states
+  const getModalState = (marketId: string, isAnswerA: boolean) => {
+    return modalStates[marketId]?.[isAnswerA ? 'answerA' : 'answerB'] || false
+  }
+
+  const setModalState = (marketId: string, isAnswerA: boolean, isOpen: boolean) => {
+    setModalStates(prev => ({
+      ...prev,
+      [marketId]: {
+        ...prev[marketId],
+        [isAnswerA ? 'answerA' : 'answerB']: isOpen
+      }
+    }))
+  }
 
   return (
     <Card>
@@ -92,21 +98,37 @@ export default function MarketDisplay({
               </CardHeader>
               <CardContent>
                 <div className='flex flex-row gap-2 justify-center items-center'>
-                  <Button
+                  <BetFormModal 
+                    isModalOpen={getModalState(market.id, true)}
+                    setIsModalOpen={(isOpen) => setModalState(market.id, true, isOpen)}
+                    marketId={market.id}
+                    profileId={"FIX ME LATER"}
+                    isAnswerA={true}
+                    teamName={market.answerA}
+                  />
+                  {/* <Button
                     className='w-[20%] bg-blue-700 hover:bg-blue-800' 
                     onClick={() => handleBetting(market.id, true, setBetLoading)}
                     disabled={betLoading}
                   >
                     {market.answerA}
-                  </Button>
+                  </Button> */}
                   <Progress className='w-[60%]' value={progress} />
-                  <Button
+                  <BetFormModal
+                    isModalOpen={getModalState(market.id, false)}
+                    setIsModalOpen={(isOpen) => setModalState(market.id, false, isOpen)}
+                    marketId={market.id}
+                    profileId={"FIX ME LATER"}
+                    isAnswerA={false}
+                    teamName={market.answerB}
+                  />
+                  {/* <Button
                     className='w-[20%] bg-blue-700 hover:bg-blue-800' 
                     onClick={() => handleBetting(market.id, false, setBetLoading)}
                     disabled={betLoading}
                   >
                     {market.answerB}
-                  </Button>
+                  </Button> */}
                 </div>
               </CardContent>
             </Card>

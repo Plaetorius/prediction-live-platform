@@ -111,7 +111,7 @@ export default function MarketFormModal({
 
       if (error) {
         console.error("Error creating market:", error)
-        toast.error("Error creating market: " + error.message)
+        toast.error("Error creating market. Please try again.")
         return
       }
 
@@ -159,7 +159,7 @@ export default function MarketFormModal({
                 <FormField
                   control={form.control}
                   name='question'
-                  render={({ field}) => (
+                  render={({ field }) => (
                     <FormItem>
                       <FormLabel>
                         Question
