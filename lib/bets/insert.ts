@@ -6,6 +6,7 @@ export async function createBet(
   marketId: string,
   profileId: string,
   isAnswerA: boolean,
+  amount: number,
   status: string = 'draft',
 ): Promise<Bet | null> {
   try {
@@ -16,6 +17,7 @@ export async function createBet(
         market_id: marketId,
         profile_id: profileId,
         is_answer_a: isAnswerA,
+        amount: amount,
         status,
       })
       .select()
@@ -30,6 +32,7 @@ export async function createBet(
         profileId: data.profile_id,
         marketId: data.market_id,
         isAnswerA: data.is_answer_a,
+        amount: data.amount,
         createdAt: new Date(data.created_at),
         updatedAt: new Date(data.updated_at),
         status: data.status
