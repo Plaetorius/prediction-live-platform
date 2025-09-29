@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { createBetClient } from "@/lib/bets/insertClient"
 import { BetPayload } from "@/lib/types"
@@ -21,7 +21,7 @@ interface BetFormModalProps {
 }
 
 const betFormSchema = z.object({
-  amount: z.number().min(1, "Amount is too small! (min: 1)").max(10000000, "Amount is too big! (max: 10,000,000)"),
+  amount: z.coerce.number().min(1, "Amount is too small! (min: 1)").max(10000000, "Amount is too big! (max: 10,000,000)"),
 })
 
 type BetFormSchema = z.infer<typeof betFormSchema>
@@ -46,40 +46,56 @@ export default function BetFormModal({
 
 
   const onSubmit: SubmitHandler<BetFormSchema> = async (data) => {
-    if (!marketId || !profile) {
-      console.error("Error placing bet:", marketId ? "" : "No marketId", profile ? "" : "No profile")
-      toast.error("Error placing bet.")
-      return null
-    }
-    setLoading(true)
-    const bet = await createBetClient(
-      marketId,
-      profile.id,
-      isAnswerA,
-      data.amount,
-      'draft'
-    )
-    if (!bet) {
-      console.error("Error placing bet:", bet)
-      toast.error('Error placing bet. Please try again.')
-      return
-    }
-    const betPayload: BetPayload = {
-      marketId,
-      profileId: profile.id,
-      amount: data.amount,
-      createdAt: bet.createdAt.toISOString(),
-      betId: bet.id,
-    }
-    if (isAnswerA) {
-      sendBetTeam1(betPayload)
+    try {
+      if (!marketId || !profile) {
+        console.error("Error placing bet:", marketId ? "" : "No marketId", profile ? "" : "No profile")
+        toast.error("Error placing bet.")
+        return null
+      }
+      setLoading(true)
+      const bet = await createBetClient(
+        marketId,
+        profile.id,
+        isAnswerA,
+        data.amount,
+        'draft'
+      )
+      if (!bet) {
+        console.error("Error placing bet:", bet)
+        toast.error('Error placing bet. Please try again.')
+        return
+      }
+      const betPayload: BetPayload = {
+        marketId,
+        profileId: profile.id,
+        amount: data.amount,
+        createdAt: bet.createdAt.toISOString(),
+        betId: bet.id,
+      }
+      if (isAnswerA) {
+        sendBetTeam1(betPayload)
+      } else {
+        sendBetTeam2(betPayload)
+      }
+      // TODO TX starts here
+      toast.success("Bet placed successfully!")
+    } catch (error) {
+      console.error("Error placing bet:", error)
+      toast.error("An unexpected error occured. Please try again.")
+    } finally {
+      setLoading(false)
+    } 
+  }
+
+  const onError = (errors: any) => {
+    console.error("Form validation errors:", errors)
+
+    const firstError = Object.values(errors)[0] as any
+    if (firstError?.message) {
+      toast.error(firstError.message)
     } else {
-      sendBetTeam2(betPayload)
+      toast.error("Please check your input and try again.")
     }
-    // TODO TX starts here
-    setLoading(false)
-    toast.success("Bet placed successfully!")
-    
   }
 
   useEffect(() => {
@@ -107,7 +123,7 @@ export default function BetFormModal({
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
+          <form onSubmit={form.handleSubmit(onSubmit, onError)}>
             <FormField
               control={form.control}
               name="amount"
@@ -122,8 +138,10 @@ export default function BetFormModal({
                       type='number'
                       placeholder="Enter the amount to bet..."
                       {...field}
+                      value={field.value?.toString() || ''}
                     />
                   </FormControl>
+                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -143,7 +161,7 @@ export default function BetFormModal({
                 Cancel
               </Button>
             </div>
-            </form>
+          </form>
         </Form>
       </DialogContent>
     </Dialog>
