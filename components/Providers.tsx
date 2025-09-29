@@ -2,6 +2,8 @@ import React from 'react'
 import { Toaster } from 'sonner'
 import Web3AuthProviderWrapper from './Web3AuthProvider'
 import { ProfileProvider } from '@/providers/ProfileProvider'
+import { BettingProvider } from '@/providers/BettingProvider'
+import { StreamProvider } from '@/providers/StreamProvider'
 
 export default function Providers({
   children

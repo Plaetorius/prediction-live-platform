@@ -3,7 +3,9 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { createBetClient } from "@/lib/bets/insertClient"
-import { createSupabaseClient } from "@/lib/supabase/client"
+import { BetPayload } from "@/lib/types"
+import { useBetting } from "@/providers/BettingProvider"
+import { useProfile } from "@/providers/ProfileProvider"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useEffect, useState } from "react"
 import { SubmitHandler, useForm } from "react-hook-form"
@@ -14,7 +16,6 @@ interface BetFormModalProps {
   isModalOpen: boolean
   setIsModalOpen: (open: boolean) => void
   marketId: string | null
-  profileId: string | null
   isAnswerA: boolean
   teamName: string
 }
@@ -29,12 +30,12 @@ export default function BetFormModal({
   isModalOpen,
   setIsModalOpen,
   marketId,
-  profileId,
   isAnswerA,
   teamName
 }: BetFormModalProps) {
+  const { profile } = useProfile()
   const [loading, setLoading] = useState<boolean>(false)
-
+  const { sendBetTeam1, sendBetTeam2 } = useBetting() 
 
   const form = useForm({
     resolver: zodResolver(betFormSchema),
@@ -43,26 +44,38 @@ export default function BetFormModal({
     }
   })
 
+
   const onSubmit: SubmitHandler<BetFormSchema> = async (data) => {
-    if (!marketId || !profileId) {
+    if (!marketId || !profile) {
+      console.error("Error placing bet:", marketId ? "" : "No marketId", profile ? "" : "No profile")
       toast.error("Error placing bet.")
       return null
     }
     setLoading(true)
     const bet = await createBetClient(
       marketId,
-      '6c5b0e03-5ba0-447c-a495-aea397fba8f9',
+      profile.id,
       isAnswerA,
       data.amount,
       'draft'
     )
     if (!bet) {
+      console.error("Error placing bet:", bet)
       toast.error('Error placing bet. Please try again.')
       return
     }
-
-    
-
+    const betPayload: BetPayload = {
+      marketId,
+      profileId: profile.id,
+      amount: data.amount,
+      createdAt: bet.createdAt.toISOString(),
+      betId: bet.id,
+    }
+    if (isAnswerA) {
+      sendBetTeam1(betPayload)
+    } else {
+      sendBetTeam2(betPayload)
+    }
     // TODO TX starts here
     setLoading(false)
     toast.success("Bet placed successfully!")
@@ -75,7 +88,7 @@ export default function BetFormModal({
         amount: 1,
       })
     }
-  }, [isModalOpen, form, marketId, profileId, isAnswerA, teamName])
+  }, [isModalOpen, form, marketId, profile, isAnswerA, teamName])
 
   return (
     <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>

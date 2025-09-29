@@ -15,7 +15,7 @@ export type Stream = {
 } | null
 
 export type Profile = {
-  id: number
+  id: string
   username: string
   displayName: string
   pictureUrl: string
@@ -41,8 +41,8 @@ export type Rank = {
 }
 
 export type BetListeners = {
-  onTeam1?: (payload: RealtimePayload) => void;
-  onTeam2?: (payload: RealtimePayload) => void;
+  onTeamA?: (payload: RealtimePayload) => void;
+  onTeamB?: (payload: RealtimePayload) => void;
   onNewMarket?: (payload: RealtimePayload) => void;
 }
 
@@ -84,6 +84,11 @@ export type Market = {
   updatedAt: Date;
 }
 
+export type MarketWithAmounts = Market & {
+  amountA?: number;
+  amountB?: number;
+}
+
 export type Bet = {
   id: string;
   profileId: string;
@@ -93,6 +98,14 @@ export type Bet = {
   updatedAt: Date;
   amount: number;
   status:  string; // Enum: Constants.public.Enums.bets_status
+}
+
+export type BetPayload = {
+  marketId: string;
+  amount: number;
+  profileId: string;
+  createdAt: string;
+  betId: string;
 }
 
 export type BalanceResult = {

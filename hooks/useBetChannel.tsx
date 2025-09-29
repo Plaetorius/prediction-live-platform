@@ -25,12 +25,12 @@ export function useBetChannel(
       config: { broadcast: { self: opts.broadcastSelf ?? true } }
     })
     
-    if (listeners.onTeam1) {
-      channel.on('broadcast', { event: 'bet_team1' }, (msg) => listeners.onTeam1?.(msg.payload))
+    if (listeners.onTeamA) {
+      channel.on('broadcast', { event: 'bet_team1' }, (msg) => listeners.onTeamA?.(msg.payload))
     }
 
-    if (listeners.onTeam2) {
-      channel.on('broadcast', { event: 'bet_team2' }, (msg) => listeners.onTeam2?.(msg.payload))
+    if (listeners.onTeamB) {
+      channel.on('broadcast', { event: 'bet_team2' }, (msg) => listeners.onTeamB?.(msg.payload))
     }
 
     if (listeners.onNewMarket) {
@@ -47,7 +47,7 @@ export function useBetChannel(
       }
       channelRef.current = null
     }
-  }, [platform, name, listeners.onTeam1, listeners.onTeam2, listeners.onNewMarket, opts.kind, opts.broadcastSelf])
+  }, [platform, name, listeners.onTeamA, listeners.onTeamB, listeners.onNewMarket, opts.kind, opts.broadcastSelf])
 
   function send<T = any>(event: string, payload: T) {
     const serializedPayload = JSON.parse(JSON.stringify(payload))
