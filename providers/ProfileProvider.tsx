@@ -35,7 +35,7 @@ interface ProfileProviderProps {
   children: React.ReactNode
 }
 
-const SUPPORTED_CHAINS = {
+export const SUPPORTED_CHAINS = {
   SOLANA_MAIN: 101,
   SOLANA_DEV: 103,
   CHILIZ_MAIN: 88888,
