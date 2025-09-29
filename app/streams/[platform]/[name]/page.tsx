@@ -2,112 +2,36 @@
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { MessageCircleCode, SquarePlus, ArrowLeft, Eye, Calendar } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import React, { useEffect, useState} from 'react'
-import { Badge } from '@/components/ui/badge'
 import Loading from '@/components/Loading'
 import Link from 'next/link'
-import { useStream } from '@/providers/stream-providers'
-import { useBetChannel } from '@/hooks/useBetChannel'
-import { Market } from '@/lib/types'
+import { useStream } from '@/providers/StreamProvider'
+import { MarketWithAmounts } from '@/lib/types'
 import MarketDisplay from './MarketDisplay'
-import { isMarketActive } from '@/lib/timezoneUtils'
 import { selectOpenMarkets } from '@/lib/markets/selectClient'
-
-type MarketWithProgress = Market & {
-  progress?: number;
-}
-
-type BetInformation = {
-  amountA: number;
-  amountB: number;
-}
+import { useBetting } from '@/providers/BettingProvider'
 
 export default function StreamPage() {
   const [loading, setLoading] = useState<boolean>(false)
-  const [betInformation, setBetInformation] = useState<BetInformation>({
-    amountA: 0,
-    amountB: 0
-  })
-  const [progress, setProgress] = useState<number>(0)
-  const [markets, setMarkets] = useState<Market[]>([]) // Fetch when landing on page
-  const [openedMarkets, setOpenedMarkets] = useState<MarketWithProgress[]>([])
-
+  const { markets, setMarkets,  } = useBetting()
   const stream = useStream()
-
-  const {
-    channelRef,
-    send,
-    sendBetTeam1,
-    sendBetTeam2,
-  } = useBetChannel(stream?.platform || '', stream?.name || '', {
-    onTeam1: (payload) => {
-      setBetInformation({ ...betInformation, amountA: betInformation.amountA + (payload.amount as number) })
-      console.log("BET TEAM1", payload)
-    },
-    onTeam2: (payload) => {
-      console.log("BET TEAM2", payload)
-      setBetInformation({ ...betInformation, amountB: betInformation.amountB + (payload.amount as number) })
-    },
-    onNewMarket: (payload) => {
-      console.log("NEW MARKET RECEIVED", payload)
-      setMarkets(prev => { 
-        console.log("PREVIOUS MARKETS", prev)
-        const newMarket: Market = {
-          id: payload.id as string,
-          question: payload.question as string,
-          answerA: payload.answerA as string,
-          answerB: payload.answerB as string,
-          startTime: payload.startTime as number,
-          estEndTime: (payload.estEndTime as number) || Date.now(),
-          realEndTime: (payload.realEndTime as number) || Date.now(),
-          status: (payload.status as string) || 'draft',
-          duration: payload.duration as number,
-          streamId: payload.streamId as string,
-          createdAt: new Date(), // Date to match other tables, not used in delay calculation
-          updatedAt: new Date(),
-        }
-        console.log("NEW MARKET CREATED", newMarket)
-        const updatedMarkets = [...prev, newMarket]
-        console.log("UPDATED MARKETS", updatedMarkets)
-        return updatedMarkets
-      })
-    }
-  })
-
-  useEffect(() => {
-    // TODO replace array by hashmap
-    setProgress((betInformation.amountA / (betInformation.amountA + betInformation.amountB)) * 100)
-    console.log("BET INFORMATION", betInformation)
-  }, [betInformation])
-
-  useEffect(() => {
-    console.log("PROGRESS", progress)
-  }, [progress])
-
-  
-  useEffect(() => {
-    const activeMarkets = markets.filter((market) => isMarketActive(market.startTime, market.estEndTime))
-    setOpenedMarkets(prev => {
-      return [...prev, ...activeMarkets]
-    })
-  }, [markets])
-
 
   useEffect(() => {
     const fetchOngoingMarkets = async (streamId: string | undefined) => {
       if (!streamId)
         return null
       setLoading(true)
-      setOpenedMarkets(await selectOpenMarkets(streamId) || [])
+      const marketsArray = await selectOpenMarkets(streamId) || []
+      const marketsMap = new Map<string, MarketWithAmounts>()
+      marketsArray.forEach(market => {
+        marketsMap.set(market.id, market)
+      })
+      setMarkets(marketsMap)
       setLoading(false)
     }
     fetchOngoingMarkets(stream?.id)
-  }, [])
-
-  useEffect(() => {
-    console.log("OPENED MARKETS", openedMarkets)
-  }, [openedMarkets])
+  }, [setMarkets])
 
   if (!stream)
     return (
@@ -162,10 +86,7 @@ export default function StreamPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Badge variant="outline" className="capitalize">
-                  {stream.platform}
-                </Badge>
-                {stream.name}
+                {stream.platform} / {stream.name}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -185,7 +106,7 @@ export default function StreamPage() {
         </div>
 
         {
-          openedMarkets.length === 0
+          markets.size === 0
           ? (
               <Card>
                 <CardHeader>
@@ -195,86 +116,9 @@ export default function StreamPage() {
                 </CardHeader>
               </Card>
             )
-          : (<MarketDisplay markets={openedMarkets} setMarkets={setOpenedMarkets} progress={progress} />)
+          : (<MarketDisplay />)
         }
-
-        {/* Stream Info */}
-        <div className='space-y-4'>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Stream Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                <span className="font-medium">Created:</span>
-                <span>{stream.createdAt.toLocaleDateString()}</span>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <Eye className="h-4 w-4" />
-                <span className="font-medium">Platform:</span>
-                <Badge variant="outline" className="capitalize">
-                  {stream.platform}
-                </Badge>
-              </div>
-
-              <div className="pt-4 border-t">
-                <h3 className="font-semibold mb-2">About this stream</h3>
-                <p className="text-muted-foreground text-sm">
-                  This is a {stream.platform} stream by {stream.name}. 
-                  Enjoy watching and don&apos;t forget to follow for more content!
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Additional Info Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Stream Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Stream ID:</span>
-                <span className="font-mono text-sm">{stream.id}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Last Updated:</span>
-                <span className="text-sm">{stream.updatedAt.toLocaleDateString()}</span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
       </div>
-      <Card className='p-2'>
-        <CardHeader className='flex flex-row justify-between items-center'>
-          <h3>
-            {stream.platform} / {stream.name}
-          </h3>
-          <div className='grid grid-cols-2 gap-2'>
-            <Button>
-              <SquarePlus />
-            </Button>
-            <Button>
-              <MessageCircleCode />
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className='bg-slate-100'>
-          <div>
-            <Button onClick={() => sendBetTeam1({ amount: 1 })}>
-              Send Bet Team 1
-            </Button>
-            <Button onClick={() => sendBetTeam2({ amount: 1})}>
-              Send Bet Team 2
-            </Button>
-          </div>
-          <div id='messages'>
-
-          </div>
-        </CardContent>
-      </Card>
     </main>
   )
 }
