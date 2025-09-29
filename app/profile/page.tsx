@@ -1,10 +1,7 @@
 "use client"
 
-import { useEffect, useState } from 'react'
-import { useWeb3AuthUser, useWeb3AuthConnect } from "@web3auth/modal/react"
-import { useAccount } from "wagmi"
+import { useState } from 'react'
 import { createSupabaseClient } from '@/lib/supabase/client'
-import { Profile } from '@/lib/types'
 import { calculateLevel, getRank } from '@/lib/rankUtils'
 import { Gift, User, Trophy, Users, Camera } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -13,62 +10,21 @@ import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import Link from 'next/link'
+import { useProfile } from '@/providers/ProfileProvider'
 
 export default function PersonalProfile() {
-  const { userInfo } = useWeb3AuthUser()
-  const { isConnected } = useWeb3AuthConnect()
-  const { } = useAccount()
-  const [profile, setProfile] = useState<Profile | null>(null)
-  const [loading, setLoading] = useState(true)
   const [canClaimLootbox, setCanClaimLootbox] = useState(true)
   const [claimingLootbox, setClaimingLootbox] = useState(false)
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
-
-  const fetchProfile = async () => {
-    try {
-      const supabase = createSupabaseClient()
-      
-      // Find user by web3auth_id (email)
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('web3auth_id', userInfo?.email || userInfo?.name)
-        .single()
-
-      if (error) {
-        console.error('Error fetching profile:', error)
-        return
-      }
-
-          if (data) {
-            setProfile({
-              id: data.id,
-              username: data.username,
-              displayName: data.display_name,
-              pictureUrl: data.picture_url || '',
-              createdAt: new Date(data.created_at),
-              updatedAt: new Date(data.updated_at),
-              xp: data.xp || 0,
-              web3authId: data.web3auth_id || '',
-              email: data.email || '',
-              walletAddress: data.wallet_address || ''
-            })
-            checkLootboxEligibility(data.id)
-          }
-    } catch (error) {
-      console.error('Error:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    if (isConnected && userInfo) {
-      fetchProfile()
-    } else {
-      setLoading(false)
-    }
-  }, [isConnected, userInfo])
+  const {
+    profile,
+    loading,
+    error,
+    userInfo,
+    updateProfile,
+    refreshProfile,
+    isConnected 
+  } = useProfile()
 
   const checkLootboxEligibility = async (profileId: string) => {
     try {
@@ -104,7 +60,7 @@ export default function PersonalProfile() {
       const rewardTypes = ['xp', 'cosmetic', 'void']
       const randomType = rewardTypes[Math.floor(Math.random() * rewardTypes.length)]
       
-           const lootboxData: Record<string, unknown> = {
+      const lootboxData: Record<string, unknown> = {
         profile_id: profile.id,
         type: randomType,
         opened_at: new Date().toISOString()
@@ -116,17 +72,7 @@ export default function PersonalProfile() {
         lootboxData.xp_amount = xpAmount
         
         // Update user XP
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update({ xp: (profile.xp || 0) + xpAmount })
-          .eq('id', profile.id)
-
-        if (updateError) {
-          console.error('Error updating XP:', updateError)
-          return
-        }
-
-        setProfile(prev => prev ? { ...prev, xp: (prev.xp || 0) + xpAmount } : null)
+        await updateProfile({ xp: (profile.xp || 0) + xpAmount })
         toast.success(`🎉 You received ${xpAmount} XP!`)
       } else if (randomType === 'cosmetic') {
         // Generate cosmetic with weighted rarity
@@ -186,19 +132,7 @@ export default function PersonalProfile() {
       const pictureUrl = prompt('Enter the URL for your profile picture:')
       
       if (pictureUrl) {
-        const supabase = createSupabaseClient()
-        const { error } = await supabase
-          .from('profiles')
-          .update({ picture_url: pictureUrl })
-          .eq('id', profile.id)
-
-        if (error) {
-          console.error('Error updating profile picture:', error)
-          toast.error('Failed to update profile picture')
-          return
-        }
-
-        setProfile(prev => prev ? { ...prev, pictureUrl: pictureUrl } : null)
+        await updateProfile({ pictureUrl })
         toast.success('Profile picture updated successfully!')
       }
     } catch (error) {

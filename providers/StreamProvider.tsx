@@ -3,7 +3,7 @@
 import { Stream } from '@/lib/types'
 import { createContext, useContext, useMemo, ReactNode } from 'react'
 
-const StreamCtx = createContext<Stream>(null)
+const StreamContext = createContext<Stream>(null)
 
 export function StreamProvider(
   { 
@@ -14,9 +14,17 @@ export function StreamProvider(
     children: ReactNode
   }) {
   const value = useMemo(() => initialStream, [initialStream])
-  return <StreamCtx.Provider value={value}>{children}</StreamCtx.Provider>
+  return (
+    <StreamContext.Provider value={value}>
+      {children}
+    </StreamContext.Provider>
+  )
 }
 
 export function useStream() {
-  return useContext(StreamCtx)
+  const context = useContext(StreamContext)
+  if (!context) {
+    throw new Error('useStream must be used within a StreamProvider')
+  }
+  return useContext(StreamContext)
 }

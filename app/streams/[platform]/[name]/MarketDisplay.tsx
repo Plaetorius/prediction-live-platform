@@ -1,15 +1,19 @@
-import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
-import { createBetClient } from '@/lib/bets/insertClient'
-import { isMarketActive, getTimeRemaining } from '@/lib/timezoneUtils'
-import { Market } from '@/lib/types'
+import { getTimeRemaining } from '@/lib/timezoneUtils'
+import { BetListeners, BetPayload, Market, MarketWithAmounts } from '@/lib/types'
 import React, { useEffect, useState } from 'react'
-import { toast } from 'sonner'
 import BetFormModal from './BetFormModal'
+import { useBetting } from '@/providers/BettingProvider'
 
 // Timer component for individual market countdown
-function MarketTimer({ market, setMarkets }: { market: Market, setMarkets: React.Dispatch<React.SetStateAction<Market[]>> }) {
+function MarketTimer({ 
+  market,
+  onExpire,
+}: { 
+  market: Market,
+  onExpire: () => void
+}) {
   const [timeRemaining, setTimeRemaining] = useState(getTimeRemaining(market.estEndTime))
 
   useEffect(() => {
@@ -23,11 +27,9 @@ function MarketTimer({ market, setMarkets }: { market: Market, setMarkets: React
   // Handle market expiration in useEffect to avoid setState during render
   useEffect(() => {
     if (timeRemaining.isExpired) {
-      setMarkets(prev => {
-        return prev.filter((m) => m.id !== market.id)
-      })
+      onExpire()
     }
-  }, [timeRemaining.isExpired, market.id, setMarkets])
+  }, [timeRemaining.isExpired, onExpire])
 
   if (timeRemaining.isExpired) {
     return <span className="text-red-500 font-semibold">Expired</span>
@@ -47,22 +49,10 @@ function MarketTimer({ market, setMarkets }: { market: Market, setMarkets: React
   )
 }
 
-export default function MarketDisplay({
-  markets,
-  setMarkets,
-  progress
-}: {
-  markets: Market[],
-  setMarkets: React.Dispatch<React.SetStateAction<Market[]>>,
-  progress: number
-}) {
-  // TODO progress needs to be made independant
-  // Create a state object to track modal states for each market and answer combination
+export default function MarketDisplay() {
+  const { markets, removeMarket } = useBetting()
   const [modalStates, setModalStates] = useState<Record<string, { answerA: boolean, answerB: boolean }>>({})
 
-  console.log("MARKETS IN MARKETDISPLAY", markets)
-
-  // Helper functions to manage modal states
   const getModalState = (marketId: string, isAnswerA: boolean) => {
     return modalStates[marketId]?.[isAnswerA ? 'answerA' : 'answerB'] || false
   }
@@ -85,7 +75,10 @@ export default function MarketDisplay({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {markets.map((market) => {
+        {Array.from(markets.values()).map((market) => {
+          const totalAmount = (market.amountA || 0) + (market.amountB || 0)
+          const progress = totalAmount > 0 ? ((market.amountA || 0) / totalAmount) * 100 : 0
+
           return (
             <Card key={market.id} className="mb-4">
               <CardHeader>
@@ -93,7 +86,10 @@ export default function MarketDisplay({
                   {market.question}
                 </CardTitle>
                 <CardDescription>
-                  <MarketTimer market={market} setMarkets={setMarkets} />
+                  <MarketTimer
+                    market={market}
+                    onExpire={() => removeMarket(market.id)}
+                  />
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -102,33 +98,20 @@ export default function MarketDisplay({
                     isModalOpen={getModalState(market.id, true)}
                     setIsModalOpen={(isOpen) => setModalState(market.id, true, isOpen)}
                     marketId={market.id}
-                    profileId={"FIX ME LATER"}
                     isAnswerA={true}
                     teamName={market.answerA}
                   />
-                  {/* <Button
-                    className='w-[20%] bg-blue-700 hover:bg-blue-800' 
-                    onClick={() => handleBetting(market.id, true, setBetLoading)}
-                    disabled={betLoading}
-                  >
-                    {market.answerA}
-                  </Button> */}
-                  <Progress className='w-[60%]' value={progress} />
+                  <Progress 
+                    className='w-[60%]'
+                    value={progress}
+                  />
                   <BetFormModal
                     isModalOpen={getModalState(market.id, false)}
                     setIsModalOpen={(isOpen) => setModalState(market.id, false, isOpen)}
                     marketId={market.id}
-                    profileId={"FIX ME LATER"}
                     isAnswerA={false}
                     teamName={market.answerB}
                   />
-                  {/* <Button
-                    className='w-[20%] bg-blue-700 hover:bg-blue-800' 
-                    onClick={() => handleBetting(market.id, false, setBetLoading)}
-                    disabled={betLoading}
-                  >
-                    {market.answerB}
-                  </Button> */}
                 </div>
               </CardContent>
             </Card>

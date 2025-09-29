@@ -15,7 +15,7 @@ export type Stream = {
 } | null
 
 export type Profile = {
-  id: number
+  id: string
   username: string
   displayName: string
   pictureUrl: string
@@ -25,6 +25,7 @@ export type Profile = {
   web3authId: string
   email: string
   walletAddress: string
+  currentChainId?: number
 } | null
 
 export type RankName = 'Bronze' | 'Silver' | 'Gold' | 'Diamond'
@@ -40,8 +41,8 @@ export type Rank = {
 }
 
 export type BetListeners = {
-  onTeam1?: (payload: RealtimePayload) => void;
-  onTeam2?: (payload: RealtimePayload) => void;
+  onTeamA?: (payload: RealtimePayload) => void;
+  onTeamB?: (payload: RealtimePayload) => void;
   onNewMarket?: (payload: RealtimePayload) => void;
 }
 
@@ -83,6 +84,11 @@ export type Market = {
   updatedAt: Date;
 }
 
+export type MarketWithAmounts = Market & {
+  amountA?: number;
+  amountB?: number;
+}
+
 export type Bet = {
   id: string;
   profileId: string;
@@ -93,3 +99,18 @@ export type Bet = {
   amount: number;
   status:  string; // Enum: Constants.public.Enums.bets_status
 }
+
+export type BetPayload = {
+  marketId: string;
+  amount: number;
+  profileId: string;
+  createdAt: string;
+  betId: string;
+}
+
+export type BalanceResult = {
+  decimals: number;
+  formatted: string;
+  symbol: string;
+  value: bigint;
+} | undefined

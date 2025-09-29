@@ -3,12 +3,13 @@
 import Loading from '@/components/Loading'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { createSupabaseClient } from '@/lib/supabase/client'
-import { BetListeners, BetChannelOptions, Stream } from '@/lib/types'
-import { useStream } from '@/providers/stream-providers'
+import { BetListeners, BetChannelOptions, Stream, BetPayload } from '@/lib/types'
+import { useStream } from '@/providers/StreamProvider'
 import React, { useEffect, useState, useCallback } from 'react'
 import { useBetChannel } from '@/hooks/useBetChannel'
 import { Button } from '@/components/ui/button'
 import MarketFormModal from './MarketFormModal'
+import { useBetting } from '@/providers/BettingProvider'
 
 export default function StreamAdmin() {
   const [loading, setLoading] = useState<boolean>(false)
@@ -19,8 +20,8 @@ export default function StreamAdmin() {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
 
   const betListeners: BetListeners = {
-    onTeam1: (payload: any) => { 
-      console.log("onTeam1", payload)
+    onTeamA: (payload: any) => { 
+      console.log("onTeamA", payload)
       setLogs(prevLogs => [...prevLogs, payload])
       
       // Update progress when receiving simulated bets through websocket
@@ -43,8 +44,8 @@ export default function StreamAdmin() {
         })
       }
     },
-    onTeam2: (payload: any) => {
-      console.log("onTeam2", payload)
+    onTeamB: (payload: any) => {
+      console.log("onTeamB", payload)
       setLogs(prevLogs => [...prevLogs, payload])
       
       // Update progress when receiving simulated bets through websocket
@@ -90,6 +91,8 @@ export default function StreamAdmin() {
     realtimeOptions
   )
 
+  const { markets } = useBetting()
+
   // Simulation function for betting waves
   const simulateBettingWave = useCallback(async (numBets: number = 20) => {
     if (isSimulating) return
@@ -113,14 +116,16 @@ export default function StreamAdmin() {
       const amount = Math.floor(Math.random() * 100) + 1
       
       // Random user ID for simulation
-      const userId = `user_${Math.floor(Math.random() * 1000)}`
+      const profileId = `profile_${Math.floor(Math.random() * 1000)}`
       
-      const betPayload = {
-        marketId: "e34898c0-dfb0-420b-9aab-ab977c1ebadf",
+      const marketId = Array.from(markets.keys())[0] || ''
+
+      const betPayload: BetPayload = {
+        marketId,
         amount,
-        userId,
-        timestamp: new Date().toISOString(),
-        betId: `bet_${Date.now()}_${userId}`
+        profileId,
+        createdAt: new Date().toISOString(),
+        betId: `bet_${Date.now()}_${profileId}`
       }
       
       // Send the bet - progress will be updated via websocket listeners

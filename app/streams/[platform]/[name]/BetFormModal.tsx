@@ -1,9 +1,11 @@
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { createBetClient } from "@/lib/bets/insertClient"
-import { createSupabaseClient } from "@/lib/supabase/client"
+import { BetPayload } from "@/lib/types"
+import { useBetting } from "@/providers/BettingProvider"
+import { SUPPORTED_CHAINS, useProfile } from "@/providers/ProfileProvider"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useEffect, useState, useCallback } from "react"
 import { SubmitHandler, useForm } from "react-hook-form"
@@ -17,7 +19,6 @@ interface BetFormModalProps {
   isModalOpen: boolean
   setIsModalOpen: (open: boolean) => void
   marketId: string | null
-  profileId: string | null
   isAnswerA: boolean
   teamName: string
 }
@@ -32,10 +33,10 @@ export default function BetFormModal({
   isModalOpen,
   setIsModalOpen,
   marketId,
-  profileId,
   isAnswerA,
   teamName
 }: BetFormModalProps) {
+  const { profile } = useProfile()
   const [loading, setLoading] = useState<boolean>(false)
   const [txStep, setTxStep] = useState<'idle' | 'sending' | 'confirming' | 'confirmed' | 'error'>('idle')
 
@@ -49,7 +50,8 @@ export default function BetFormModal({
   // Transaction status tracking
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
     hash: txHash,
-  })
+  }) 
+  const { sendBetTeam1, sendBetTeam2 } = useBetting() 
 
   const form = useForm({
     resolver: zodResolver(betFormSchema),
@@ -58,47 +60,50 @@ export default function BetFormModal({
     }
   })
 
+
   const onSubmit: SubmitHandler<BetFormSchema> = useCallback(async (data) => {
-    if (!marketId || !profileId) {
-      toast.error("Error placing bet.")
-      return null
-    }
-
-    // Check if wallet is connected
-    if (!isConnected) {
-      toast.error("Please connect your wallet first.")
-      await connect()
-      return
-    }
-
-    // Check if on correct chain (Spicy Testnet)
-    if (chainId !== 88882) {
-      toast.error("Please switch to Spicy Testnet.")
-      await switchChain({ chainId: 88882 })
-      return
-    }
-
-    setLoading(true)
-    setTxStep('sending')
-
     try {
-      // First create the bet in database
+      if (!marketId) {
+        console.error("Couldn't find market with marketId:", marketId)
+        toast.error("Error placing bet.")
+        return null
+      }
+
+      if(!profile) {
+        console.error("Couldn't find profile:", profile)
+        toast.error("Error placing bet.")
+        return null
+      }
+
+      if (!isConnected) {
+        console.error("Wallet is not connected.")
+        toast.error("Please connect your wallet first.")
+        await connect()
+        return
+      }
+
+      if (chainId !== SUPPORTED_CHAINS.CHILIZ_DEV) {
+        toast.error("Switching to the Spicy Testnet")
+        await switchChain({ chainId: SUPPORTED_CHAINS.CHILIZ_DEV })
+        return
+      }
+
+      setLoading(true)
+
       const bet = await createBetClient(
         marketId,
-        '6c5b0e03-5ba0-447c-a495-aea397fba8f9',
+        profile.id,
         isAnswerA,
         data.amount,
         'draft'
       )
-      
       if (!bet) {
+        console.error("Error placing bet:", bet)
         toast.error('Error placing bet. Please try again.')
-        setLoading(false)
-        setTxStep('error')
         return
       }
 
-      // Send CHZ transaction to the specified address
+      setTxStep('sending')
       await sendTransaction({
         to: "0x2D4Ec5dd34bCaff6c1998575763E12597092A044" as `0x${string}`,
         value: parseEther(data.amount.toString())
@@ -106,25 +111,49 @@ export default function BetFormModal({
 
       setTxStep('confirming')
       toast.info("Transaction sent! Waiting for confirmation...")
-      
-    } catch (err) {
-      console.error("Transaction error:", err)
-      toast.error("Transaction failed. Please try again.")
-      setTxStep('error')
-      setLoading(false)
-    }
-  }, [marketId, profileId, isConnected, chainId, connect, switchChain, sendTransaction, isAnswerA])
 
-  // Stable callbacks
+      const betPayload: BetPayload = {
+        marketId,
+        profileId: profile.id,
+        amount: data.amount,
+        createdAt: bet.createdAt.toISOString(),
+        betId: bet.id,
+      }
+      if (isAnswerA) {
+        sendBetTeam1(betPayload)
+      } else {
+        sendBetTeam2(betPayload)
+      }
+      // TODO TX starts here
+      toast.success("Bet placed successfully!")
+    } catch (error) {
+      setTxStep('error')
+      console.error("Error placing bet:", error)
+      toast.error("An unexpected error occured. Please try again.")
+    } finally {
+      setLoading(false)
+    } 
+  }, [marketId, profile, isConnected, chainId, connect, switchChain, sendTransaction, isAnswerA])
+
+  const onError = (errors: any) => {
+    console.error("Form validation errors:", errors)
+
+    const firstError = Object.values(errors)[0] as any
+    if (firstError?.message) {
+      toast.error(firstError.message)
+    } else {
+      toast.error("Please check your input and try again.")
+    }
+  }
+
   const handleConnect = useCallback(() => {
     connect()
   }, [connect])
 
   const handleSwitchChain = useCallback(() => {
-    switchChain({ chainId: 88882 })
+    switchChain({ chainId: SUPPORTED_CHAINS.CHILIZ_DEV })
   }, [switchChain])
 
-  // Handle transaction status changes
   useEffect(() => {
     if (isConfirming) {
       setTxStep('confirming')
@@ -148,7 +177,7 @@ export default function BetFormModal({
         amount: 1,
       })
     }
-  }, [isModalOpen, form, marketId, profileId, isAnswerA, teamName])
+  }, [isModalOpen, form, marketId, profile, isAnswerA, teamName])
 
   return (
     <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
@@ -167,7 +196,7 @@ export default function BetFormModal({
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
+          <form onSubmit={form.handleSubmit(onSubmit, onError)}>
             <FormField
               control={form.control}
               name="amount"
@@ -183,15 +212,11 @@ export default function BetFormModal({
                       step="0.01"
                       min="1"
                       placeholder="Enter the amount to bet..."
+                      {...field}
                       value={field.value?.toString() || ''}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        field.onChange(value === '' ? 0 : parseFloat(value) || 0);
-                      }}
-                      onBlur={field.onBlur}
-                      name={field.name}
                     />
                   </FormControl>
+                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -275,7 +300,7 @@ export default function BetFormModal({
                 Cancel
               </Button>
             </div>
-            </form>
+          </form>
         </Form>
       </DialogContent>
     </Dialog>

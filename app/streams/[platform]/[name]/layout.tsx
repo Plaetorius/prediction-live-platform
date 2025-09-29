@@ -1,5 +1,6 @@
 import { createSupabaseServerClient } from '@/lib/supabase/server'
-import { StreamProvider } from '@/providers/stream-providers'
+import { BettingProvider } from '@/providers/BettingProvider'
+import { StreamProvider } from '@/providers/StreamProvider'
 import React from 'react'
 
 interface Props {
@@ -36,7 +37,9 @@ export default async function StreamSegmentLayout({ children, params}: Props) {
 
   return (
     <StreamProvider initialStream={stream}>
-      {children}
+      <BettingProvider>
+        {children}
+      </BettingProvider>
     </StreamProvider>
   )
 }

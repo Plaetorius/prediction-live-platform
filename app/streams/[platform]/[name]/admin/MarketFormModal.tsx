@@ -125,7 +125,9 @@ export default function MarketFormModal({
         duration: marketData.duration,
         estEndTime: marketData.est_end_time,
         status: marketData.status,
-        streamId: marketData.stream_id
+        streamId: marketData.stream_id,
+        createdAt: marketData.created_at,
+        updatedAt: marketData.updated_at,
       })
       form.reset()
       setIsModalOpen(false)

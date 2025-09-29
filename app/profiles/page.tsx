@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { UserPlus, Users, Shield, ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import Loading from '@/components/Loading'
 import { useWeb3AuthConnect } from "@web3auth/modal/react"
@@ -26,7 +26,7 @@ export default function Profiles() {
       const { data, error } = await supabase
         .from('profiles')
         .select()
-        .range(0, 5)
+        .range(0, 10)
 
         if (error) {
             setLoading(false)
