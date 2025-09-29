@@ -11,9 +11,10 @@ import { useEffect, useState, useCallback } from "react"
 import { SubmitHandler, useForm } from "react-hook-form"
 import { toast } from "sonner"
 import z from "zod"
-import { useSendTransaction, useWaitForTransactionReceipt, useChainId, useSwitchChain, useAccount } from "wagmi"
+import { useSendTransaction, useWaitForTransactionReceipt, useChainId, useSwitchChain, useAccount, useWriteContract } from "wagmi"
 import { useWeb3AuthConnect } from "@web3auth/modal/react"
-import { parseEther } from "viem"
+import { parseEther, keccak256, toHex } from "viem"
+import { BettingPoolABI, BETTING_POOL_ADDRESS } from "@/lib/contracts/BettingPoolABI"
 
 interface BetFormModalProps {
   isModalOpen: boolean
@@ -41,7 +42,7 @@ export default function BetFormModal({
   const [txStep, setTxStep] = useState<'idle' | 'sending' | 'confirming' | 'confirmed' | 'error'>('idle')
 
   // Web3 hooks
-  const { sendTransaction, isPending: isTxPending, error: txError, data: txHash } = useSendTransaction()
+  const { writeContract, isPending: isTxPending, error: txError, data: txHash } = useWriteContract()
   const chainId = useChainId()
   const { switchChain } = useSwitchChain()
   const { isConnected, address } = useAccount()
@@ -104,8 +105,19 @@ export default function BetFormModal({
       }
 
       setTxStep('sending')
-      await sendTransaction({
-        to: "0x2D4Ec5dd34bCaff6c1998575763E12597092A044" as `0x${string}`,
+      
+      // Convertir le marketId (UUID) en poolId numérique
+      const poolId = BigInt(keccak256(toHex(marketId)).slice(0, 10)) // Prendre les 8 premiers caractères du hash
+      
+      // Appel de la fonction placeBet du smart contract
+      await writeContract({
+        address: BETTING_POOL_ADDRESS,
+        abi: BettingPoolABI,
+        functionName: "placeBet",
+        args: [
+          poolId, // PoolId généré à partir du marketId
+          isAnswerA ? 0 : 1 // 0 = BetSide.A, 1 = BetSide.B
+        ],
         value: parseEther(data.amount.toString())
       })
 
@@ -133,7 +145,7 @@ export default function BetFormModal({
     } finally {
       setLoading(false)
     } 
-  }, [marketId, profile, isConnected, chainId, connect, switchChain, sendTransaction, isAnswerA])
+  }, [marketId, profile, isConnected, chainId, connect, switchChain, writeContract, isAnswerA])
 
   const onError = (errors: any) => {
     console.error("Form validation errors:", errors)
