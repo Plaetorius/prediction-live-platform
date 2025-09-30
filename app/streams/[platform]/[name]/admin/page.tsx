@@ -13,6 +13,62 @@ import { Database } from '@/database.types'
 import { toast } from 'sonner'
 import MarketEditModal from '@/components/betting/MarketEditModal'
 import { CloudLightning, Zap } from 'lucide-react'
+import { getTimeRemaining, now } from '@/lib/timezoneUtils'
+import MarketResolutionModal from './MarketResolutionModal'
+
+// Timer component for individual market countdown
+function MarketTimer({ 
+  market,
+}: { 
+  market: Market
+}) {
+  const [timeRemaining, setTimeRemaining] = useState(getTimeRemaining(market.estEndTime))
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTimeRemaining(getTimeRemaining(market.estEndTime))
+    }, 1000) // Update every second
+
+    return () => clearInterval(interval)
+  }, [market.estEndTime])
+
+  if (timeRemaining.isExpired) {
+    return <span className="text-red-500 font-semibold">Expired</span>
+  }
+
+  const formatTime = (value: number) => value.toString().padStart(2, '0')
+
+  return (
+    <div className="text-sm text-muted-foreground">
+      <span className="font-mono">
+        {timeRemaining.days > 0 && `${timeRemaining.days}d `}
+        {formatTime(timeRemaining.hours)}:
+        {formatTime(timeRemaining.minutes)}:
+        {formatTime(timeRemaining.seconds)}
+      </span>
+    </div>
+  )
+}
+
+// Function to get status-based background color
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'draft':
+      return 'bg-gray-200'
+    case 'open':
+      return 'bg-green-200'
+    case 'timeout':
+      return 'bg-blue-200'
+    case 'stopped':
+      return 'bg-orange-200'
+    case 'error':
+      return 'bg-red-200'
+    case 'voided':
+      return 'bg-slate-200'
+    default:
+      return 'bg-gray-100'
+  }
+}
 
 const fetchAndSetMarkets = async (
   stream: Stream, 
@@ -30,7 +86,6 @@ const fetchAndSetMarkets = async (
 
     const newMap = new Map<string, Market>()
     data?.forEach((market) => {
-      console.log("TREATING MARKET", market)
       const formattedMarket: Market = {
         id: market.id || '',
         question: market.question as string,
@@ -42,6 +97,7 @@ const fetchAndSetMarkets = async (
         status: market.status as Database["public"]["Enums"]["market_status"],
         duration: market.duration as number,
         streamId: market.stream_id as string,
+        isAnswerA: market.is_answer_a as boolean | null,
         createdAt: new Date(market.created_at),
         updatedAt: new Date(market.updated_at)
       }
@@ -104,19 +160,30 @@ export default function StreamAdmin() {
           Markets on {stream.platform} / {stream.name}
         </CardHeader>
         <CardContent className='grid grid-cols-2 gap-2'>
-          {Array.from(markets.values()).map((market) => {
+          {Array.from(markets.values())
+            .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+            .map((market) => {
             return (
-              <Card key={market.id}>
+              <Card key={market.id} className={`${getStatusColor(market.status)} border-l-4 border-l-gray-400`}>
                 <CardHeader>
                   <CardTitle>
                     <div className='flex flex-row gap-2 items-center'>
                       {market.question}
                       <MarketEditModal market={market} stream={stream} />
+                      <MarketResolutionModal market={market} />
                     </div>
                   </CardTitle>
                   <CardDescription>
-                    <div className='flex flex-row gap-2 items-center'>
-                      {market.answerA} <Zap className='h-4 w-4' /> {market.answerB}
+                    <div className='flex flex-col gap-2'>
+                      <div className='flex flex-row gap-2 items-center'>
+                        {market.answerA} <Zap className='h-4 w-4' /> {market.answerB}
+                      </div>
+                      <div className='flex flex-row justify-between items-center'>
+                        <MarketTimer market={market} />
+                        <span className='text-xs font-medium px-2 py-1 rounded-full bg-white/50'>
+                          {market.status.toUpperCase()}
+                        </span>
+                      </div>
                     </div>
                   </CardDescription>
                 </CardHeader>

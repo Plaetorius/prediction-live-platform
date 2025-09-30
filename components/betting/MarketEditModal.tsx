@@ -82,7 +82,7 @@ export default function MarketEditModal({ market, stream } : MarketEditModalProp
   return (
     <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
       <DialogTrigger asChild>
-        <Button variant='ghost'>
+        <Button variant='secondary' className='opacity-50'>
           <Edit className='h-4 w-4' />
         </Button>
       </DialogTrigger>

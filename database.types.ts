@@ -16,28 +16,31 @@ export type Database = {
     Tables: {
       bets: {
         Row: {
+          amount: number
           created_at: string
           id: string
           is_answer_a: boolean
-          market_id: string
+          market_id: string | null
           profile_id: string
           status: Database["public"]["Enums"]["bets_status"]
           updated_at: string
         }
         Insert: {
+          amount?: number
           created_at?: string
           id?: string
           is_answer_a: boolean
-          market_id: string
+          market_id?: string | null
           profile_id: string
           status: Database["public"]["Enums"]["bets_status"]
           updated_at?: string
         }
         Update: {
+          amount?: number
           created_at?: string
           id?: string
           is_answer_a?: boolean
-          market_id?: string
+          market_id?: string | null
           profile_id?: string
           status?: Database["public"]["Enums"]["bets_status"]
           updated_at?: string
@@ -132,6 +135,7 @@ export type Database = {
           duration: number
           est_end_time: number
           id: string
+          is_answer_a: boolean | null
           question: string
           real_end_time: number | null
           start_time: number
@@ -146,6 +150,7 @@ export type Database = {
           duration?: number
           est_end_time: number
           id?: string
+          is_answer_a?: boolean | null
           question: string
           real_end_time?: number | null
           start_time: number
@@ -160,6 +165,7 @@ export type Database = {
           duration?: number
           est_end_time?: number
           id?: string
+          is_answer_a?: boolean | null
           question?: string
           real_end_time?: number | null
           start_time?: number
@@ -180,39 +186,42 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          current_chain_id: number | null
           display_name: string
+          email: string | null
           id: string
           picture_url: string | null
           updated_at: string
           username: string
-          xp: number | null
-          web3auth_id: string | null
-          email: string | null
           wallet_address: string | null
+          web3auth_id: string | null
+          xp: number | null
         }
         Insert: {
           created_at?: string
+          current_chain_id?: number | null
           display_name: string
+          email?: string | null
           id?: string
           picture_url?: string | null
           updated_at?: string
           username: string
-          xp?: number | null
-          web3auth_id?: string | null
-          email?: string | null
           wallet_address?: string | null
+          web3auth_id?: string | null
+          xp?: number | null
         }
         Update: {
           created_at?: string
+          current_chain_id?: number | null
           display_name?: string
+          email?: string | null
           id?: string
           picture_url?: string | null
           updated_at?: string
           username?: string
-          xp?: number | null
-          web3auth_id?: string | null
-          email?: string | null
           wallet_address?: string | null
+          web3auth_id?: string | null
+          xp?: number | null
         }
         Relationships: []
       }
@@ -263,6 +272,7 @@ export type Database = {
         | "stopped"
         | "error"
         | "voided"
+        | "resolved"
       rarity: "common" | "rare" | "epic" | "legendary"
     }
     CompositeTypes: {
@@ -393,7 +403,15 @@ export const Constants = {
     Enums: {
       bets_status: ["draft", "voided", "win", "lose", "accepted", "error"],
       lootboxes_rewards: ["xp", "cosmetic", "void"],
-      market_status: ["draft", "open", "timeout", "stopped", "error", "voided"],
+      market_status: [
+        "draft",
+        "open",
+        "timeout",
+        "stopped",
+        "error",
+        "voided",
+        "resolved",
+      ],
       rarity: ["common", "rare", "epic", "legendary"],
     },
   },

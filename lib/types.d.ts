@@ -80,6 +80,7 @@ export type Market = {
   status: typeof Constants.public.Enums.market_status; // Enum: Constants.public.Enums.market_status
   duration: number; // Duration in seconds (as stored in database)
   streamId: string;
+  isAnswerA?: boolean | null; // The resolved answer (true for answerA, false for answerB, null if not resolved)
   createdAt: Date;
   updatedAt: Date;
 }
