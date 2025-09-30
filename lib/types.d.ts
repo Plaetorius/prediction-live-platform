@@ -77,7 +77,7 @@ export type Market = {
   startTime: number; // Unix timestamp in milliseconds
   estEndTime: number; // Unix timestamp in milliseconds
   realEndTime: number; // Unix timestamp in milliseconds
-  status: string; // Enum: Constants.public.Enums.market_status
+  status: typeof Constants.public.Enums.market_status; // Enum: Constants.public.Enums.market_status
   duration: number; // Duration in seconds (as stored in database)
   streamId: string;
   createdAt: Date;

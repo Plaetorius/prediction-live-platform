@@ -2,151 +2,86 @@
 
 import Loading from '@/components/Loading'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { createSupabaseClient } from '@/lib/supabase/client'
-import { BetListeners, BetChannelOptions, Stream, BetPayload } from '@/lib/types'
+import { BetChannelOptions, Market, Stream } from '@/lib/types'
 import { useStream } from '@/providers/StreamProvider'
 import React, { useEffect, useState, useCallback } from 'react'
 import { useBetChannel } from '@/hooks/useBetChannel'
-import { Button } from '@/components/ui/button'
-import MarketFormModal from './MarketFormModal'
+import MarketFormModal from '@/components/betting/MarketCreationModal'
 import { useBetting } from '@/providers/BettingProvider'
+import { createSupabaseClient } from '@/lib/supabase/client'
+import { Database } from '@/database.types'
+import { toast } from 'sonner'
+import MarketEditModal from '@/components/betting/MarketEditModal'
+import { CloudLightning, Zap } from 'lucide-react'
+
+const fetchAndSetMarkets = async (
+  stream: Stream, 
+  setMarkets: (markets: Map<string, Market>) => void,
+  setLoading: React.Dispatch<React.SetStateAction<boolean>>
+) => {
+  try {
+    console.log("STREAM ID", stream?.id || "No stream ID")
+    const supabase = createSupabaseClient()
+    const { data, error } = await supabase
+      .from('markets')
+      .select()
+      .eq('stream_id', stream?.id)
+      .order('created_at', { ascending: false })
+
+    const newMap = new Map<string, Market>()
+    data?.forEach((market) => {
+      console.log("TREATING MARKET", market)
+      const formattedMarket: Market = {
+        id: market.id || '',
+        question: market.question as string,
+        answerA: market.answer_a as string,
+        answerB: market.answer_b as string,
+        startTime: market.start_time as number,
+        estEndTime: market.est_end_time as number,
+        realEndTime: market.real_end_time as number,
+        status: market.status as Database["public"]["Enums"]["market_status"],
+        duration: market.duration as number,
+        streamId: market.stream_id as string,
+        createdAt: new Date(market.created_at),
+        updatedAt: new Date(market.updated_at)
+      }
+      newMap.set(formattedMarket.id, formattedMarket)
+    }) 
+    setMarkets(newMap)
+  } catch (error) {
+    console.error("Error retrieving markets from database:", error)
+    toast.error("Error retrieving markets from database.")
+    return
+  } finally {
+    setLoading(false)
+  }
+}
 
 export default function StreamAdmin() {
-  const [loading, setLoading] = useState<boolean>(false)
   const stream = useStream()
-  const [logs, setLogs] = useState<any[]>([])
-  const [isSimulating, setIsSimulating] = useState<boolean>(false)
-  const [simulationProgress, setSimulationProgress] = useState<{ current: number; total: number }>({ current: 0, total: 0 })
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
-
-  const betListeners: BetListeners = {
-    onTeamA: (payload: any) => { 
-      console.log("onTeamA", payload)
-      setLogs(prevLogs => [...prevLogs, payload])
-      
-      // Update progress when receiving simulated bets through websocket
-      if (isSimulating && payload.betId?.includes('bet_')) {
-        setSimulationProgress(prev => {
-          const newCurrent = Math.min(prev.current + 1, prev.total)
-          
-          // Auto-complete simulation when all bets are received
-          if (newCurrent >= prev.total) {
-            setTimeout(() => {
-              setIsSimulating(false)
-              setSimulationProgress({ current: 0, total: 0 })
-            }, 1000) // Small delay to show completion
-          }
-          
-          return {
-            ...prev,
-            current: newCurrent
-          }
-        })
-      }
-    },
-    onTeamB: (payload: any) => {
-      console.log("onTeamB", payload)
-      setLogs(prevLogs => [...prevLogs, payload])
-      
-      // Update progress when receiving simulated bets through websocket
-      if (isSimulating && payload.betId?.includes('bet_')) {
-        setSimulationProgress(prev => {
-          const newCurrent = Math.min(prev.current + 1, prev.total)
-          
-          // Auto-complete simulation when all bets are received
-          if (newCurrent >= prev.total) {
-            setTimeout(() => {
-              setIsSimulating(false)
-              setSimulationProgress({ current: 0, total: 0 })
-            }, 1000) // Small delay to show completion
-          }
-          
-          return {
-            ...prev,
-            current: newCurrent
-          }
-        })
-      }
-    },
-    onNewMarket: (payload: any) => {
-      console.log("NEW MARKET", payload)
-    }
-  }
+  // const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
+  const { markets, setMarkets } = useBetting()
+  const [loading, setLoading] = useState<boolean>(false)
 
   const realtimeOptions: BetChannelOptions = {
     broadcastSelf: true,
     kind: 'all' 
   }
 
-  const { 
-    channelRef,
-    send,
-    sendBetTeam1,
-    sendBetTeam2,
+  const {
     sendNewMarket
   } = useBetChannel(
     stream?.platform || '', 
     stream?.name || '', 
-    betListeners, 
+    undefined, 
     realtimeOptions
   )
 
-  const { markets } = useBetting()
+  useEffect(() => {
+    fetchAndSetMarkets(stream, setMarkets, setLoading)
+  }, [stream?.id, setMarkets])
 
-  // Simulation function for betting waves
-  const simulateBettingWave = useCallback(async (numBets: number = 20) => {
-    if (isSimulating) return
-    
-    setIsSimulating(true)
-    setSimulationProgress({ current: 0, total: numBets })
-    
-    const duration = 30000 // 30 seconds
-    const interval = duration / numBets
-    
-    for (let i = 0; i < numBets; i++) {
-      // Random delay between 0.5x and 1.5x the calculated interval
-      const randomDelay = interval * (0.5 + Math.random())
-      
-      await new Promise(resolve => setTimeout(resolve, randomDelay))
-      
-      // Random team selection (50/50 chance)
-      const isTeam1 = Math.random() < 0.5
-      
-      // Random bet amount between $1 and $100
-      const amount = Math.floor(Math.random() * 100) + 1
-      
-      // Random user ID for simulation
-      const profileId = `profile_${Math.floor(Math.random() * 1000)}`
-      
-      const marketId = Array.from(markets.keys())[0] || ''
-
-      const betPayload: BetPayload = {
-        marketId,
-        amount,
-        profileId,
-        createdAt: new Date().toISOString(),
-        betId: `bet_${Date.now()}_${profileId}`
-      }
-      
-      // Send the bet - progress will be updated via websocket listeners
-      if (isTeam1) {
-        sendBetTeam1(betPayload)
-      } else {
-        sendBetTeam2(betPayload)
-      }
-    }
-    
-    // Set a timeout to end simulation if not all bets are received
-    // This handles cases where websocket might be slow or fail
-    setTimeout(() => {
-      if (isSimulating) {
-        setIsSimulating(false)
-        setSimulationProgress({ current: 0, total: 0 })
-      }
-    }, 35000) // 5 seconds after the last bet should be sent
-  }, [isSimulating, sendBetTeam1, sendBetTeam2])
-
-  if (!stream)
+  if (!stream || loading)
     return <Loading />
   
   return (
@@ -156,82 +91,38 @@ export default function StreamAdmin() {
           <CardTitle>
             {stream.platform} / {stream.name}&apos;s admin page
           </CardTitle>
-          <CardDescription>
-
-          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className='grid grid-cols-2 gap-3 mb-4'>
-            <Button onClick={() => sendBetTeam1({ amount: 1 })}>
-              Send bet team 1
-            </Button>
-            <Button onClick={() => sendBetTeam2({ amount: 1 })}>
-              Send bet team 2
-            </Button>
-          </div>
-          
-          {/* Simulation Controls */}
-          <div className='border-t pt-4 mb-4'>
-            <h4 className='text-lg font-semibold mb-3'>Betting Simulation</h4>
-            <div className='grid grid-cols-2 gap-3 mb-3'>
-              <Button 
-                onClick={() => simulateBettingWave(10)}
-                disabled={isSimulating}
-                variant="outline"
-              >
-                Simulate 10 bets (30s)
-              </Button>
-              <Button 
-                onClick={() => simulateBettingWave(100)}
-                disabled={isSimulating}
-                variant="outline"
-              >
-                Simulate 100 bets (30s)
-              </Button>
-            </div>
-            
-            {isSimulating && (
-              <div className='space-y-2'>
-                <div className='text-sm text-gray-600'>
-                  Simulating... {simulationProgress.current} / {simulationProgress.total} bets received
-                </div>
-                <div className='w-full bg-gray-200 rounded-full h-2'>
-                  <div 
-                    className='bg-blue-600 h-2 rounded-full transition-all duration-300'
-                    style={{ 
-                      width: `${(simulationProgress.current / simulationProgress.total) * 100}%` 
-                    }}
-                  />
-                </div>
-                <div className='text-xs text-gray-500'>
-                  Progress updates via websocket data
-                </div>
-              </div>
-            )}
-          </div>
-          
-          {/* Market Form Modal */}
           <MarketFormModal 
-            isModalOpen={isModalOpen}
-            setIsModalOpen={setIsModalOpen}
             stream={stream}
             sendNewMarket={sendNewMarket}
           />
-          
-          <div className='mt-4 '>
-            <h4>
-              Logs
-            </h4>
-            <div className='p-4 rounded-l bg-gray-100'>
-              {logs.map((log, index) => {
-                return (
-                  <div key={index}>
-                    {JSON.stringify(log)}
-                  </div>
-                )
-              })}
-            </div>
-          </div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          Markets on {stream.platform} / {stream.name}
+        </CardHeader>
+        <CardContent className='grid grid-cols-2 gap-2'>
+          {Array.from(markets.values()).map((market) => {
+            return (
+              <Card key={market.id}>
+                <CardHeader>
+                  <CardTitle>
+                    <div className='flex flex-row gap-2 items-center'>
+                      {market.question}
+                      <MarketEditModal market={market} stream={stream} />
+                    </div>
+                  </CardTitle>
+                  <CardDescription>
+                    <div className='flex flex-row gap-2 items-center'>
+                      {market.answerA} <Zap className='h-4 w-4' /> {market.answerB}
+                    </div>
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            )
+          })}
         </CardContent>
       </Card>
     </main>
