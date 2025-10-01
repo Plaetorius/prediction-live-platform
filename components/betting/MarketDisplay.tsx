@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { getTimeRemaining } from '@/lib/timezoneUtils'
-import { BetListeners, BetPayload, Market, MarketWithAmounts } from '@/lib/types'
+import { Market } from '@/lib/types'
 import React, { useEffect, useState } from 'react'
 import BetFormModal from './BetFormModal'
 import { useBetting } from '@/providers/BettingProvider'

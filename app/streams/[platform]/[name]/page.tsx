@@ -8,13 +8,13 @@ import Loading from '@/components/Loading'
 import Link from 'next/link'
 import { useStream } from '@/providers/StreamProvider'
 import { MarketWithAmounts } from '@/lib/types'
-import MarketDisplay from './MarketDisplay'
+import MarketDisplay from '../../../../components/betting/MarketDisplay'
 import { selectOpenMarkets } from '@/lib/markets/selectClient'
 import { useBetting } from '@/providers/BettingProvider'
 
 export default function StreamPage() {
   const [loading, setLoading] = useState<boolean>(false)
-  const { markets, setMarkets,  } = useBetting()
+  const { markets, setMarkets } = useBetting()
   const stream = useStream()
 
   useEffect(() => {

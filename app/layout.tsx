@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Providers from "@/components/Providers";
 import Header from "@/components/Header";
+import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -23,7 +25,7 @@ export default function RootLayout({
       <head>
         {/* <script src="http://localhost:8097"></script> */}
       </head>
-      <body>
+      <body className={`${GeistSans.variable} ${GeistMono.variable}`}>
         <Providers>
           <Header />
           {children}
