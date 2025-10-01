@@ -12,31 +12,31 @@ export default function Header() {
   return (
     <header className="border-b bg-background px-4 py-3">
       <nav className="flex items-center gap-4">
-        <Button asChild variant="default">
+        <Button variant='ghost' asChild>
           <Link href="/">
             Home
           </Link>
         </Button>
-        <Button asChild variant="default">
+        <Button variant='ghost' asChild>
           <Link href="/streams">
             Streams
           </Link>
         </Button>
         {isConnected && (
-          <Button asChild variant="default">
+          <Button variant='ghost' asChild>
             <Link href="/profile">
               <User className="mr-2 h-4 w-4" />
               My Profile
             </Link>
           </Button>
         )}
-        <Button asChild variant="default">
+        <Button variant='ghost' asChild>
           <Link href="/profiles">
             <Users className="mr-2 h-4 w-4" />
             All Profiles
           </Link>
         </Button>
-        <Button asChild variant="default">
+        <Button variant='ghost' asChild>
           <Link href="/ranking">
             Ranking
           </Link>
