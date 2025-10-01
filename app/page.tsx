@@ -16,7 +16,7 @@ export default function Home() {
   const { address } = useAccount();
 
   return (
-    <div className="min-h-screen relative">
+    <div className="min-h-screen relative bg-black">
       {/* GradientBlinds Background */}
       <div className="absolute inset-0 w-full h-full">
         <GradientBlinds
