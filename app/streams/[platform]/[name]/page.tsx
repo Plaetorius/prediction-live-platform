@@ -8,9 +8,10 @@ import Loading from '@/components/Loading'
 import Link from 'next/link'
 import { useStream } from '@/providers/StreamProvider'
 import { MarketWithAmounts } from '@/lib/types'
-import MarketDisplay from '../../../../components/betting/MarketDisplay'
+import MarketDisplay from '@/components/betting/MarketDisplay'
 import { selectOpenMarkets } from '@/lib/markets/selectClient'
 import { useBetting } from '@/providers/BettingProvider'
+import { selectBetsWithMarketId } from '@/lib/bets/selectClient'
 
 export default function StreamPage() {
   const [loading, setLoading] = useState<boolean>(false)
@@ -23,10 +24,31 @@ export default function StreamPage() {
         return null
       setLoading(true)
       const marketsArray = await selectOpenMarkets(streamId) || []
+      
+      const marketsWithBets = await Promise.all(
+        marketsArray.map(async (market) => {
+          const bets = await selectBetsWithMarketId(market.id)
+          let { amountA, amountB } = { amountA: 0, amountB: 0 }
+          bets?.forEach((bet) => {
+            console.log("BET", bet)
+            if (bet.isAnswerA) {
+              amountA += bet.amount
+            } else {
+              amountB += bet.amount
+            }
+            // bet.isAnswerA ? amountA += bet.amount : amountB += bet.amount
+          })
+          return { ...market, amountA, amountB }
+        })
+      )
+      
       const marketsMap = new Map<string, MarketWithAmounts>()
-      marketsArray.forEach(market => {
+      marketsWithBets.forEach(market => {
         marketsMap.set(market.id, market)
       })
+
+      console.log("MARKETS MAP", marketsMap)
+
       setMarkets(marketsMap)
       setLoading(false)
     }
