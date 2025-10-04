@@ -263,7 +263,14 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      bets_status: "draft" | "voided" | "win" | "lose" | "accepted" | "error"
+      bets_status:
+        | "draft"
+        | "voided"
+        | "win"
+        | "lose"
+        | "accepted"
+        | "error"
+        | "confirmed"
       lootboxes_rewards: "xp" | "cosmetic" | "void"
       market_status:
         | "draft"
@@ -401,7 +408,15 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      bets_status: ["draft", "voided", "win", "lose", "accepted", "error"],
+      bets_status: [
+        "draft",
+        "voided",
+        "win",
+        "lose",
+        "accepted",
+        "error",
+        "confirmed",
+      ],
       lootboxes_rewards: ["xp", "cosmetic", "void"],
       market_status: [
         "draft",

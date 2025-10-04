@@ -107,6 +107,7 @@ export type BetPayload = {
   profileId: string;
   createdAt: string;
   betId: string;
+  isAnswerA: boolean
 }
 
 export type BalanceResult = {
