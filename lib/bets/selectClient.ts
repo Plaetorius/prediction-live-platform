@@ -1,16 +1,32 @@
 import { createSupabaseClient } from "../supabase/client";
 import { Bet } from "../types";
 
-export async function selectBetsWithMarketId(marketId: string): Promise<Bet[] | null> {
+export async function selectBetsWithMarketId({ 
+  marketId,
+  status
+}: {
+  marketId: string,
+  status?: string
+}): Promise<Bet[] | null> {
   try {
     const supabase = createSupabaseClient()
-    const { data, error } = await supabase
+    let query = supabase
       .from('bets')
       .select()
       .eq('market_id', marketId)
 
+
+    if (status) {
+      query = query.eq('status', status)
+    }
+
+    const { data, error } = await query
+       
     if (error)
       throw error
+
+    if (!data)
+      return null
 
     const bets: Bet[] = data.map((bet) => {
       return {

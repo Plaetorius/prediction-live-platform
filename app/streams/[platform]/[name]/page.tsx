@@ -27,7 +27,7 @@ export default function StreamPage() {
       
       const marketsWithBets = await Promise.all(
         marketsArray.map(async (market) => {
-          const bets = await selectBetsWithMarketId(market.id)
+          const bets = await selectBetsWithMarketId({ marketId: market.id, status: 'confirmed' })
           let { amountA, amountB } = { amountA: 0, amountB: 0 }
           bets?.forEach((bet) => {
             console.log("BET", bet)
