@@ -17,6 +17,8 @@ import { parseEther, keccak256, toHex } from "viem"
 import { BettingPoolABI, BETTING_POOL_ADDRESS } from "@/lib/contracts/BettingPoolABI"
 import { createSupabaseClient } from "@/lib/supabase/client"
 import { betTxErrorMessages } from "@/lib/errors"
+import { validateBettingPrerequisites } from "@/lib/betting/validation"
+import { createBetPayload, handleTransactionError, processBettingRequest } from "@/lib/betting/bettingService"
 
 interface BetFormModalProps {
   isModalOpen: boolean
@@ -47,7 +49,7 @@ export default function BetFormModal({
   const { writeContract, error: txError, data: txHash } = useWriteContract()
   const chainId = useChainId()
   const { switchChain } = useSwitchChain()
-  const { isConnected } = useAccount()
+  const { isConnected, address } = useAccount()
   const { connect } = useWeb3AuthConnect()
 
   // Transaction status tracking
@@ -63,97 +65,6 @@ export default function BetFormModal({
     }
   })
 
-
-  const onSubmit: SubmitHandler<BetFormSchema> = useCallback(async (data) => {
-    try {
-      if (!marketId) {
-        console.error("Couldn't find market with marketId:", marketId)
-        toast.error("Error placing bet.")
-        return null
-      }
-
-      if(!profile) {
-        console.error("Couldn't find profile:", profile)
-        toast.error("Error placing bet.")
-        return null
-      }
-
-      if (!isConnected) {
-        console.error("Wallet is not connected.")
-        toast.error("Please connect your wallet first.")
-        await connect()
-        return
-      }
-
-      if (chainId !== SUPPORTED_CHAINS.CHILIZ_DEV) {
-        toast.error("Switching to the Spicy Testnet")
-        await switchChain({ chainId: SUPPORTED_CHAINS.CHILIZ_DEV })
-        return
-      }
-
-      setLoading(true)
-
-      const bet = await createBetClient(
-        marketId,
-        profile.id,
-        isAnswerA,
-        data.amount,
-        'draft'
-      )
-      if (!bet) {
-        console.error("Error placing bet:", bet)
-        toast.error('Error placing bet. Please try again.')
-        return
-      }
-
-      setTxStep('sending')
-      
-      // Convertir le marketId (UUID) en poolId numérique
-      const poolId = BigInt(keccak256(toHex(marketId)).slice(0, 10)) // Prendre les 10 premiers caractères du hash
-      
-      try {
-
-        // Appel de la fonction placeBet du smart contract
-        await writeContract({
-          address: BETTING_POOL_ADDRESS,
-          abi: BettingPoolABI,
-          functionName: "placeBet",
-          args: [
-            poolId, // PoolId généré à partir du marketId
-            isAnswerA ? 0 : 1 // 0 = BetSide.A, 1 = BetSide.B
-          ],
-          value: parseEther(data.amount.toString())
-        })
-        
-        setTxStep('confirming')
-        toast.info("Transaction sent! Waiting for confirmation...")
-
-        setPendingBetPayload({
-          marketId,
-          profileId: profile.id,
-          amount: data.amount,
-          createdAt: bet.createdAt.toISOString(),
-          betId: bet.id,
-          isAnswerA
-        })
-      } catch (writeContractError) {
-        setTxStep('error')
-        console.error("Transaction failed:", writeContractError)
-        toast.error(`Transaction failed. Please try again.`)
-
-        await updateBetStatus(bet.id, 'error')
-        return
-      }
-
-    } catch (error) {
-      setTxStep('error')
-      console.error("Error placing bet:", error)
-      toast.error("An unexpected error occured. Please try again.")
-    } finally {
-      setLoading(false)
-    } 
-  }, [marketId, profile, isConnected, chainId, connect, switchChain, writeContract, isAnswerA])
-
   const [pendingBetPayload, setPendingBetPayload] = useState<BetPayload | null>(null)
   const updateBetStatus = useCallback(async (betId: string, status: string) => {
     try {
@@ -166,6 +77,75 @@ export default function BetFormModal({
       console.error("Error updating bet status:", error)
     }
   }, [])
+
+  const onSubmit: SubmitHandler<BetFormSchema> = useCallback(async (data) => {
+    try {
+      if (!profile) return
+
+      setLoading(true)
+      const result = await processBettingRequest({
+        marketId,
+        profileId: profile.id,
+        isAnswerA,
+        amount: data.amount,
+        profile,
+        isConnected,
+        chainId,
+        account: address || null
+      })
+
+
+      if (!result.success) {
+        if (result.requiresAction === 'connect') {
+          await connect()
+        } else if (result.requiresAction === 'switchChain') {
+          await switchChain({ chainId: SUPPORTED_CHAINS.CHILIZ_DEV })
+        } else {
+          toast.error(result.error || "Error placing bet.")
+        }
+        return
+      }
+
+      setTxStep('sending')
+            
+      try {
+
+        // Appel de la fonction placeBet du smart contract
+        await writeContract(result.transactionParams!)
+        
+        setTxStep('confirming')
+        toast.info("Transaction sent! Waiting for confirmation...")
+
+        setPendingBetPayload(createBetPayload(
+          marketId!,
+          profile.id,
+          data.amount,
+          result.bet!.createdAt.toISOString(),
+          result.bet!.id,
+          isAnswerA
+        ))
+      } catch (writeContractError) {
+        setTxStep('error')
+        console.error("Transaction failed:", writeContractError)
+        
+
+        const errorHandling = handleTransactionError(writeContractError, null)
+        toast.error(`Transaction failed: ${errorHandling.userMessage}`)
+
+        if (errorHandling.shouldUpdateBetStatus) {
+          await updateBetStatus(result.bet!.id, 'error')
+        }
+        return
+      }
+
+    } catch (error) {
+      setTxStep('error')
+      console.error("Error placing bet:", error)
+      toast.error("An unexpected error occured. Please try again.")
+    } finally {
+      setLoading(false)
+    } 
+  }, [marketId, profile, isConnected, chainId, connect, switchChain, writeContract, isAnswerA, updateBetStatus])
 
   const onError = (errors: Record<string, { message?: string }>) => {
     console.error("Form validation errors:", errors)
@@ -190,7 +170,7 @@ export default function BetFormModal({
     if (isConfirming) {
       setTxStep('confirming')
     }
-    if (isConfirmed) {
+    if (isConfirmed && txStep !== 'confirmed') {
       setTxStep('confirmed')
       setLoading(false)
       toast.success("Bet placed successfully! Transaction confirmed.")
@@ -220,52 +200,16 @@ export default function BetFormModal({
       setTxStep('error')
       setLoading(false)
       
-      let errorCode: string | undefined;
+      const errorHandling = handleTransactionError(txError, pendingBetPayload)
+      toast.error(`Transaction failed; ${errorHandling.userMessage}`)
       
-      const hasCause = (error: any): error is { cause: any } => 
-        error && typeof error === 'object' && 'cause' in error;
-      
-      const hasData = (obj: any): obj is { data: any } => 
-        obj && typeof obj === 'object' && 'data' in obj;
-      
-      const hasCode = (obj: any): obj is { code: number } => 
-        obj && typeof obj === 'object' && 'code' in obj && typeof obj.code === 'number';
-      
-      if (hasCause(txError)) {
-        if (hasData(txError.cause) && hasCode(txError.cause.data)) {
-          errorCode = txError.cause.data.code.toString();
-        } else if (hasCode(txError.cause)) {
-          errorCode = txError.cause.code.toString();
-        }
-      }
-      
-      if (!errorCode) {
-        const errorMessage = 
-          (hasCause(txError) && 'shortMessage' in txError.cause ? txError.cause.shortMessage : '') ||
-          (hasCause(txError) && 'message' in txError.cause ? txError.cause.message : '') ||
-          ('message' in txError ? txError.message : '') ||
-          '';
-        
-        const dataCodeMatch = errorMessage.match(/"data":\s*\{[^}]*"code":\s*(-?\d+)/);
-        if (dataCodeMatch) {
-          errorCode = dataCodeMatch[1];
-        } else {
-          const codeMatch = errorMessage.match(/"code":\s*(-?\d+)/);
-          if (codeMatch) {
-            errorCode = codeMatch[1];
-          }
-        }
-      }
-      
-      console.error("Transaction failed with error code:", errorCode);
-      toast.error(`Transaction failed: ${betTxErrorMessages[errorCode || ''] || "An unknown error occurred"}`);
 
-      if (pendingBetPayload) {
+      if (pendingBetPayload && errorHandling.shouldUpdateBetStatus) {
         updateBetStatus(pendingBetPayload.betId, 'error');
         setPendingBetPayload(null);
       }
     }
-  }, [isConfirming, isConfirmed, txError, pendingBetPayload, sendBetTeam1, sendBetTeam2, updateBetStatus, setIsModalOpen])
+  }, [isConfirming, isConfirmed, txError, pendingBetPayload, sendBetTeam1, sendBetTeam2, updateBetStatus])
 
   useEffect(() => {
     if (isModalOpen) {
@@ -334,7 +278,7 @@ export default function BetFormModal({
             )}
 
             {/* Chain status */}
-            {isConnected && chainId !== 88882 && (
+            {isConnected && chainId !== SUPPORTED_CHAINS.CHILIZ_DEV && (
               <div className="p-3 bg-yellow-50 border border-yellow-200 rounded mb-4">
                 <p className="text-sm text-yellow-800">
                   Please switch to Spicy Testnet to place bets
@@ -378,7 +322,7 @@ export default function BetFormModal({
             <div className="flex gap-2 pt-4">
               <Button
                 type='submit'
-                disabled={loading || !isConnected || chainId !== 88882}
+                disabled={loading || !isConnected || chainId !== SUPPORTED_CHAINS.CHILIZ_DEV}
                 className="flex-1"
               >
                 {loading ? (
