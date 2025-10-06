@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { Medal, Trophy, Gem } from 'lucide-react'
-import { Rank, RankName } from './types'
+import { Rank } from './types'
 
 // Tailwind classes used in this file:
 // from-cyan-300 via-sky-400 to-blue-500 text-sky-600 text-sky-700 border-sky-600

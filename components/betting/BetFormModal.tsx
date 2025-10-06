@@ -296,26 +296,50 @@ export default function BetFormModal({
 
             {/* Transaction status */}
             {txHash && (
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded mb-4">
-                <p className="text-sm text-blue-800">
-                  Transaction Hash: {txHash}
-                </p>
+              <div className="p-4 bg-gradient-to-r from-blue-500/10 to-blue-600/10 border border-blue-500/20 rounded-xl mb-4 backdrop-blur-sm">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-blue-200">
+                      Transaction submitted
+                    </p>
+                    <p className="text-xs text-blue-300/70 font-mono">
+                      {txHash.slice(0, 8)}...{txHash.slice(-8)}
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
 
             {txStep === 'confirming' && (
-              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded mb-4">
-                <p className="text-sm text-yellow-800">
-                  Waiting for transaction confirmation...
-                </p>
+              <div className="p-4 bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-xl mb-4 backdrop-blur-sm">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-amber-500 rounded-full animate-pulse"></div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-amber-200">
+                      Confirming transaction...
+                    </p>
+                    <p className="text-xs text-amber-300/70">
+                      This may take a few moments
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
 
             {txStep === 'confirmed' && (
-              <div className="p-3 bg-green-50 border border-green-200 rounded mb-4">
-                <p className="text-sm text-green-800">
-                  Transaction confirmed! Bet placed successfully.
-                </p>
+              <div className="p-4 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-xl mb-4 backdrop-blur-sm">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-green-200">
+                      Bet placed successfully!
+                    </p>
+                    <p className="text-xs text-green-300/70">
+                      Your prediction is now active
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
 

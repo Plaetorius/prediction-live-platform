@@ -2,7 +2,8 @@
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowLeft } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { ArrowLeft, Play, TrendingUp } from 'lucide-react'
 import React, { useEffect, useState} from 'react'
 import Loading from '@/components/Loading'
 import Link from 'next/link'
@@ -57,19 +58,25 @@ export default function StreamPage() {
 
   if (!stream)
     return (
-      <main className='p-4'>
-        <div className='mb-6'>
-          <Button asChild variant="outline">
-            <Link href="/streams">
-              <ArrowLeft className="mr-2 h-4 w-4" />
+      <div className="min-h-screen p-4">
+        <div className="mb-6">
+          <Button asChild variant="ghost">
+            <Link href="/streams" className="flex items-center gap-2">
+              <ArrowLeft className="h-4 w-4" />
               Back to Streams
             </Link>
           </Button>
         </div>
-        <div className="text-center py-8">
-          <p className="text-muted-foreground">Stream not found.</p>
+        <div className="text-center py-20">
+          <h2 className="text-2xl font-bold mb-4">Stream not found</h2>
+          <p className="text-muted-foreground mb-8">The stream you&apos;re looking for doesn&apos;t exist or has been removed.</p>
+          <Button asChild>
+            <Link href="/streams">
+              Browse All Streams
+            </Link>
+          </Button>
         </div>
-      </main>
+      </div>
     )
 
   const getEmbedUrl = (platform: string, streamName: string) => {
@@ -92,23 +99,45 @@ export default function StreamPage() {
     return <Loading />
 
   return (
-    <main className='p-4'>
-      <div className='mb-6'>
-        <Button asChild variant="outline">
-          <Link href="/streams">
-            <ArrowLeft className="mr-2 h-4 w-4" />
+    <div className="min-h-screen p-4">
+      <div className="mb-6">
+        <Button asChild variant="ghost">
+          <Link href="/streams" className="flex items-center gap-2">
+            <ArrowLeft className="h-4 w-4" />
             Back to Streams
           </Link>
         </Button>
       </div>
       
-      <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
+      <div className="flex flex-col lg:flex-row gap-6 items-start lg:items-center justify-between mb-8">
+        <div className="space-y-2">
+          <div className="flex items-center gap-3">
+            <Badge 
+              variant="secondary" 
+              className={`text-sm ${
+                stream.platform.toLowerCase() === 'twitch' 
+                  ? 'bg-purple-500/20 text-purple-300 border-purple-500/30'
+                  : 'bg-green-500/20 text-green-300 border-green-500/30'
+              }`}
+            >
+              {stream.platform.toUpperCase()}
+            </Badge>
+            <h1 className="text-3xl md:text-5xl font-bold">{stream.name}</h1>
+          </div>
+          <p className="text-muted-foreground text-lg">Live stream with prediction markets</p>
+        </div>
+        
+      </div>
+
+      
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Stream Video */}
-        <div className='lg:col-span-2'>
+        <div className="lg:col-span-2">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                {stream.platform} / {stream.name}
+                <Play className="h-5 w-5 text-red-500" />
+                Live Stream
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -127,20 +156,38 @@ export default function StreamPage() {
           </Card>
         </div>
 
-        {
-          markets.size === 0
-          ? (
-              <Card>
-                <CardHeader>
-                  <CardTitle>
-                    No markets
-                  </CardTitle>
-                </CardHeader>
-              </Card>
-            )
-          : (<MarketDisplay />)
-        }
+        {/* Markets Section */}
+        <div className="space-y-6">
+          {markets.size === 0 ? (
+            <Card>
+              <CardContent className="text-center py-12">
+                <div className="mx-auto w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-6">
+                  <TrendingUp className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <h3 className="text-xl font-bold mb-4">No Active Markets</h3>
+                <p className="text-muted-foreground">
+                  There are currently no prediction markets for this stream.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-red-500" />
+                  Active Markets
+                  <Badge variant="secondary" className="ml-auto">
+                    {markets.size} market{markets.size > 1 ? 's' : ''}
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <MarketDisplay />
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
-    </main>
+    </div>
   )
 }
