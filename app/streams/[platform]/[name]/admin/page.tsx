@@ -2,6 +2,8 @@
 
 import Loading from '@/components/Loading'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { BetChannelOptions, Market, Stream } from '@/lib/types'
 import { useStream } from '@/providers/StreamProvider'
 import React, { useEffect, useState, useCallback } from 'react'
@@ -12,9 +14,10 @@ import { createSupabaseClient } from '@/lib/supabase/client'
 import { Database } from '@/database.types'
 import { toast } from 'sonner'
 import MarketEditModal from '@/components/betting/MarketEditModal'
-import { CloudLightning, Zap } from 'lucide-react'
+import { CloudLightning, Zap, ArrowLeft, Plus, Settings, TrendingUp, Clock, AlertCircle, CheckCircle } from 'lucide-react'
 import { getTimeRemaining, now } from '@/lib/timezoneUtils'
 import MarketResolutionModal from './MarketResolutionModal'
+import Link from 'next/link'
 
 // Timer component for individual market countdown
 function MarketTimer({ 
@@ -39,8 +42,8 @@ function MarketTimer({
   const formatTime = (value: number) => value.toString().padStart(2, '0')
 
   return (
-    <div className="text-sm text-muted-foreground">
-      <span className="font-mono">
+    <div className="text-sm text-muted-foreground font-mono">
+      <span className="font-semibold">
         {timeRemaining.days > 0 && `${timeRemaining.days}d `}
         {formatTime(timeRemaining.hours)}:
         {formatTime(timeRemaining.minutes)}:
@@ -54,19 +57,19 @@ function MarketTimer({
 const getStatusColor = (status: string) => {
   switch (status) {
     case 'draft':
-      return 'bg-gray-200'
+      return 'bg-gray-100 text-gray-600 border-l-gray-400'
     case 'open':
-      return 'bg-green-200'
+      return 'bg-green-100 text-green-600 border-l-green-400'
     case 'timeout':
-      return 'bg-blue-200'
+      return 'bg-blue-100 text-blue-600 border-l-blue-400'
     case 'stopped':
-      return 'bg-orange-200'
+      return 'bg-orange-100 text-orange-600 border-l-orange-400'
     case 'error':
-      return 'bg-red-200'
+      return 'bg-red-100 text-red-600 border-l-red-400'
     case 'voided':
-      return 'bg-slate-200'
+      return 'bg-gray-100 text-gray-600 border-l-gray-400'
     default:
-      return 'bg-gray-100'
+      return 'bg-gray-100 text-gray-600 border-l-gray-400'
   }
 }
 

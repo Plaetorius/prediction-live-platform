@@ -15,6 +15,10 @@ import { useWaitForTransactionReceipt, useChainId, useSwitchChain, useAccount, u
 import { useWeb3AuthConnect } from "@web3auth/modal/react"
 import { parseEther, keccak256, toHex } from "viem"
 import { BettingPoolABI, BETTING_POOL_ADDRESS } from "@/lib/contracts/BettingPoolABI"
+import { createSupabaseClient } from "@/lib/supabase/client"
+import { betTxErrorMessages } from "@/lib/errors"
+import { validateBettingPrerequisites } from "@/lib/betting/validation"
+import { createBetPayload, handleTransactionError, processBettingRequest } from "@/lib/betting/bettingService"
 
 interface BetFormModalProps {
   isModalOpen: boolean
@@ -42,7 +46,7 @@ export default function BetFormModal({
   const [txStep, setTxStep] = useState<'idle' | 'sending' | 'confirming' | 'confirmed' | 'error'>('idle')
 
   // Web3 hooks
-  const { writeContract, isPending: isTxPending, error: txError, data: txHash } = useWriteContract()
+  const { writeContract, error: txError, data: txHash } = useWriteContract()
   const chainId = useChainId()
   const { switchChain } = useSwitchChain()
   const { isConnected, address } = useAccount()
@@ -61,83 +65,79 @@ export default function BetFormModal({
     }
   })
 
+  const [pendingBetPayload, setPendingBetPayload] = useState<BetPayload | null>(null)
+  const updateBetStatus = useCallback(async (betId: string, status: string) => {
+    try {
+      const supabase = createSupabaseClient()
+      await supabase
+        .from('bets')
+        .update({ status })
+        .eq('id', betId)
+    } catch (error) {
+      console.error("Error updating bet status:", error)
+    }
+  }, [])
 
   const onSubmit: SubmitHandler<BetFormSchema> = useCallback(async (data) => {
     try {
-      if (!marketId) {
-        console.error("Couldn't find market with marketId:", marketId)
-        toast.error("Error placing bet.")
-        return null
-      }
-
-      if(!profile) {
-        console.error("Couldn't find profile:", profile)
-        toast.error("Error placing bet.")
-        return null
-      }
-
-      if (!isConnected) {
-        console.error("Wallet is not connected.")
-        toast.error("Please connect your wallet first.")
-        await connect()
-        return
-      }
-
-      if (chainId !== SUPPORTED_CHAINS.CHILIZ_DEV) {
-        toast.error("Switching to the Spicy Testnet")
-        await switchChain({ chainId: SUPPORTED_CHAINS.CHILIZ_DEV })
-        return
-      }
+      if (!profile) return
 
       setLoading(true)
-
-      const bet = await createBetClient(
+      const result = await processBettingRequest({
         marketId,
-        profile.id,
+        profileId: profile.id,
         isAnswerA,
-        data.amount,
-        'draft'
-      )
-      if (!bet) {
-        console.error("Error placing bet:", bet)
-        toast.error('Error placing bet. Please try again.')
+        amount: data.amount,
+        profile,
+        isConnected,
+        chainId,
+        account: address || null
+      })
+
+
+      if (!result.success) {
+        if (result.requiresAction === 'connect') {
+          await connect()
+        } else if (result.requiresAction === 'switchChain') {
+          await switchChain({ chainId: SUPPORTED_CHAINS.CHILIZ_DEV })
+        } else {
+          toast.error(result.error || "Error placing bet.")
+        }
         return
       }
 
       setTxStep('sending')
-      
-      // Convertir le marketId (UUID) en poolId numérique
-      const poolId = BigInt(keccak256(toHex(marketId)).slice(0, 10)) // Prendre les 8 premiers caractères du hash
-      
-      // Appel de la fonction placeBet du smart contract
-      await writeContract({
-        address: BETTING_POOL_ADDRESS,
-        abi: BettingPoolABI,
-        functionName: "placeBet",
-        args: [
-          poolId, // PoolId généré à partir du marketId
-          isAnswerA ? 0 : 1 // 0 = BetSide.A, 1 = BetSide.B
-        ],
-        value: parseEther(data.amount.toString())
-      })
+            
+      try {
 
-      setTxStep('confirming')
-      toast.info("Transaction sent! Waiting for confirmation...")
+        // Appel de la fonction placeBet du smart contract
+        await writeContract(result.transactionParams!)
+        
+        setTxStep('confirming')
+        toast.info("Transaction sent! Waiting for confirmation...")
 
-      const betPayload: BetPayload = {
-        marketId,
-        profileId: profile.id,
-        amount: data.amount,
-        createdAt: bet.createdAt.toISOString(),
-        betId: bet.id,
+        setPendingBetPayload(createBetPayload(
+          marketId!,
+          profile.id,
+          data.amount,
+          result.bet!.createdAt.toISOString(),
+          result.bet!.id,
+          isAnswerA
+        ))
+      } catch (writeContractError) {
+        setTxStep('error')
+        console.error("Transaction failed:", writeContractError)
+        
+
+        const errorHandling = handleTransactionError(writeContractError, null)
+        toast.error(`Transaction failed: ${errorHandling.userMessage}`)
+
+        if (errorHandling.shouldUpdateBetStatus) {
+          await updateBetStatus(result.bet!.id, 'error')
+        }
+        return
       }
-      if (isAnswerA) {
-        sendBetTeam1(betPayload)
-      } else {
-        sendBetTeam2(betPayload)
-      }
-      // TODO TX starts here
-      toast.success("Bet placed successfully!")
+
     } catch (error) {
       setTxStep('error')
       console.error("Error placing bet:", error)
@@ -145,12 +145,12 @@ export default function BetFormModal({
     } finally {
       setLoading(false)
     } 
-  }, [marketId, profile, isConnected, chainId, connect, switchChain, writeContract, isAnswerA])
+  }, [marketId, profile, isConnected, chainId, connect, switchChain, writeContract, isAnswerA, updateBetStatus])
 
-  const onError = (errors: any) => {
+  const onError = (errors: Record<string, { message?: string }>) => {
     console.error("Form validation errors:", errors)
 
-    const firstError = Object.values(errors)[0] as any
+    const firstError = Object.values(errors)[0]
     if (firstError?.message) {
       toast.error(firstError.message)
     } else {
@@ -170,18 +170,46 @@ export default function BetFormModal({
     if (isConfirming) {
       setTxStep('confirming')
     }
-    if (isConfirmed) {
+    if (isConfirmed && txStep !== 'confirmed') {
       setTxStep('confirmed')
       setLoading(false)
       toast.success("Bet placed successfully! Transaction confirmed.")
+    
+      if (pendingBetPayload) {
+        const betPayload: BetPayload = {
+          marketId: pendingBetPayload.marketId,
+          profileId: pendingBetPayload.profileId,
+          amount: pendingBetPayload.amount,
+          createdAt: pendingBetPayload.createdAt,
+          betId: pendingBetPayload.betId,
+          isAnswerA: pendingBetPayload.isAnswerA,
+        }
+
+        if (pendingBetPayload.isAnswerA) {
+          sendBetTeam1(betPayload)
+        } else {
+          sendBetTeam2(betPayload)
+        }
+
+        updateBetStatus(pendingBetPayload.betId, 'confirmed')
+        setPendingBetPayload(null)
+      }
       setIsModalOpen(false)
     }
     if (txError) {
       setTxStep('error')
       setLoading(false)
-      toast.error(`Transaction failed: ${txError.message}`)
+      
+      const errorHandling = handleTransactionError(txError, pendingBetPayload)
+      toast.error(`Transaction failed; ${errorHandling.userMessage}`)
+      
+
+      if (pendingBetPayload && errorHandling.shouldUpdateBetStatus) {
+        updateBetStatus(pendingBetPayload.betId, 'error');
+        setPendingBetPayload(null);
+      }
     }
-  }, [isConfirming, isConfirmed, txError])
+  }, [isConfirming, isConfirmed, txError, pendingBetPayload, sendBetTeam1, sendBetTeam2, updateBetStatus])
 
   useEffect(() => {
     if (isModalOpen) {
@@ -189,7 +217,7 @@ export default function BetFormModal({
         amount: 1,
       })
     }
-  }, [isModalOpen, form, marketId, profile, isAnswerA, teamName])
+  }, [isModalOpen])
 
   return (
     <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
@@ -250,7 +278,7 @@ export default function BetFormModal({
             )}
 
             {/* Chain status */}
-            {isConnected && chainId !== 88882 && (
+            {isConnected && chainId !== SUPPORTED_CHAINS.CHILIZ_DEV && (
               <div className="p-3 bg-yellow-50 border border-yellow-200 rounded mb-4">
                 <p className="text-sm text-yellow-800">
                   Please switch to Spicy Testnet to place bets
@@ -268,33 +296,57 @@ export default function BetFormModal({
 
             {/* Transaction status */}
             {txHash && (
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded mb-4">
-                <p className="text-sm text-blue-800">
-                  Transaction Hash: {txHash}
-                </p>
+              <div className="p-4 bg-gradient-to-r from-blue-500/10 to-blue-600/10 border border-blue-500/20 rounded-xl mb-4 backdrop-blur-sm">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-blue-200">
+                      Transaction submitted
+                    </p>
+                    <p className="text-xs text-blue-300/70 font-mono">
+                      {txHash.slice(0, 8)}...{txHash.slice(-8)}
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
 
             {txStep === 'confirming' && (
-              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded mb-4">
-                <p className="text-sm text-yellow-800">
-                  Waiting for transaction confirmation...
-                </p>
+              <div className="p-4 bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-xl mb-4 backdrop-blur-sm">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-amber-500 rounded-full animate-pulse"></div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-amber-200">
+                      Confirming transaction...
+                    </p>
+                    <p className="text-xs text-amber-300/70">
+                      This may take a few moments
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
 
             {txStep === 'confirmed' && (
-              <div className="p-3 bg-green-50 border border-green-200 rounded mb-4">
-                <p className="text-sm text-green-800">
-                  Transaction confirmed! Bet placed successfully.
-                </p>
+              <div className="p-4 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-xl mb-4 backdrop-blur-sm">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-green-200">
+                      Bet placed successfully!
+                    </p>
+                    <p className="text-xs text-green-300/70">
+                      Your prediction is now active
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
 
             <div className="flex gap-2 pt-4">
               <Button
                 type='submit'
-                disabled={loading || !isConnected || chainId !== 88882}
+                disabled={loading || !isConnected || chainId !== SUPPORTED_CHAINS.CHILIZ_DEV}
                 className="flex-1"
               >
                 {loading ? (

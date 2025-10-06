@@ -3,12 +3,12 @@ import { Buffer } from 'buffer';
 
 // Make Buffer available globally
 if (typeof window !== 'undefined') {
-  (window as any).Buffer = Buffer;
+  (window as unknown as { Buffer: typeof Buffer }).Buffer = Buffer;
 }
 
 // Process polyfill
 if (typeof window !== 'undefined' && !window.process) {
-  (window as any).process = {
+  (window as unknown as { process: unknown }).process = {
     env: {},
     version: '',
     versions: {},

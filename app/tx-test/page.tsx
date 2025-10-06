@@ -7,6 +7,7 @@ import { parseEther } from "viem";
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { SUPPORTED_CHAINS } from "@/providers/ProfileProvider";
 
 export default function TxTestPage() {
   // Local state for form
@@ -84,7 +85,7 @@ export default function TxTestPage() {
                 Switch to Spicy Testnet to send CHZ
               </p>
               <Button 
-                onClick={() => switchChain({ chainId: 88882 })}
+                onClick={() => switchChain({ chainId: SUPPORTED_CHAINS.CHILIZ_DEV })}
                 variant="outline"
                 size="sm"
               >

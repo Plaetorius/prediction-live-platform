@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Play, Users, LogIn, LogOut, User } from "lucide-react";
+import { Play, Users, LogOut, User } from "lucide-react";
 import { useWeb3AuthConnect, useWeb3AuthDisconnect, useWeb3AuthUser } from "@web3auth/modal/react";
 import { useAccount } from "wagmi";
 import Web3AuthAutoSync from "@/components/Web3AuthAutoSync";

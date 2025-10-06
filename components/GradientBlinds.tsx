@@ -387,7 +387,6 @@ void main() {
       <div
         className={`w-full h-full overflow-hidden relative ${className}`}
         style={{
-          background: 'linear-gradient(135deg, #FB2B37 0%, #000000 100%)',
           ...(mixBlendMode && {
             mixBlendMode: mixBlendMode as React.CSSProperties['mixBlendMode']
           })

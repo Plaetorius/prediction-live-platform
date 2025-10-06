@@ -21,11 +21,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className="dark">
       <head>
         {/* <script src="http://localhost:8097"></script> */}
       </head>
-      <body className={`${GeistSans.variable} ${GeistMono.variable}`}>
+      <body className={`${GeistSans.variable} ${GeistMono.variable} dark bg-black text-white`}>
         <Providers>
           <Header />
           {children}
