@@ -40,6 +40,10 @@ export type Rank = {
   weight: number
 }
 
+export type ResultListeners = {
+  onResult?: (payload: RealtimePayload) => void;
+}
+
 export type BetListeners = {
   onTeamA?: (payload: RealtimePayload) => void;
   onTeamB?: (payload: RealtimePayload) => void;

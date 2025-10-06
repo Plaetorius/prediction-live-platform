@@ -26,11 +26,11 @@ export function useBetChannel(
     })
     
     if (listeners.onTeamA) {
-      channel.on('broadcast', { event: 'bet_team1' }, (msg) => listeners.onTeamA?.(msg.payload))
+      channel.on('broadcast', { event: 'bet_team_a' }, (msg) => listeners.onTeamA?.(msg.payload))
     }
 
     if (listeners.onTeamB) {
-      channel.on('broadcast', { event: 'bet_team2' }, (msg) => listeners.onTeamB?.(msg.payload))
+      channel.on('broadcast', { event: 'bet_team_b' }, (msg) => listeners.onTeamB?.(msg.payload))
     }
 
     if (listeners.onNewMarket) {
@@ -55,11 +55,11 @@ export function useBetChannel(
   }
 
   function sendBetTeam1(payload: any = {}) {
-    send('bet_team1', payload)
+    send('bet_team_a', payload)
   }
 
   function sendBetTeam2(payload: any = []) {
-    send('bet_team2', payload)
+    send('bet_team_b', payload)
   }
 
   function sendNewMarket(payload: any = []) {
