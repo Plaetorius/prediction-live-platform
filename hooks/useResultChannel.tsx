@@ -1,3 +1,5 @@
+"use client"
+
 import { createSupabaseClient } from "@/lib/supabase/client";
 import { ResultListeners } from "@/lib/types";
 import { RealtimeChannel } from "@supabase/supabase-js";

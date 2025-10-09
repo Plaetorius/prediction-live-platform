@@ -111,7 +111,12 @@ export type BetPayload = {
   profileId: string;
   createdAt: string;
   betId: string;
-  isAnswerA: boolean
+  isAnswerA: boolean;
+}
+
+export type ResultPayload = {
+  marketId: string;
+  isAnswerA: boolean;
 }
 
 export type BalanceResult = {

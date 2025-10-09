@@ -47,8 +47,6 @@ export default function StreamPage() {
         marketsMap.set(market.id, market)
       })
 
-      console.log("MARKETS MAP", marketsMap)
-
       setMarkets(marketsMap)
       setLoading(false)
     }

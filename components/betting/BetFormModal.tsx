@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { createBetClient } from "@/lib/bets/insertClient"
-import { BetPayload } from "@/lib/types"
+import { Bet, BetPayload } from "@/lib/types"
 import { useBetting } from "@/providers/BettingProvider"
 import { SUPPORTED_CHAINS, useProfile } from "@/providers/ProfileProvider"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -19,6 +19,7 @@ import { createSupabaseClient } from "@/lib/supabase/client"
 import { betTxErrorMessages } from "@/lib/errors"
 import { validateBettingPrerequisites } from "@/lib/betting/validation"
 import { createBetPayload, handleTransactionError, processBettingRequest } from "@/lib/betting/bettingService"
+import { mapBetSupaToTS } from "@/lib/mappings"
 
 interface BetFormModalProps {
   isModalOpen: boolean
@@ -41,7 +42,7 @@ export default function BetFormModal({
   isAnswerA,
   teamName
 }: BetFormModalProps) {
-  const { profile } = useProfile()
+  const { profile, setConfirmedBets } = useProfile()
   const [loading, setLoading] = useState<boolean>(false)
   const [txStep, setTxStep] = useState<'idle' | 'sending' | 'confirming' | 'confirmed' | 'error'>('idle')
 
@@ -69,10 +70,13 @@ export default function BetFormModal({
   const updateBetStatus = useCallback(async (betId: string, status: string) => {
     try {
       const supabase = createSupabaseClient()
-      await supabase
+      const { data, error } = await supabase
         .from('bets')
         .update({ status })
         .eq('id', betId)
+        .select()
+        .single()
+      return mapBetSupaToTS(data)
     } catch (error) {
       console.error("Error updating bet status:", error)
     }
@@ -167,48 +171,65 @@ export default function BetFormModal({
   }, [switchChain])
 
   useEffect(() => {
-    if (isConfirming) {
-      setTxStep('confirming')
-    }
-    if (isConfirmed && txStep !== 'confirmed') {
-      setTxStep('confirmed')
-      setLoading(false)
-      toast.success("Bet placed successfully! Transaction confirmed.")
-    
-      if (pendingBetPayload) {
-        const betPayload: BetPayload = {
-          marketId: pendingBetPayload.marketId,
-          profileId: pendingBetPayload.profileId,
-          amount: pendingBetPayload.amount,
-          createdAt: pendingBetPayload.createdAt,
-          betId: pendingBetPayload.betId,
-          isAnswerA: pendingBetPayload.isAnswerA,
-        }
-
-        if (pendingBetPayload.isAnswerA) {
-          sendBetTeam1(betPayload)
-        } else {
-          sendBetTeam2(betPayload)
-        }
-
-        updateBetStatus(pendingBetPayload.betId, 'confirmed')
-        setPendingBetPayload(null)
+    const confirmBet = async () => {
+      if (isConfirming) {
+        setTxStep('confirming')
+        return
       }
-      setIsModalOpen(false)
-    }
-    if (txError) {
-      setTxStep('error')
-      setLoading(false)
-      
-      const errorHandling = handleTransactionError(txError, pendingBetPayload)
-      toast.error(`Transaction failed; ${errorHandling.userMessage}`)
-      
+      if (isConfirmed && txStep !== 'confirmed' && pendingBetPayload) {
+        try {
+          setTxStep('confirmed')
+          setLoading(false)
+          toast.success("Bet placed successfully! Transaction confirmed.")
+        
+          const betPayload: BetPayload = {
+            marketId: pendingBetPayload.marketId,
+            profileId: pendingBetPayload.profileId,
+            amount: pendingBetPayload.amount,
+            createdAt: pendingBetPayload.createdAt,
+            betId: pendingBetPayload.betId,
+            isAnswerA: pendingBetPayload.isAnswerA,
+          }
 
-      if (pendingBetPayload && errorHandling.shouldUpdateBetStatus) {
-        updateBetStatus(pendingBetPayload.betId, 'error');
-        setPendingBetPayload(null);
+          if (pendingBetPayload.isAnswerA) {
+            sendBetTeam1(betPayload)
+          } else {
+            sendBetTeam2(betPayload)
+          }
+
+          const bet = await updateBetStatus(pendingBetPayload.betId, 'confirmed')
+
+          if (bet) {
+            setConfirmedBets((prev) => {
+              const newMap = new Map(prev)
+              newMap.set(bet.marketId, bet)
+              return newMap
+            })
+          }
+
+          setPendingBetPayload(null)
+          setIsModalOpen(false)
+        } catch (error) {
+          console.error("Error confirming bet:", error)
+          toast.error("Error confirming bet. Please check your bets.")
+        }
+      }
+
+      if (txError) {
+        setTxStep('error')
+        setLoading(false)
+        
+        const errorHandling = handleTransactionError(txError, pendingBetPayload)
+        toast.error(`Transaction failed; ${errorHandling.userMessage}`)
+
+        if (pendingBetPayload && errorHandling.shouldUpdateBetStatus) {
+          await updateBetStatus(pendingBetPayload.betId, 'error');
+          setPendingBetPayload(null);
+        }
       }
     }
+
+    confirmBet()
   }, [isConfirming, isConfirmed, txError, pendingBetPayload, sendBetTeam1, sendBetTeam2, updateBetStatus])
 
   useEffect(() => {
