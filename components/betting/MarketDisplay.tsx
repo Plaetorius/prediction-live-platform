@@ -75,7 +75,9 @@ export default function MarketDisplay() {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {Array.from(markets.values()).map((market) => {
+        {Array.from(markets.values())
+          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+          .map((market) => {
           const totalAmount = (market.amountA || 0) + (market.amountB || 0)
           const progress = totalAmount > 0 ? ((market.amountA || 0) / totalAmount) * 100 : 0
 
