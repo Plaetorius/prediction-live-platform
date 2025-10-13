@@ -118,20 +118,20 @@ pub mod betting_pool {
         });
         
         // Distribute winnings
-        Self::distribute_winnings(ctx, pool_id, resolution)?;
+        distribute_winnings(ctx, pool_id, resolution)?;
         
         Ok(())
     }
 
     // Internal function to distribute winnings (automatic distribution like Solidity)
-    fn distribute_winnings(
+    pub fn distribute_winnings(
         ctx: Context<ResolvePool>,
         pool_id: u64,
         resolution: Resolution,
     ) -> Result<()> {
         let pool = &ctx.accounts.pool;
         let total_winnings = pool.total_amount_a + pool.total_amount_b;
-        let fee_amount = (total_winnings * pool.fee_percentage) / 100;
+        let fee_amount = (total_winnings * pool.fee_percentage as u64) / 100;
         let winnings_to_distribute = total_winnings - fee_amount;
         
         // Send fee to fee recipient
@@ -167,7 +167,7 @@ pub mod betting_pool {
         
         // Calculate winnings (simplified)
         let total_winnings = pool.total_amount_a + pool.total_amount_b;
-        let fee_amount = (total_winnings * pool.fee_percentage) / 100;
+        let fee_amount = (total_winnings * pool.fee_percentage as u64) / 100;
         let winnings_to_distribute = total_winnings - fee_amount;
         
         let bettor_winnings = if pool.resolution == Resolution::A {
@@ -437,13 +437,13 @@ pub struct Bet {
     pub claimed: bool,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq)]
 pub enum BetSide {
     A,
     B,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq)]
 pub enum Resolution {
     Pending,
     A,
