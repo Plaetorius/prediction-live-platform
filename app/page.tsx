@@ -1,13 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { Play, Users, LogIn, LogOut, User } from "lucide-react";
+import { Play, Users, LogIn, LogOut, User, UserIcon, Twitch } from "lucide-react";
 import { useWeb3AuthConnect, useWeb3AuthDisconnect, useWeb3AuthUser } from "@web3auth/modal/react";
 import { useAccount } from "wagmi";
 import Web3AuthAutoSync from "@/components/Web3AuthAutoSync";
 import GradientBlinds from "@/components/GradientBlinds";
 import GlassSurface from "@/components/GlassSurface";
+import { getEmbedUrl } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
 export default function Home() {
   const { connect, isConnected, connectorName, loading: connectLoading, error: connectError } = useWeb3AuthConnect();
@@ -16,25 +19,72 @@ export default function Home() {
   const { address } = useAccount();
 
   return (
-    <div className="min-h-screen relative">
-      {/* GradientBlinds Background */}
-      <div className="absolute inset-0 w-full h-full">
-        <GradientBlinds
-          gradientColors={['#FB2B37', '#000000']}
-          angle={35}
-          noise={0.25}
-          blindCount={50}
-          blindMinWidth={50}
-          spotlightRadius={0.5}
-          spotlightSoftness={1}
-          spotlightOpacity={1}
-          mouseDampening={0.15}
-          distortAmount={3}
-          shineDirection="left"
-          mixBlendMode="lighten"
-        />
-      </div>
-      
+    <main className="min-h-screen bg-brand-black-4 p-4">
+      <Web3AuthAutoSync />
+      <section className="w-full bg-brand-black-3 grid grid-cols-2 mb-4">
+        <div className="flex flex-col p-4 gap-2">
+          <div className="flex flex-row justify-between items-center">
+            <Button className="bg-brand-purple hover:bg-brand-purple-dark">
+              <Twitch strokeWidth={2.5} className="h-8 w-8" />
+              twitch / otplol_
+            </Button>
+            <div className="flex justify-center text-brand-pink">
+              <UserIcon />
+              15,653
+            </div>
+          </div>
+          <div>
+            WORLDS 2025 - T1 vs IG & TIRAGE SWISS STAGE - BO5
+          </div>
+        </div>
+        <div className="aspect-video w-full bg-black overflow-hidden">
+          <iframe
+            src={getEmbedUrl("twitch", "otplol_")}
+            width="100%"
+            height="100%"
+            frameBorder="0"
+            allowFullScreen
+            className="w-full h-full"
+            title={`Twitch stream - otplol_`}
+          />
+        </div>
+      </section>
+      <section className="w-full bg-brand-black-3 grid grid-cols-3 p-4">
+        <div className="flex flex-col h-full gap-2">
+          <Image
+            src="/categories/league-of-legends.png"
+            height={100}
+            width={250}
+            alt="League Of Legends"
+          />
+          <div>
+            League Of Legends
+          </div>
+          <div className="flex flex-row flex-wrap">
+            <Badge>
+              MOBA
+            </Badge>
+          </div>
+        </div>
+        <div className="flex items-center justify-center w-full col-span-2 p-4">
+          <div className="aspect-video w-full bg-black overflow-hidden">
+            <iframe
+              src={getEmbedUrl("twitch", "otplol_")}
+              width="100%"
+              height="100%"
+              frameBorder="0"
+              allowFullScreen
+              className="w-full h-full"
+              title={`Twitch stream - otplol_`}
+            />
+          </div>
+        </div>
+      </section>
+    </main>
+  )
+
+  return (
+    <div className="min-h-screen relative">      
       {/* Auto-sync Web3Auth users with Supabase */}
       <Web3AuthAutoSync />
       

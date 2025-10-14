@@ -1,47 +1,36 @@
 "use client"
 
 import React from 'react'
-import { Button } from './ui/button'
-import Link from 'next/link'
 import { useWeb3AuthConnect } from "@web3auth/modal/react"
-import { User, Users } from 'lucide-react'
+import { SidebarTrigger } from './ui/sidebar'
+import { Button } from './ui/button'
+import { CoinsIcon, CrownIcon, SearchIcon, UserIcon } from 'lucide-react'
 
 export default function Header() {
   const { isConnected } = useWeb3AuthConnect()
 
   return (
-    <header className="border-b bg-background px-4 py-3">
-      <nav className="flex items-center gap-4">
-        <Button variant='ghost' asChild>
-          <Link href="/">
-            Home
-          </Link>
-        </Button>
-        <Button variant='ghost' asChild>
-          <Link href="/streams">
-            Streams
-          </Link>
-        </Button>
-        {isConnected && (
-          <Button variant='ghost' asChild>
-            <Link href="/profile">
-              <User className="mr-2 h-4 w-4" />
-              My Profile
-            </Link>
+    <header className="flex justify-between items-center border-b bg-background px-4 py-3">
+      <SidebarTrigger className='h-8 w-8' />
+      <div className='flex gap-2 px-2 py-1 items-center text-brand-pink-dark rounded-xl border-2 border-brand-pink-dark w-[30%]'>
+        <SearchIcon width={20} height={20} />
+        Search...
+      </div>
+      <div>
+        {isConnected
+        ? (
+          <Button>
+            <CoinsIcon />
+            Buy Tokens
+          </Button>
+        )
+        : (
+          <Button>
+            <UserIcon />
+            Sign up
           </Button>
         )}
-        <Button variant='ghost' asChild>
-          <Link href="/profiles">
-            <Users className="mr-2 h-4 w-4" />
-            All Profiles
-          </Link>
-        </Button>
-        <Button variant='ghost' asChild>
-          <Link href="/ranking">
-            Ranking
-          </Link>
-        </Button>
-      </nav>
+      </div>
     </header>
   )
 }

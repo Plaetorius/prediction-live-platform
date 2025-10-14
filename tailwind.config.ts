@@ -12,6 +12,27 @@ export default {
   theme: {
   	extend: {
   		colors: {
+  			// Brand colors
+  			brand: {
+  				pink: {
+  					DEFAULT: '#F40755',
+  					dark: '#A10539'
+  				},
+  				black: {
+  					DEFAULT: '#101010',
+  					'2': '#2C2929',
+  					'3': '#242424',
+  					'4': '#323232',
+  					'5': '#353535'
+  				},
+  				cyan: '#169AA4',
+  				purple: {
+  					DEFAULT: '#9247FF',
+  					dark: '#6B2FCC'
+  				},
+  				white: '#F5F5F5'
+  			},
+  			// Theme colors (using your brand colors)
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
   			card: {

@@ -19,11 +19,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className="dark" suppressHydrationWarning>
       <head>
         {/* <script src="http://localhost:8097"></script> */}
       </head>
-      <body>
+      <body suppressHydrationWarning>
         <Providers>
           <Header />
           {children}

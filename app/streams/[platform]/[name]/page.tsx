@@ -11,6 +11,7 @@ import { MarketWithAmounts } from '@/lib/types'
 import MarketDisplay from '../../../../components/betting/MarketDisplay'
 import { selectOpenMarkets } from '@/lib/markets/selectClient'
 import { useBetting } from '@/providers/BettingProvider'
+import { getEmbedUrl } from '@/lib/utils'
 
 export default function StreamPage() {
   const [loading, setLoading] = useState<boolean>(false)
@@ -38,9 +39,9 @@ export default function StreamPage() {
       <main className='p-4'>
         <div className='mb-6'>
           <Button asChild variant="outline">
-            <Link href="/streams">
+            <Link href="/">
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Streams
+              Back home
             </Link>
           </Button>
         </div>
@@ -50,36 +51,11 @@ export default function StreamPage() {
       </main>
     )
 
-  const getEmbedUrl = (platform: string, streamName: string) => {
-    // Get hostname safely (only in browser)
-    const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
-    
-    switch (platform.toLowerCase()) {
-      case 'twitch':
-        return `https://player.twitch.tv/?channel=${streamName}&parent=${hostname}`
-      case 'youtube':
-        return `https://www.youtube.com/embed/${streamName}`
-      case 'kick':
-        return `https://player.kick.com/${streamName}`
-      default:
-        return `https://player.twitch.tv/?channel=${streamName}&parent=${hostname}`
-    }
-  }
-
   if (loading)
     return <Loading />
 
   return (
-    <main className='p-4'>
-      <div className='mb-6'>
-        <Button asChild variant="outline">
-          <Link href="/streams">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Streams
-          </Link>
-        </Button>
-      </div>
-      
+    <main className='p-4'>      
       <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
         {/* Stream Video */}
         <div className='lg:col-span-2'>
