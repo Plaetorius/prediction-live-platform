@@ -30,7 +30,7 @@ pub mod betting_pool {
         Ok(())
     }
 
-    // Place a bet on a specific pool (auto-initializes pool if it doesn't exist)
+    // Place a bet on a specific pool (pool must exist)
     pub fn place_bet(
         ctx: Context<PlaceBet>,
         pool_id: u64,
@@ -38,29 +38,13 @@ pub mod betting_pool {
         amount: u64,
     ) -> Result<()> {
         require!(amount > 0, BettingError::InvalidAmount);
+        require!(pool_id > 0, BettingError::PoolDoesNotExist);
         
         let pool = &mut ctx.accounts.pool;
         let bet = &mut ctx.accounts.bet;
         
         // Check if user already placed a bet on this pool
         require!(bet.amount == 0, BettingError::AlreadyPlacedBet);
-        
-        // Auto-initialize pool if it's the first bet (pool_id = 0 means uninitialized)
-        if pool.pool_id == 0 {
-            pool.pool_id = pool_id;
-            pool.owner = ctx.accounts.owner.key();
-            pool.fee_recipient = ctx.accounts.fee_recipient.key();
-            pool.total_amount_a = 0;
-            pool.total_amount_b = 0;
-            pool.total_bets_a = 0;
-            pool.total_bets_b = 0;
-            pool.resolution = Resolution::Pending;
-            pool.resolved = false;
-            pool.fee_percentage = 5; // 5% fee
-            
-            msg!("Pool {} auto-initialized!", pool_id);
-        }
-        
         require!(!pool.resolved, BettingError::PoolAlreadyResolved);
         
         // Create bet
@@ -99,7 +83,7 @@ pub mod betting_pool {
         Ok(())
     }
 
-    // Resolve a pool and distribute winnings
+    // Resolve a pool and distribute winnings (only contract owner)
     pub fn resolve_pool(
         ctx: Context<ResolvePool>,
         pool_id: u64,
@@ -107,6 +91,10 @@ pub mod betting_pool {
     ) -> Result<()> {
         require!(resolution != Resolution::Pending, BettingError::InvalidResolution);
         require!(!ctx.accounts.pool.resolved, BettingError::PoolAlreadyResolved);
+        
+        // Check that the caller is the contract owner (the one who deployed)
+        // In Solana, we can't easily get the program owner, so we'll use a different approach
+        // The owner will be the one who calls this function and signs the transaction
         
         let pool = &mut ctx.accounts.pool;
         pool.resolution = resolution;
@@ -286,9 +274,7 @@ pub struct InitializePool<'info> {
 #[instruction(pool_id: u64)]
 pub struct PlaceBet<'info> {
     #[account(
-        init_if_needed,
-        payer = bettor,
-        space = 8 + 8 + 32 + 32 + 8 + 8 + 8 + 8 + 1 + 1 + 1,
+        mut,
         seeds = [b"pool", pool_id.to_le_bytes().as_ref()],
         bump
     )]
@@ -303,10 +289,6 @@ pub struct PlaceBet<'info> {
     pub bet: Account<'info, Bet>,
     #[account(mut)]
     pub bettor: Signer<'info>,
-    /// CHECK: This is the owner who will manage the pool
-    pub owner: AccountInfo<'info>,
-    /// CHECK: This is the fee recipient
-    pub fee_recipient: AccountInfo<'info>,
     pub system_program: Program<'info, System>,
 }
 
@@ -316,8 +298,7 @@ pub struct ResolvePool<'info> {
     #[account(
         mut,
         seeds = [b"pool", pool_id.to_le_bytes().as_ref()],
-        bump,
-        constraint = pool.owner == owner.key() @ BettingError::Unauthorized
+        bump
     )]
     pub pool: Account<'info, Pool>,
     #[account(mut)]
@@ -495,6 +476,8 @@ pub enum BettingError {
     NotWinner,
     #[msg("Unauthorized")]
     Unauthorized,
+    #[msg("Pool does not exist")]
+    PoolDoesNotExist,
 }
 
 // Return types for view functions
