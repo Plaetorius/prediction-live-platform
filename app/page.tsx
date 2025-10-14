@@ -20,7 +20,6 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-brand-black-4 p-4">
-      <Web3AuthAutoSync />
       <section className="w-full bg-brand-black-3 grid grid-cols-2 mb-4">
         <div className="flex flex-col p-4 gap-2">
           <div className="flex flex-row justify-between items-center">
