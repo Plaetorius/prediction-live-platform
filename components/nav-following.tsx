@@ -49,12 +49,13 @@ export function NavFollowing({
             <SidebarMenuButton 
               tooltip={item.name}
               onClick={() => window.location.href = item.url}
+              className="group-data-[collapsible=icon]:!p-0 group-data-[collapsible=icon]:!justify-center"
             >
               <Image
                 src={item.image.url}
                 width={24}
                 height={24}
-                className={`rounded-full ${item.online ? '' : 'grayscale'}`}
+                className={`rounded-full ${item.online ? '' : 'grayscale'} group-data-[collapsible=icon]:!size-6 group-data-[collapsible=icon]:!flex-shrink-0 group-data-[collapsible=icon]:!object-cover`}
                 style={{boxShadow: item.online ? 'inset 0 0 0 2px white' : ''}}
                 alt={item.image.alt}
               />
