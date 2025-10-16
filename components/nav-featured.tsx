@@ -6,6 +6,7 @@ import {
   MoreHorizontalIcon,
   ShareIcon,
 } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 import {
   DropdownMenu,
@@ -39,6 +40,7 @@ export function NavFeatured({
 }) {
   const { isMobile, state } = useSidebar()
   const isCollapsed = state === "collapsed"
+  const router = useRouter()
 
   return (
     <SidebarGroup className="border-t border-brand-pink-dark">
@@ -48,7 +50,7 @@ export function NavFeatured({
           <SidebarMenuItem key={item.name}>
             <SidebarMenuButton 
               tooltip={item.name}
-              onClick={() => window.location.href = item.url}
+              onClick={() => router.push(item.url)}
               className="group-data-[collapsible=icon]:!p-0 group-data-[collapsible=icon]:!justify-center"
             >
               <Image
