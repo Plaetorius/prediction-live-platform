@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import { Stream } from '@/lib/types'
 import { createSupabaseClient } from '@/lib/supabase/client'
+import { useBatchPlatformStatus } from '@/hooks/usePlatformStatus'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { TicketPlus } from 'lucide-react'
@@ -12,10 +13,26 @@ import { Badge } from '@/components/ui/badge'
 import Loading from '@/components/Loading'
 
 
+
+// Using PlatformStatus from lib/platformStatus.ts
+
 export default function Streams() {
-  const [loading, setLoading] = useState<boolean>(false)
+  const [loading, setLoading] = useState<boolean>(true) // Start with true to prevent flash
   const [streams, setStreams] = useState<Stream[]>([])
-  const [statuses, setStatuses] = useState<Record<string, { live: boolean; game?: string }>>({})
+  const [streamsLoaded, setStreamsLoaded] = useState<boolean>(false)
+
+  // Use the hook to automatically fetch and refresh statuses
+  const { statuses, loading: statusLoading, error: statusError } = useBatchPlatformStatus(
+    streams.filter(stream => stream !== null).map(stream => ({
+      id: stream.id,
+      platform: stream.platform,
+      name: stream.name
+    })),
+    { 
+      refreshInterval: 30000, // Refresh every 30 seconds
+      enabled: streamsLoaded && streams.length > 0 
+    }
+  )
 
   useEffect(() => {
     async function getStreams() {
@@ -43,122 +60,12 @@ export default function Streams() {
         }
       }).filter((stream): stream is Stream => stream !== null)
       setStreams(mapped)
+      setStreamsLoaded(true)
       setLoading(false)
-
-      // Fetch live statuses after we have streams
-      fetchStatuses(mapped)
     }
     getStreams()
   }, [])
 
-  async function fetchStatuses(items: Stream[]) {
-    const results: Record<string, { live: boolean; game?: string }> = {}
-
-    // Environment for Twitch API
-    const twitchClientId = process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID
-    const twitchToken = process.env.NEXT_PUBLIC_TWITCH_TOKEN
-
-    // Environment for Kick API
-    const kickToken = process.env.NEXT_PUBLIC_KICK_TOKEN
-
-    await Promise.all(items.map(async (s) => {
-      if (!s) return
-      try {
-        if (s.platform.toLowerCase() === 'twitch' && twitchClientId && twitchToken) {
-          // Check live status
-          const res = await fetch(`https://api.twitch.tv/helix/streams?user_login=${encodeURIComponent(s.name)}`, {
-            headers: {
-              'Client-Id': twitchClientId,
-              'Authorization': `Bearer ${twitchToken}`,
-            },
-            cache: 'no-store',
-          })
-          if (!res.ok) throw new Error(`Twitch status HTTP ${res.status}`)
-          const json = await res.json() as { data: Array<{ type: string; game_id?: string }> }
-          const liveEntry = json.data?.[0]
-          if (liveEntry && liveEntry.type === 'live') {
-            let gameName: string | undefined
-            if (liveEntry.game_id) {
-              const g = await fetch(`https://api.twitch.tv/helix/games?id=${liveEntry.game_id}`, {
-                headers: {
-                  'Client-Id': twitchClientId,
-                  'Authorization': `Bearer ${twitchToken}`,
-                },
-                cache: 'no-store',
-              })
-              if (g.ok) {
-                const gJson = await g.json() as { data: Array<{ name: string }> }
-                gameName = gJson.data?.[0]?.name
-              }
-            }
-            results[s.id] = { live: true, game: gameName }
-          } else {
-            results[s.id] = { live: false }
-          }
-        } else if (s.platform.toLowerCase() === 'kick' && kickToken) {
-          // Check Kick.com live status
-          try {
-            // Get user_id from username
-            const userRes = await fetch(`https://api.kick.com/public/v1/channels?slug=${encodeURIComponent(s.name)}`, {
-              headers: {
-                'Accept': 'application/json',
-                'Authorization': `Bearer ${kickToken}`,
-              },
-              cache: 'no-store',
-            })
-
-            if (!userRes.ok) {
-              results[s.id] = { live: false }
-              return
-            }
-
-            const userData = await userRes.json()
-            const userId = userData.data?.[0]?.broadcaster_user_id
-
-            if (!userId) {
-              results[s.id] = { live: false }
-              return
-            }
-
-            // Check livestream status
-            const streamRes = await fetch(`https://api.kick.com/public/v1/livestreams?broadcaster_user_id=${userId}`, {
-              headers: {
-                'Accept': 'application/json',
-                'Authorization': `Bearer ${kickToken}`,
-              },
-              cache: 'no-store',
-            })
-
-            if (!streamRes.ok) {
-              results[s.id] = { live: false }
-              return
-            }
-
-            const streamData = await streamRes.json()
-            const livestream = streamData.data?.[0]
-
-            if (livestream) {
-              const gameName = livestream.category?.name
-              results[s.id] = { live: true, game: gameName }
-            } else {
-              results[s.id] = { live: false }
-            }
-          } catch (e) {
-            console.error('Kick status fetch error for', s.name, e)
-            results[s.id] = { live: false }
-          }
-        } else {
-          // Other platforms not yet implemented -> default offline
-          results[s.id] = { live: false }
-        }
-      } catch (e) {
-        console.error('Status fetch error for', s.platform, s.name, e)
-        results[s.id] = { live: false }
-      }
-    }))
-
-    setStatuses(results)
-  }
 
   if (loading)
     return <Loading />
@@ -169,6 +76,11 @@ export default function Streams() {
         <h2>
           Streams
         </h2>
+        {statusLoading && (
+          <Badge variant="outline" className="animate-pulse text-xs">
+            Refreshing...
+          </Badge>
+        )}
         <Button asChild variant="default" className='size-8'>
           <Link href="/streams/create">
             <TicketPlus />
@@ -197,8 +109,10 @@ export default function Streams() {
                       Offline
                     </Badge>
                   )
+                ) : statusLoading ? (
+                  <Badge variant='outline' className="animate-pulse">Checking status...</Badge>
                 ) : (
-                  <Badge variant='outline'>Checking status...</Badge>
+                  <Badge variant='outline'>Loading...</Badge>
                 )}
               </CardContent>
               <CardFooter>
