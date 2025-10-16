@@ -11,6 +11,7 @@ import GradientBlinds from "@/components/GradientBlinds";
 import GlassSurface from "@/components/GlassSurface";
 import { getEmbedUrl } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import StreamHorizontalGallery from "@/components/StreamHorizontalGallery";
 
 export default function Home() {
   const { connect, isConnected, connectorName, loading: connectLoading, error: connectError } = useWeb3AuthConnect();
@@ -18,37 +19,101 @@ export default function Home() {
   const { userInfo } = useWeb3AuthUser();
   const { address } = useAccount();
 
+  const topPlayers = [
+    {
+      name: "Plaetorius",
+      picture_url: "https://avatars.githubusercontent.com/u/46137705?v=4",
+      amount: 25367,
+    },
+    {
+      name: "Plaetorius",
+      picture_url: "https://avatars.githubusercontent.com/u/46137705?v=4",
+      amount: 25367,
+    },
+    {
+      name: "Plaetorius",
+      picture_url: "https://avatars.githubusercontent.com/u/46137705?v=4",
+      amount: 25367,
+    },
+    {
+      name: "Plaetorius",
+      picture_url: "https://avatars.githubusercontent.com/u/46137705?v=4",
+      amount: 25367,
+    },
+    {
+      name: "Plaetorius",
+      picture_url: "https://avatars.githubusercontent.com/u/46137705?v=4",
+      amount: 25367,
+    },
+    {
+      name: "Plaetorius",
+      picture_url: "https://avatars.githubusercontent.com/u/46137705?v=4",
+      amount: 25367,
+    },
+    {
+      name: "Plaetorius",
+      picture_url: "https://avatars.githubusercontent.com/u/46137705?v=4",
+      amount: 25367,
+    },
+    {
+      name: "Plaetorius",
+      picture_url: "https://avatars.githubusercontent.com/u/46137705?v=4",
+      amount: 25367,
+    },
+    {
+      name: "Plaetorius",
+      picture_url: "https://avatars.githubusercontent.com/u/46137705?v=4",
+      amount: 25367,
+    },
+    {
+      name: "Plaetorius",
+      picture_url: "https://avatars.githubusercontent.com/u/46137705?v=4",
+      amount: 25367,
+    },
+  ]
+
+  const sampleStreams = [
+    {
+      id: "1",
+      platform: "twitch",
+      name: "otplol_",
+      viewers: 15653,
+      title: "League of Legends - Ranked Games"
+    },
+    {
+      id: "2", 
+      platform: "twitch",
+      name: "faker",
+      viewers: 45230,
+      title: "T1 vs Gen.G - LCK Spring"
+    },
+    {
+      id: "3",
+      platform: "twitch", 
+      name: "caps",
+      viewers: 12890,
+      title: "G2 Esports - LEC Practice"
+    },
+    {
+      id: "4",
+      platform: "twitch",
+      name: "doublelift",
+      viewers: 8750,
+      title: "100 Thieves - LCS Analysis"
+    },
+    {
+      id: "5",
+      platform: "twitch",
+      name: "bjergsen",
+      viewers: 12340,
+      title: "TSM - Team Practice Session"
+    }
+  ]
+
   return (
-    <main className="min-h-screen bg-brand-black-4 p-4">
-      <section className="w-full bg-brand-black-3 grid grid-cols-2 mb-4">
-        <div className="flex flex-col p-4 gap-2">
-          <div className="flex flex-row justify-between items-center">
-            <Button className="bg-brand-purple hover:bg-brand-purple-dark">
-              <Twitch strokeWidth={2.5} className="h-8 w-8" />
-              twitch / otplol_
-            </Button>
-            <div className="flex justify-center text-brand-pink">
-              <UserIcon />
-              15,653
-            </div>
-          </div>
-          <div>
-            WORLDS 2025 - T1 vs IG & TIRAGE SWISS STAGE - BO5
-          </div>
-        </div>
-        <div className="aspect-video w-full bg-black overflow-hidden">
-          <iframe
-            src={getEmbedUrl("twitch", "otplol_")}
-            width="100%"
-            height="100%"
-            frameBorder="0"
-            allowFullScreen
-            className="w-full h-full"
-            title={`Twitch stream - otplol_`}
-          />
-        </div>
-      </section>
-      <section className="w-full bg-brand-black-3 grid grid-cols-3 p-4">
+    <main className="min-h-screen bg-brand-black-4 p-2">
+      <section className="w-full bg-brand-black-3 grid grid-cols-4 p-4 gap-4">
+        {/* Category info section - col-span-1 */}
         <div className="flex flex-col h-full gap-2">
           <Image
             src="/categories/league-of-legends.png"
@@ -56,27 +121,25 @@ export default function Home() {
             width={250}
             alt="League Of Legends"
           />
-          <div>
+          <h5 className="font-semibold text-white">
             League Of Legends
-          </div>
-          <div className="flex flex-row flex-wrap">
-            <Badge>
+          </h5>
+          <div className="flex flex-row flex-wrap gap-1">
+            <Badge className="bg-brand-purple text-white">
               MOBA
+            </Badge>
+            <Badge className="bg-brand-pink text-white">
+              Strategy
+            </Badge>
+            <Badge className="bg-blue-600 text-white">
+              Competitive
             </Badge>
           </div>
         </div>
-        <div className="flex items-center justify-center w-full col-span-2 p-4">
-          <div className="aspect-video w-full bg-black overflow-hidden">
-            <iframe
-              src={getEmbedUrl("twitch", "otplol_")}
-              width="100%"
-              height="100%"
-              frameBorder="0"
-              allowFullScreen
-              className="w-full h-full"
-              title={`Twitch stream - otplol_`}
-            />
-          </div>
+        
+        {/* Streams gallery section - col-span-3 */}
+        <div className="col-span-3">
+          <StreamHorizontalGallery streams={sampleStreams} />
         </div>
       </section>
     </main>
