@@ -7,7 +7,7 @@ import { Button } from './ui/button'
 import { CoinsIcon, CrownIcon, SearchIcon, UserIcon } from 'lucide-react'
 
 export default function Header() {
-  const { isConnected } = useWeb3AuthConnect()
+  const { connect, isConnected, connectorName, loading: connectLoading, error: connectError } = useWeb3AuthConnect()
 
   return (
     <header className="flex justify-between items-center border-b bg-background px-4 py-3">
@@ -25,10 +25,7 @@ export default function Header() {
           </Button>
         )
         : (
-          <Button>
-            <UserIcon />
-            Sign up
-          </Button>
+          <></>
         )}
       </div>
     </header>

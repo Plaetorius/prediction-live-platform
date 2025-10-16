@@ -3,9 +3,11 @@
 import {
   BellIcon,
   CreditCardIcon,
+  LogInIcon,
   LogOutIcon,
   MoreVerticalIcon,
   UserCircleIcon,
+  UserIcon,
 } from "lucide-react"
 
 import {
@@ -28,6 +30,9 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
+import { useWeb3AuthConnect, useWeb3AuthDisconnect } from "@web3auth/modal/react"
+import { Button } from "./ui/button"
+import { useProfile } from "@/providers/ProfileProvider"
 
 export function NavUser({
   user,
@@ -39,6 +44,21 @@ export function NavUser({
   }
 }) {
   const { isMobile } = useSidebar()
+  const { disconnect, loading: disconnectLoading, error: disconnectError } = useWeb3AuthDisconnect();
+  const { profile } = useProfile()
+  const { connect, isConnected } = useWeb3AuthConnect()
+
+  if (!profile || !isConnected)
+    return (
+      <SidebarMenuButton
+        tooltip="Connect"
+        onClick={() => connect()}
+        className="group-data-[collapsible=icon]:!p-0 group-data-[collapsible=icon]:!justify-center flex justify-center items-center bg-brand-pink hover:bg-brand-pink-dark"
+      >
+        <UserIcon />
+        <span className="group-data-[collapsible=icon]:hidden">Connect</span>
+        </SidebarMenuButton>
+    )
 
   return (
     <SidebarMenu>
@@ -50,8 +70,8 @@ export function NavUser({
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <Avatar className="h-8 w-8 rounded-lg grayscale">
-                <AvatarImage src={user.avatar} alt={user.name} />
-                <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                <AvatarImage src={profile?.pictureUrl} alt={user.name} />
+                <AvatarFallback className="rounded-lg">PL</AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{user.name}</span>
@@ -88,19 +108,38 @@ export function NavUser({
                 <UserCircleIcon />
                 Account
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              {/* <DropdownMenuItem>
                 <CreditCardIcon />
                 Billing
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <BellIcon />
                 Notifications
-              </DropdownMenuItem>
+              </DropdownMenuItem> */}
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem>
-              <LogOutIcon />
-              Log out
+              <Button
+                onClick={() => disconnect()}
+                variant='ghost'
+                className="p-0 m-0 h-fit w-fit font-normal"
+                disabled={disconnectLoading}
+              >
+                {disconnectLoading
+                  ? (
+                    <>
+                      Disconnecting
+                    </>
+                  )
+                  : (
+                    <>
+                      <LogOutIcon />
+                      Log out
+                    </>
+                  )
+
+                }
+              </Button>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
