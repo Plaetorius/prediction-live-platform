@@ -46,7 +46,7 @@ export default function StreamPage() {
       setLoading(true)
       const marketsArray = await selectOpenMarkets(streamId) || []
       const marketsMap = new Map<string, MarketWithAmounts>()
-      marketsMap.forEach(market => {
+      marketsArray.forEach(market => {
         marketsMap.set(market.id, market)
       })
 
