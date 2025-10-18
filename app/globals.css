@@ -2,80 +2,65 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    --background: 0 0% 0%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 8%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 8%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 84% 60%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 15%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 70%;
-    --accent: 0 0% 15%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 15%;
-    --input: 0 0% 15%;
-    --ring: 0 84% 60%;
-    --chart-1: 0 84% 60%;
-    --chart-2: 0 84% 60%;
-    --chart-3: 0 84% 60%;
-    --chart-4: 0 84% 60%;
-    --chart-5: 0 84% 60%;
-    --radius: 0.5rem;
-    --sidebar-background: 0 0% 8%;
-    --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 0 84% 60%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 0 0% 15%;
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 0 0% 15%;
-    --sidebar-ring: 0 84% 60%;
-  }
-  .dark {
-    --background: 0 0% 0%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 8%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 8%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 84% 60%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 15%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 70%;
-    --accent: 0 0% 15%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 15%;
-    --input: 0 0% 15%;
-    --ring: 0 84% 60%;
-    --chart-1: 0 84% 60%;
-    --chart-2: 0 84% 60%;
-    --chart-3: 0 84% 60%;
-    --chart-4: 0 84% 60%;
-    --chart-5: 0 84% 60%;
-    --sidebar-background: 0 0% 8%;
-    --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 0 84% 60%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 0 0% 15%;
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 0 0% 15%;
-    --sidebar-ring: 0 84% 60%;
-  }
+:root {
+  --radius: 0.625rem;
+  
+  /* Brand colors - using HSL for better CSS variable support */
+  --brand-pink: 340 95% 49%;
+  --brand-pink-dark: 340 95% 32%;
+  --brand-black: 0 0% 6%;
+  --brand-black-2: 0 0% 14%;
+  --brand-black-3: 0 0% 17%;
+  --brand-black-4: 0 0% 20%;
+  --brand-black-5: 0 0% 21%;
+  --brand-black-6: 0 0% 9%;
+  --brand-cyan: 185 30% 40%;
+  --brand-purple: 270 100% 60%;
+  --brand-purple-dark: 270 100% 45%; /* Fixed: darker purple for hover states */
+  --brand-white: 0 0% 96%;
+  
+  /* Theme colors - single source of truth */
+  --background: var(--brand-black);
+  --foreground: var(--brand-white);
+  --card: var(--brand-black-3);
+  --card-foreground: var(--brand-white);
+  --popover: var(--brand-black);
+  --popover-foreground: var(--brand-white);
+  --primary: var(--brand-pink);
+  --primary-foreground: var(--brand-white);
+  --secondary: var(--brand-black-4);
+  --secondary-foreground: var(--brand-white);
+  --muted: var(--brand-black-2);
+  --muted-foreground: var(--brand-white);
+  --accent: var(--brand-black-4);
+  --accent-foreground: var(--brand-white);
+  --destructive: var(--brand-pink);
+  --destructive-foreground: var(--brand-white);
+  --border: var(--brand-black-4);
+  --input: var(--brand-black-4);
+  --ring: var(--brand-pink);
+  
+  /* Chart colors */
+  --chart-1: var(--brand-pink);
+  --chart-2: var(--brand-cyan);
+  --chart-3: var(--brand-purple);
+  --chart-4: var(--brand-pink-dark);
+  --chart-5: var(--brand-black-5);
+  
+  /* Sidebar colors */
+  --sidebar-background: var(--brand-black);
+  --sidebar-foreground: var(--brand-white);
+  --sidebar-primary: var(--brand-pink);
+  --sidebar-primary-foreground: var(--brand-white);
+  --sidebar-accent: var(--brand-black-4);
+  --sidebar-accent-foreground: var(--brand-white);
+  --sidebar-border: var(--brand-black-4);
+  --sidebar-ring: var(--brand-pink);
 }
 
 @layer base {
   * {
+    @apply border-border;
     @apply border-border;
   }
   body {
@@ -83,7 +68,68 @@
   }
 }
 
-/* Custom styles for PREDICTION.LIVE branding - Alpha Style */
+/* Sidebar styling */
+[data-sidebar="sidebar"] {
+  background-color: hsl(var(--sidebar-background)) !important;
+  color: hsl(var(--sidebar-foreground)) !important;
+  border: none !important;
+}
+
+[data-sidebar="menu-button"] {
+  color: hsl(var(--sidebar-foreground)) !important;
+}
+
+/* Dropdown/popover styling */
+[data-radix-dropdown-menu-content],
+[data-radix-dropdown-menu-sub-content] {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Remove all borders */
+[data-sidebar="sidebar"],
+[data-sidebar="sidebar"] *,
+.border-l,
+.border-r,
+.border-t,
+.border-b,
+.border {
+  border: none !important;
+}
+
+/* Sidebar styling */
+[data-sidebar="sidebar"] {
+  background-color: hsl(var(--sidebar-background)) !important;
+  color: hsl(var(--sidebar-foreground)) !important;
+  border: none !important;
+}
+
+[data-sidebar="menu-button"] {
+  color: hsl(var(--sidebar-foreground)) !important;
+}
+
+/* Dropdown/popover styling */
+[data-radix-dropdown-menu-content],
+[data-radix-dropdown-menu-sub-content] {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Remove all borders */
+[data-sidebar="sidebar"],
+[data-sidebar="sidebar"] *,
+.border-l,
+.border-r,
+.border-t,
+.border-b,
+.border {
+  border: none !important;
+}
+
 .brand-text {
   font-family: var(--font-geist-sans);
   font-weight: 900;
@@ -118,12 +164,25 @@
   opacity: 0.6;
 }
 
-/* Force dark theme globally */
-html {
-  color-scheme: dark;
+* Custom scrollbar styles for horizontal galleries */
+.scrollbar-thin {
+  scrollbar-width: thin;
 }
 
-body {
-  background-color: #000000;
-  color: #ffffff;
+.scrollbar-thin::-webkit-scrollbar {
+  height: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: hsl(var(--brand-black-2));
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: hsl(var(--brand-purple));
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--brand-purple-dark));
 }

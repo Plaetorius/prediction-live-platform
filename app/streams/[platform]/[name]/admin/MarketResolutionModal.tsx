@@ -23,9 +23,10 @@ export default function MarketResolutionModal({ market }: MarketResolutionModalP
   const [loading, setLoading] = useState<boolean>(false)
   const [txStep, setTxStep] = useState<'idle' | 'sending' | 'confirming' | 'success'>('idle')
   const [pendingResolution, setPendingResolution] = useState<boolean | null>(null)
-
+  
   const { sendResult } = useResult()
-  const { address, isConnected, chainId } = useAccount()
+
+  const { isConnected, chainId } = useAccount()
   const { writeContract, data: hash, error, isPending } = useWriteContract()
   const { switchChain } = useSwitchChain()
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
@@ -107,7 +108,7 @@ export default function MarketResolutionModal({ market }: MarketResolutionModalP
   const updateMarketResolution = async (marketId: string, isAnswerA: boolean) => {
     const supabase = createSupabaseClient()
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('markets')
         .update({
           is_answer_a: isAnswerA,
@@ -153,8 +154,9 @@ export default function MarketResolutionModal({ market }: MarketResolutionModalP
             className={txStep === 'sending' || txStep === 'confirming' ? 'opacity-50' : ''}
           >
             {txStep === 'sending' ? 'Sending...' : 
-             txStep === 'confirming' ? 'Confirming...' : 
-             market.answerA}
+              txStep === 'confirming' ? 'Confirming...' : 
+              market.answerA
+            }
           </Button>
           <Button 
             onClick={() => handleResolution(market.id, false)} 
@@ -162,8 +164,9 @@ export default function MarketResolutionModal({ market }: MarketResolutionModalP
             className={txStep === 'sending' || txStep === 'confirming' ? 'opacity-50' : ''}
           >
             {txStep === 'sending' ? 'Sending...' : 
-             txStep === 'confirming' ? 'Confirming...' : 
-             market.answerB}
+              txStep === 'confirming' ? 'Confirming...' : 
+              market.answerB
+            }
           </Button>
         </div>
       </DialogContent>

@@ -2,8 +2,6 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Providers from "@/components/Providers";
 import Header from "@/components/Header";
-import { GeistSans } from "geist/font/sans";
-import { GeistMono } from "geist/font/mono";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -11,7 +9,7 @@ const defaultUrl = process.env.VERCEL_URL
 
 export const metadata: Metadata = {
   metadataBase: new URL(defaultUrl),
-  title: "Prediction.live",
+  title: "Prediction.Live",
   description: "Don't watch e-sport. Predict it.",
 };
 
@@ -21,11 +19,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className="dark">
+    <html lang="en" className="dark" suppressHydrationWarning>
       <head>
         {/* <script src="http://localhost:8097"></script> */}
       </head>
-      <body className={`${GeistSans.variable} ${GeistMono.variable} dark bg-black text-white`}>
+      <body suppressHydrationWarning>
         <Providers>
           <Header />
           {children}

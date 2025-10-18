@@ -5,6 +5,7 @@ import { Market } from '@/lib/types'
 import React, { useEffect, useState } from 'react'
 import BetFormModal from './BetFormModal'
 import { useBetting } from '@/providers/BettingProvider'
+import { Badge } from '../ui/badge'
 
 // Timer component for individual market countdown
 function MarketTimer({ 
@@ -38,14 +39,13 @@ function MarketTimer({
   const formatTime = (value: number) => value.toString().padStart(2, '0')
 
   return (
-    <div className="text-sm text-muted-foreground">
+    <Badge className="text-sm text-muted-foreground">
       <span className="font-mono">
         {timeRemaining.days > 0 && `${timeRemaining.days}d `}
-        {formatTime(timeRemaining.hours)}:
         {formatTime(timeRemaining.minutes)}:
         {formatTime(timeRemaining.seconds)}
       </span>
-    </div>
+    </Badge>
   )
 }
 
@@ -68,42 +68,45 @@ export default function MarketDisplay() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>
-          Predictions
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {Array.from(markets.values()).map((market) => {
-          const totalAmount = (market.amountA || 0) + (market.amountB || 0)
-          const progress = totalAmount > 0 ? ((market.amountA || 0) / totalAmount) * 100 : 0
+    <div className='p-4'>
+      {Array.from(markets.values()).map((market) => {
+        const totalAmount = (market.amountA || 0) + (market.amountB || 0)
+        const progress = totalAmount > 0 ? ((market.amountA || 0) / totalAmount) * 100 : 0
 
-          return (
-            <Card key={market.id} className="mb-4">
-              <CardHeader>
-                <CardTitle>
-                  {market.question}
-                </CardTitle>
-                <CardDescription>
-                  <MarketTimer
-                    market={market}
-                    onExpire={() => removeMarket(market.id)}
-                  />
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className='flex flex-row gap-2 justify-center items-center'>
+        return (
+          <Card key={market.id} className="bg-brand-black mb-4">
+            <CardHeader>
+              <CardTitle className='flex justify-center items-center gap-2'>
+                {market.question}
+                <MarketTimer
+                  market={market}
+                  onExpire={() => removeMarket(market.id)}
+                />
+              </CardTitle>
+              <CardDescription>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className='flex flex-col gap-2 justify-center items-center'>
+                {totalAmount > 0
+                  ? (
+
+                    <Progress 
+                    className="w-full bg-brand-cyan"
+                    value={progress}
+                    />
+                  )
+                  : (
+                    <></>
+                  ) 
+                } 
+                <div className='flex items-center justify-center gap-3 w-full'>
                   <BetFormModal 
                     isModalOpen={getModalState(market.id, true)}
                     setIsModalOpen={(isOpen) => setModalState(market.id, true, isOpen)}
                     marketId={market.id}
                     isAnswerA={true}
                     teamName={market.answerA}
-                  />
-                  <Progress 
-                    className='w-[60%]'
-                    value={progress}
                   />
                   <BetFormModal
                     isModalOpen={getModalState(market.id, false)}
@@ -113,11 +116,11 @@ export default function MarketDisplay() {
                     teamName={market.answerB}
                   />
                 </div>
-              </CardContent>
-            </Card>
-          )
-        })}
-      </CardContent>
-    </Card>
+              </div>
+            </CardContent>
+          </Card>
+        )
+      })}
+    </div>
   )
 }

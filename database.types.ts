@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           amount: number
           created_at: string
+          exit_amount: number | null
           id: string
           is_answer_a: boolean
           market_id: string | null
@@ -28,6 +29,7 @@ export type Database = {
         Insert: {
           amount?: number
           created_at?: string
+          exit_amount?: number | null
           id?: string
           is_answer_a: boolean
           market_id?: string | null
@@ -38,6 +40,7 @@ export type Database = {
         Update: {
           amount?: number
           created_at?: string
+          exit_amount?: number | null
           id?: string
           is_answer_a?: boolean
           market_id?: string | null
@@ -224,6 +227,39 @@ export type Database = {
           xp?: number | null
         }
         Relationships: []
+      }
+      stream_follows: {
+        Row: {
+          created_at: string | null
+          profile_id: string
+          stream_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          profile_id: string
+          stream_id: string
+        }
+        Update: {
+          created_at?: string | null
+          profile_id?: string
+          stream_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stream_follows_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stream_follows_stream_id_fkey"
+            columns: ["stream_id"]
+            isOneToOne: false
+            referencedRelation: "streams"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       streams: {
         Row: {

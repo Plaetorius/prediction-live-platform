@@ -243,7 +243,7 @@ export default function BetFormModal({
   return (
     <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
       <DialogTrigger asChild>
-        <Button variant='default'>
+        <Button variant='default' className={`w-full ${isAnswerA ? "bg-brand-pink" : "bg-brand-cyan" }`}>
           {teamName}
         </Button>
       </DialogTrigger>

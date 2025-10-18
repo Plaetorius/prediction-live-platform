@@ -18,3 +18,19 @@ export function formatBalance(balanceData: BalanceResult) {
     balanceData?.decimals ? balanceData.decimals : 1,
   )
 }
+
+export function getEmbedUrl(platform: string, streamName: string) {
+  // Get hostname safely (only in browser)
+  const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
+  
+  switch (platform.toLowerCase()) {
+    case 'twitch':
+      return `https://player.twitch.tv/?channel=${streamName}&parent=${hostname}`
+    case 'youtube':
+      return `https://www.youtube.com/embed/${streamName}`
+    case 'kick':
+      return `https://player.kick.com/${streamName}`
+    default:
+      return `https://player.twitch.tv/?channel=${streamName}&parent=${hostname}`
+  }
+}
