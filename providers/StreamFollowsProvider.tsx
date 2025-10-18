@@ -98,7 +98,7 @@ export function StreamFollowsProvider({ children }: { children: ReactNode }) {
       dispatch({ type: 'SET_ERROR', payload: 'An unexpected error occured' })
       console.error("Error fetching following:", error)
     }
-  }, [])
+  }, [profile])
 
   const addFollowing = useCallback(async (streamId: string) => {
     try {
@@ -128,7 +128,7 @@ export function StreamFollowsProvider({ children }: { children: ReactNode }) {
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false })
     }
-  }, [])
+  }, [profile])
 
   const removeFollowing = useCallback(async (streamId: string) => {
     try {
@@ -157,11 +157,11 @@ export function StreamFollowsProvider({ children }: { children: ReactNode }) {
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false })
     }
-  }, [])
+  }, [profile])
 
   const clearError = useCallback(() => {
     dispatch({ type: 'SET_ERROR', payload: null })
-  }, [])
+  }, [profile])
 
   useEffect(() => {
     if (profile)

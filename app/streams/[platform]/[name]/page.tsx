@@ -135,7 +135,7 @@ export default function StreamPage() {
                 onClick={handleFollow}
                 disabled={followingLoading}
               >
-                <Heart fill={isFollowing ? 'white' : ''} />
+                <Heart fill='white' fillOpacity={isFollowing ? 1 : 0} />
               </Button>
 
               {status && status.live && status.viewer_count && (
