@@ -1,23 +1,60 @@
 "use client"
 
 import { useResultChannel } from "@/hooks/useResultChannel";
-import { ResultListeners } from "@/lib/types";
-import { createContext, ReactNode, useCallback, useContext, useState } from "react";
+import { Bet, ResultListeners } from "@/lib/types";
+import { createContext, ReactNode, useCallback, useContext, useReducer, useState } from "react";
 import { useProfile } from "./ProfileProvider";
 import { toast } from "sonner";
 
-interface ResultContextType {
+
+interface ResultContextState {
+  bet: Bet | null
   loading: boolean
   error: string | null
+
+}
+
+type ResultContextAction =
+  | { type: 'SET_LOADING'; payload: boolean }
+  | { type: 'SET_ERROR'; payload: string | null }
+  | { type: 'SET_BET'; payload: Bet }
+
+const initialState: ResultContextState = {
+  bet: null,
+  loading: false,
+  error: null
+}
+
+function resultReducer(state: ResultContextState, action: ResultContextAction): ResultContextState {
+  switch (action.type) {
+    case 'SET_LOADING':
+      return { ...state, loading: action.payload }
+    
+    case 'SET_ERROR':
+      return { ...state, error: action.payload }
+    
+    case 'SET_BET':
+      return { ...state, bet: action.payload }
+
+    default:
+      return state
+  }
+}
+
+interface ResultContextType {
+  bet: Bet | null
+  loading: boolean
+  error: string | null
+
   sendResult: (payload: any) => void
 }
+
 
 const ResultContext = createContext<ResultContextType | null>(null)
 
 export function ResultProvider({ children }: { children: ReactNode }) {
+  const [state, dispatch] = useReducer(resultReducer, initialState)
   const { profile, confirmedBets } = useProfile()
-  const [loading, setLoading] = useState<boolean>(false)
-  const [error, setError] = useState<string | null>(null)
   
   // Global result listener that always listens for market resolutions
   const resultListeners: ResultListeners = {
@@ -27,6 +64,7 @@ export function ResultProvider({ children }: { children: ReactNode }) {
       
       // Only process results if user is authenticated and has bets
       if (!profile || !confirmedBets) {
+        dispatch({ type: 'SET_ERROR', payload: "No profile or bets, skipping result processing" })
         console.log("No profile or bets, skipping result processing")
         return
       }
@@ -42,17 +80,17 @@ export function ResultProvider({ children }: { children: ReactNode }) {
       } else {
         toast.error(`YOU LOST BET ON MARKET ${bet.marketId}`)
       }
+      dispatch({ type: 'SET_BET', payload: bet })
     }, [profile, confirmedBets])
   }
-
-
 
   // Always establish websocket connection, regardless of authentication status
   const { sendResult } = useResultChannel(resultListeners)
 
   const contextValue: ResultContextType = {
-    loading,
-    error,
+    bet: state.bet,
+    loading: state.loading,
+    error: state.error,
     sendResult,
   }
 
