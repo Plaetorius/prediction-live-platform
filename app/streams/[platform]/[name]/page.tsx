@@ -14,6 +14,9 @@ import { selectOpenMarkets } from '@/lib/markets/selectClient'
 import { useBetting } from '@/providers/BettingProvider'
 import { getEmbedUrl } from '@/lib/utils'
 import { usePlatformStatus } from '@/hooks/usePlatformStatus'
+import { useStreamFollows } from '@/providers/StreamFollowsProvider'
+import { profile } from 'console'
+import { toast } from 'sonner'
 
 export default function StreamPage() {
   const [loading, setLoading] = useState<boolean>(false)
@@ -33,6 +36,9 @@ export default function StreamPage() {
     }
   )
 
+  const { follows, addFollowing, removeFollowing, loading: followingLoading, error: followingError} = useStreamFollows()
+  const isFollowing = follows.find((streamId) => streamId === stream?.id) ? true : false
+
   useEffect(() => {
     const fetchOngoingMarkets = async (streamId: string | undefined) => {
       if (!streamId)
@@ -48,6 +54,19 @@ export default function StreamPage() {
     }
     fetchOngoingMarkets(stream?.id)
   }, [setMarkets])
+
+  const handleFollow = async () => {
+    if (!stream)
+      return
+    if (isFollowing) {
+      await removeFollowing(stream.id)
+    } else {
+      await addFollowing(stream.id)
+    }
+    if (followingError) {
+      toast.error(followingError)
+    }
+  }
 
   if (!stream)
     return (
@@ -104,8 +123,12 @@ export default function StreamPage() {
                 </Link>
               </Button>
 
-              <Button className='bg-brand-pink hover:bg-brand-pink-dark h-8 w-8'>
-                <Heart />
+              <Button
+                className='bg-brand-pink hover:bg-brand-pink-dark h-8 w-8'
+                onClick={handleFollow}
+                disabled={followingLoading}
+              >
+                <Heart fill={isFollowing ? 'white' : ''} />
               </Button>
 
               {status && status.live && status.viewer_count && (
