@@ -80,7 +80,6 @@ const GlassSurface: React.FC<GlassSurfaceProps> = ({
   className = '',
   style = {}
 }) => {
-  const [isMounted, setIsMounted] = useState(false);
   const uniqueId = useId().replace(/:/g, '-');
   const filterId = `glass-filter-${uniqueId}`;
   const redGradId = `red-grad-${uniqueId}`;
@@ -94,10 +93,6 @@ const GlassSurface: React.FC<GlassSurfaceProps> = ({
   const gaussianBlurRef = useRef<SVGFEGaussianBlurElement>(null);
 
   const isDarkMode = useDarkMode();
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   const generateDisplacementMap = () => {
     const rect = containerRef.current?.getBoundingClientRect();
@@ -293,27 +288,6 @@ const GlassSurface: React.FC<GlassSurfaceProps> = ({
   const focusVisibleClasses = isDarkMode
     ? 'focus-visible:outline-2 focus-visible:outline-[#0A84FF] focus-visible:outline-offset-2'
     : 'focus-visible:outline-2 focus-visible:outline-[#007AFF] focus-visible:outline-offset-2';
-
-  if (!isMounted) {
-    return (
-      <div
-        className={`${glassSurfaceClasses} ${className}`}
-        style={{
-          width: typeof width === 'number' ? `${width}px` : width,
-          height: typeof height === 'number' ? `${height}px` : height,
-          borderRadius: `${borderRadius}px`,
-          background: 'rgba(255, 255, 255, 0.1)',
-          backdropFilter: 'blur(12px)',
-          border: '1px solid rgba(255, 255, 255, 0.2)',
-          ...style
-        }}
-      >
-        <div className="w-full h-full flex items-center justify-center p-2 rounded-[inherit] relative z-10">
-          {children}
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div
