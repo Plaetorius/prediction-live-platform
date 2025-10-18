@@ -5,13 +5,13 @@ import { createContext, ReactNode, useCallback, useContext, useReducer } from "r
 import { useStream } from "./StreamProvider"
 import { useBetChannel } from "@/hooks/useBetChannel"
 
-interface BettingState {
+interface BettingContextState {
   markets: Map<string, MarketWithAmounts>
   loading: boolean
   error: string | null
 }
 
-type BettingAction =
+type BettingContextAction =
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_ERROR'; payload: string | null }
   | { type: 'ADD_MARKET'; payload: Market }
@@ -19,13 +19,13 @@ type BettingAction =
   | { type: 'REMOVE_MARKET'; payload: string }
   | { type: 'SET_MARKETS'; payload: Map<string, MarketWithAmounts> }
 
-const initialState: BettingState = {
+const initialState: BettingContextState = {
   markets: new Map(),
   loading: false,
   error: null
 }
 
-function bettingReducer(state: BettingState, action: BettingAction): BettingState {
+function bettingReducer(state: BettingContextState, action: BettingContextAction): BettingContextState {
   switch (action.type) {
     case 'SET_LOADING':
       return { ...state, loading: action.payload }
