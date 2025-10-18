@@ -164,7 +164,7 @@
   opacity: 0.6;
 }
 
-* Custom scrollbar styles for horizontal galleries */
+/* Custom scrollbar styles for horizontal galleries */
 .scrollbar-thin {
   scrollbar-width: thin;
 }
