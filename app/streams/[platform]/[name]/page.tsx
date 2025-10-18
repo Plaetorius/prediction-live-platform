@@ -47,14 +47,18 @@ export default function StreamPage() {
       const marketsArray = await selectOpenMarkets(streamId) || []
       const marketsMap = new Map<string, MarketWithAmounts>()
       marketsArray.forEach(market => {
-        marketsMap.set(market.id, market)
+        marketsMap.set(market.id, {
+          ...market,
+          amountA: 0,
+          amountB: 0,
+        })
       })
 
       setMarkets(marketsMap)
       setLoading(false)
     }
     fetchOngoingMarkets(stream?.id)
-  }, [setMarkets])
+  }, [setMarkets, stream?.id])
 
   const handleFollow = async () => {
     if (!stream)
