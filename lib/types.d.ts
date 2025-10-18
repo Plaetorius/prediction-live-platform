@@ -115,3 +115,10 @@ export type BalanceResult = {
   symbol: string;
   value: bigint;
 } | undefined
+
+export type StreamFollows = {
+  id: string;
+  profileId: string;
+  streamId: string;
+  createdAt: Date;
+} | null
