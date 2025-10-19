@@ -70,6 +70,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
 
   const { data: balanceData, refetch: refetchBalance } = useBalance({
     address,
+    chainId: 88882,
     query: {
       enabled: !!address,
       staleTime: 30000,
@@ -83,9 +84,11 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
   const getBalance = async () => {
     try {
       if (!address) {
+        console.error("No address in ProfileProvider")
         return '0.00'
       }
       const result = await refetchBalance()
+      console.log("RESULT", result)
       return formatBalance(result.data)
     } catch (error) {
       setError("Failed to fetch balance")
