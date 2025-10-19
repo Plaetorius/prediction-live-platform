@@ -1,10 +1,9 @@
 "use client"
 
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, Users, Clock, RefreshCw, TwitchIcon, Heart } from 'lucide-react'
-import React, { useEffect, useRef, useState} from 'react'
+import { ArrowLeft, Users, TwitchIcon, Heart } from 'lucide-react'
+import React, { useEffect, useState} from 'react'
 import Loading from '@/components/Loading'
 import Link from 'next/link'
 import { useStream } from '@/providers/StreamProvider'
@@ -15,7 +14,6 @@ import { useBetting } from '@/providers/BettingProvider'
 import { getEmbedUrl } from '@/lib/utils'
 import { usePlatformStatus } from '@/hooks/usePlatformStatus'
 import { useStreamFollows } from '@/providers/StreamFollowsProvider'
-import { profile } from 'console'
 import { toast } from 'sonner'
 import { useResult } from '@/providers/ResultProvider'
 
