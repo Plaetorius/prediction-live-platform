@@ -2,8 +2,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { createBetClient } from "@/lib/bets/insertClient"
-import { Bet, BetPayload } from "@/lib/types"
+import { BetPayload } from "@/lib/types"
 import { useBetting } from "@/providers/BettingProvider"
 import { SUPPORTED_CHAINS, useProfile } from "@/providers/ProfileProvider"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -11,13 +10,9 @@ import { useEffect, useState, useCallback } from "react"
 import { SubmitHandler, useForm } from "react-hook-form"
 import { toast } from "sonner"
 import z from "zod"
-import { useWaitForTransactionReceipt, useChainId, useSwitchChain, useAccount, useWriteContract } from "wagmi"
+import { useWaitForTransactionReceipt, useChainId, useSwitchChain, useAccount, useWriteContract, useCall } from "wagmi"
 import { useWeb3AuthConnect } from "@web3auth/modal/react"
-import { parseEther, keccak256, toHex } from "viem"
-import { BettingPoolABI, BETTING_POOL_ADDRESS } from "@/lib/contracts/BettingPoolABI"
 import { createSupabaseClient } from "@/lib/supabase/client"
-import { betTxErrorMessages } from "@/lib/errors"
-import { validateBettingPrerequisites } from "@/lib/betting/validation"
 import { createBetPayload, handleTransactionError, processBettingRequest } from "@/lib/betting/bettingService"
 import { mapBetSupaToTS } from "@/lib/mappings"
 
@@ -87,6 +82,8 @@ export default function BetFormModal({
       if (!profile) return
 
       setLoading(true)
+      setTxStep('idle')
+
       const result = await processBettingRequest({
         marketId,
         profileId: profile.id,
@@ -107,14 +104,13 @@ export default function BetFormModal({
         } else {
           toast.error(result.error || "Error placing bet.")
         }
+        setLoading(false)
         return
       }
 
       setTxStep('sending')
             
       try {
-
-        // Appel de la fonction placeBet du smart contract
         await writeContract(result.transactionParams!)
         
         setTxStep('confirming')
@@ -128,8 +124,10 @@ export default function BetFormModal({
           result.bet!.id,
           isAnswerA
         ))
+
       } catch (writeContractError) {
         setTxStep('error')
+        setLoading(false)
         console.error("Transaction failed:", writeContractError)
         
 
@@ -144,11 +142,10 @@ export default function BetFormModal({
 
     } catch (error) {
       setTxStep('error')
+      setLoading(false)
       console.error("Error placing bet:", error)
       toast.error("An unexpected error occured. Please try again.")
-    } finally {
-      setLoading(false)
-    } 
+    }
   }, [marketId, profile, isConnected, chainId, connect, switchChain, writeContract, isAnswerA, updateBetStatus])
 
   const onError = (errors: Record<string, { message?: string }>) => {
@@ -176,6 +173,7 @@ export default function BetFormModal({
         setTxStep('confirming')
         return
       }
+
       if (isConfirmed && txStep !== 'confirmed' && pendingBetPayload) {
         try {
           setTxStep('confirmed')
@@ -212,6 +210,7 @@ export default function BetFormModal({
         } catch (error) {
           console.error("Error confirming bet:", error)
           toast.error("Error confirming bet. Please check your bets.")
+          setLoading(false)
         }
       }
 
@@ -239,6 +238,21 @@ export default function BetFormModal({
       })
     }
   }, [isModalOpen])
+
+  const resetModalState = useCallback(() => {
+    setLoading(false)
+    setTxStep('idle')
+    setPendingBetPayload(null)
+  }, [])
+
+  useEffect(() => {
+    if (isModalOpen) {
+      form.reset({
+        amount: 1,
+      })
+      resetModalState()
+    }
+  }, [isModalOpen, resetModalState])
 
   return (
     <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
@@ -372,15 +386,19 @@ export default function BetFormModal({
                   !isConnected || 
                   chainId !== SUPPORTED_CHAINS.CHILIZ_DEV ||
                   txStep === "sending" ||
-                  txStep === "confirming"
+                  txStep === "confirming" ||
+                  !!txHash
                 }
                 className="flex-1"
               >
-                {loading ? (
-                  txStep === 'sending' ? "Sending transaction..." :
-                  txStep === 'confirming' ? "Confirming..." :
-                  "Placing bet..."
-                ) : "Place Bet"}
+                {(() => {
+                  if (txStep === 'sending') return "Sending transaction..."
+                  if (txStep === 'confirming') return "Confirming..."
+                  if (txStep === 'confirmed') return "Bet Placed!"
+                  if (txStep === 'error') return "Retry"
+                  if (loading) return "Placing bet..."
+                  return "Place Bet"
+                })()}
               </Button>
               <Button
                 type='button'
