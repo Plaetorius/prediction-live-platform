@@ -76,7 +76,7 @@ export default function MarketDisplay() {
         return (
           <Card key={market.id} className="bg-brand-black mb-4">
             <CardHeader>
-              <CardTitle className='flex justify-center items-center gap-2'>
+              <CardTitle className='flex justify-between items-center gap-2'>
                 {market.question}
                 <MarketTimer
                   market={market}

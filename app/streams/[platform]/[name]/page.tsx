@@ -206,7 +206,7 @@ export default function StreamPage() {
               </div>
             )
             : (
-              <div className='flex justify-center items-center'>
+              <div className='w-full justify-center items-center'>
                 <MarketDisplay />
               </div>
             )
