@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { useWeb3AuthConnect } from "@web3auth/modal/react"
 import { SidebarTrigger } from './ui/sidebar'
 import { Button } from './ui/button'
-import { CoinsIcon, CrownIcon, SearchIcon, UserIcon } from 'lucide-react'
+import { CoinsIcon, SearchIcon } from 'lucide-react'
 import { useProfile } from '@/providers/ProfileProvider'
 
 export default function Header() {
