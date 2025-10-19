@@ -102,8 +102,8 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
       return
     }
     try {
-     setError(null)
-     setLoading(true) 
+    setError(null)
+    setLoading(true) 
 
       const supabase = createSupabaseClient()
       const { data, error } = await supabase
