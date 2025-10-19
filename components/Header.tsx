@@ -1,28 +1,46 @@
 "use client"
 
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { useWeb3AuthConnect } from "@web3auth/modal/react"
 import { SidebarTrigger } from './ui/sidebar'
 import { Button } from './ui/button'
 import { CoinsIcon, CrownIcon, SearchIcon, UserIcon } from 'lucide-react'
+import { useProfile } from '@/providers/ProfileProvider'
 
 export default function Header() {
-  const { connect, isConnected, connectorName, loading: connectLoading, error: connectError } = useWeb3AuthConnect()
-
+  const { isConnected: isWeb3AuthConnected, loading: connectLoading, error: connectError } = useWeb3AuthConnect()
+  const { profile, isConnected: isProfileConnected, getBalance } = useProfile()
+  const [balance, setBalance] = useState<string | null>(null)
+  const isConnected = isWeb3AuthConnected && isProfileConnected
+  
+  useEffect(() => {
+    const getProfileBalance = async () => {
+      setBalance(await getBalance())
+    }
+    getProfileBalance()
+  }, [profile, isConnected])
+  
   return (
-    <header className="flex justify-between items-center border-b bg-background px-4 py-3">
+    <header className="flex items-center justify-between border-b bg-background px-4 py-3">
       <SidebarTrigger className='h-8 w-8' />
-      <div className='flex gap-2 px-2 py-1 items-center text-brand-pink-dark rounded-xl border-2 border-brand-pink-dark w-[30%]'>
+      <div className='flex items-center gap-2 px-2 py-1 text-brand-pink-dark rounded-xl border-2 border-brand-pink-dark flex-1 max-w-md mx-4'>
         <SearchIcon width={20} height={20} />
         Search...
       </div>
       <div>
         {isConnected
         ? (
-          <Button>
-            <CoinsIcon />
-            Buy Tokens
-          </Button>
+          <div className='flex items-center gap-2'>
+            <div className='flex flex-row items-center gap-1'>
+              <div className='font-semibold'>
+                {parseFloat(balance ? balance : '').toFixed(2)} 
+              </div>
+            <CoinsIcon className='h-4 w-4' />
+            </div>
+            <Button>
+              Buy Tokens
+            </Button>
+          </div>
         )
         : (
           <></>
