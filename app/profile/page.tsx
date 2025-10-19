@@ -23,8 +23,10 @@ export default function PersonalProfile() {
     userInfo,
     updateProfile,
     refreshProfile,
-    isConnected 
+    isConnected,
+    address
   } = useProfile()
+
 
   const checkLootboxEligibility = async (profileId: string) => {
     try {
@@ -174,7 +176,7 @@ export default function PersonalProfile() {
         <div className="text-center py-12">
           <User className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-white mb-2">Profile not found</h2>
-               <p className="text-gray-400 mb-6">Your profile hasn&apos;t been created yet. Please try connecting again.</p>
+              <p className="text-gray-400 mb-6">Your profile hasn&apos;t been created yet. Please try connecting again.</p>
           <Link href="/">
             <Button>Go to Homepage</Button>
           </Link>
@@ -256,8 +258,8 @@ export default function PersonalProfile() {
               <p className="font-medium">{profile.email || 'Not provided'}</p>
             </div>
             <div>
-              <label className="text-sm text-muted-foreground">Wallet Address</label>
-              <p className="font-mono text-sm">{profile.walletAddress || 'Not connected'}</p>
+              <label className="text-sm text-muted-foreground">Address</label>
+              <p className="font-mono text-sm">{address || 'Not connected'}</p>
             </div>
           </CardContent>
         </Card>
