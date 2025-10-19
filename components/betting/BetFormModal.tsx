@@ -367,7 +367,13 @@ export default function BetFormModal({
             <div className="flex gap-2 pt-4">
               <Button
                 type='submit'
-                disabled={loading || !isConnected || chainId !== SUPPORTED_CHAINS.CHILIZ_DEV}
+                disabled={
+                  loading || 
+                  !isConnected || 
+                  chainId !== SUPPORTED_CHAINS.CHILIZ_DEV ||
+                  txStep === "sending" ||
+                  txStep === "confirming"
+                }
                 className="flex-1"
               >
                 {loading ? (
