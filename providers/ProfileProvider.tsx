@@ -82,12 +82,15 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
 
   const getBalance = async () => {
     try {
+      if (!address) {
+        return '0.00'
+      }
       const result = await refetchBalance()
       return formatBalance(result.data)
     } catch (error) {
       setError("Failed to fetch balance")
       console.error("Balance fetch error:", error)
-      throw error
+      return '0.00'
     }
   }
 

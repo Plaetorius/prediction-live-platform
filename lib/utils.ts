@@ -13,9 +13,13 @@ export function getShortAddress(address: string | undefined) {
 }
 
 export function formatBalance(balanceData: BalanceResult) {
+  if (!balanceData) {
+    return '0.00'
+  }
+
   return formatUnits(
-    balanceData?.value ? balanceData.value : BigInt(0),
-    balanceData?.decimals ? balanceData.decimals : 1,
+    balanceData.value || BigInt(0),
+    balanceData.decimals || 18,
   )
 }
 
