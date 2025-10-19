@@ -102,6 +102,7 @@ export type Bet = {
   createdAt: Date;
   updatedAt: Date;
   amount: number;
+  exitAmount: number | null;
   status:  string; // Enum: Constants.public.Enums.bets_status
 }
 

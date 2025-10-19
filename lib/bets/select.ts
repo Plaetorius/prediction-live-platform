@@ -20,6 +20,7 @@ export async function selectBetsWithMarketId(marketId: string) : Promise<Bet[] |
         marketId: bet.market_id,
         isAnswerA: bet.is_answer_a,
         amount: bet.amount,
+        exitAmount: bet.exit_amount,
         createdAt: new Date(bet.created_ad),
         updatedAt: new Date(bet.updated_at),
         status: bet.status,

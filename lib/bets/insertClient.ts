@@ -33,6 +33,7 @@ export async function createBetClient(
       marketId: data.market_id,
       isAnswerA: data.is_answer_a,
       amount: data.amount,
+      exitAmount: null,
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at),
       status: data.status

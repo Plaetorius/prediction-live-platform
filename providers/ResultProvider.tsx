@@ -7,8 +7,12 @@ import { useProfile } from "./ProfileProvider";
 import { toast } from "sonner";
 
 
+type BetResult = Bet & {
+  correct: boolean
+}
+
 interface ResultContextState {
-  bet: Bet | null
+  result: BetResult | null
   loading: boolean
   error: string | null
 
@@ -17,10 +21,10 @@ interface ResultContextState {
 type ResultContextAction =
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_ERROR'; payload: string | null }
-  | { type: 'SET_BET'; payload: Bet }
+  | { type: 'SET_BET'; payload: BetResult }
 
 const initialState: ResultContextState = {
-  bet: null,
+  result: null,
   loading: false,
   error: null
 }
@@ -34,7 +38,7 @@ function resultReducer(state: ResultContextState, action: ResultContextAction): 
       return { ...state, error: action.payload }
     
     case 'SET_BET':
-      return { ...state, bet: action.payload }
+      return { ...state, result: action.payload }
 
     default:
       return state
@@ -42,7 +46,7 @@ function resultReducer(state: ResultContextState, action: ResultContextAction): 
 }
 
 interface ResultContextType {
-  bet: Bet | null
+  result: BetResult | null
   loading: boolean
   error: string | null
 
@@ -77,10 +81,11 @@ export function ResultProvider({ children }: { children: ReactNode }) {
       
       if (bet.isAnswerA === payload.isAnswerA) {
         toast.success(`YOU WON BET ON MARKET ${bet.marketId}`)
+        dispatch({ type: 'SET_BET', payload: {...bet, correct: true } })
       } else {
         toast.error(`YOU LOST BET ON MARKET ${bet.marketId}`)
+        dispatch({ type: 'SET_BET', payload: {...bet, correct: false } })
       }
-      dispatch({ type: 'SET_BET', payload: bet })
     }, [profile, confirmedBets])
   }
 
@@ -88,7 +93,7 @@ export function ResultProvider({ children }: { children: ReactNode }) {
   const { sendResult } = useResultChannel(resultListeners)
 
   const contextValue: ResultContextType = {
-    bet: state.bet,
+    result: state.result,
     loading: state.loading,
     error: state.error,
     sendResult,

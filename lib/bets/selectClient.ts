@@ -37,6 +37,7 @@ export async function selectBetsWithMarketId({
         createdAt: bet.created_at,
         updatedAt: bet.updated_at,
         amount: bet.amount,
+        exitAmount: bet.exit_amount,
         status: bet.status,
       }
     })

@@ -17,6 +17,7 @@ import { usePlatformStatus } from '@/hooks/usePlatformStatus'
 import { useStreamFollows } from '@/providers/StreamFollowsProvider'
 import { profile } from 'console'
 import { toast } from 'sonner'
+import { useResult } from '@/providers/ResultProvider'
 
 export default function StreamPage() {
   const [loading, setLoading] = useState<boolean>(false)
@@ -38,6 +39,7 @@ export default function StreamPage() {
 
   const { follows, addFollowing, removeFollowing, loading: followingLoading, error: followingError} = useStreamFollows()
   const isFollowing = follows.find((streamId) => streamId === stream?.id) ? true : false
+  const { result } = useResult()
 
   useEffect(() => {
     const fetchOngoingMarkets = async (streamId: string | undefined) => {
@@ -180,16 +182,38 @@ export default function StreamPage() {
           />
         </div>
       </section>
-      <section className='col-span-1 bg-brand-black-3 w-full h-screen'>
-        {
-          markets.size === 0
-          ? (
-            <div className='flex justify-center items-center h-full w-full font-semibold'>
-              No markets
-            </div>
-          )
-          : (<MarketDisplay />)
-        }
+      <section className='col-span-1 flex flex-col gap-2 bg-brand-black w-full p-2'>
+        <div className='flex bg-brand-black-2 justify-center items-center h-[30vh] w-full font-semibold'>
+          {
+            result
+            ? (
+              <div>
+                You won {result.exitAmount} at {result.id}!
+                {result.correct ? "WIN" : "LOSE"}
+              </div>
+            )
+            : (
+              <div>
+                No result for now
+              </div>
+            )
+          }
+        </div>
+        <div className='bg-brand-black-2 center h-full w-full font-semibold'>
+          {
+            markets.size === 0
+            ? (
+              <div className='flex justify-center items-center h-full'>
+                No markets
+              </div>
+            )
+            : (
+              <div className='flex justify-center items-center'>
+                <MarketDisplay />
+              </div>
+            )
+          }
+        </div>
       </section>
     
     </main>

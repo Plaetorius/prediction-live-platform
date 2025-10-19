@@ -9,6 +9,7 @@ export function mapBetSupaToTS(bet: any): Bet {
     createdAt: new Date(bet.created_at),
     updatedAt: new Date(bet.updated_at),
     amount: bet.amount,
+    exitAmount: bet.exit_amount,
     status: bet.status,
   }
 }
