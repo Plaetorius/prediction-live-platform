@@ -41,11 +41,6 @@ import Link from "next/link"
 import { NavFeatured } from "./nav-featured"
 
 const data = {
-  user: {
-    name: "Plaetorius",
-    email: "plaetorius@gmail.com",
-    avatar: "https://avatars.githubusercontent.com/u/46137705?v=4",
-  },
   navMain: [
     {
       title: "Home",
@@ -219,7 +214,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser />
       </SidebarFooter>
     </Sidebar>
   )
