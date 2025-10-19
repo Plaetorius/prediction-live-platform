@@ -70,7 +70,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
 
   const { data: balanceData, refetch: refetchBalance } = useBalance({
     address,
-    chainId: 88882,
+    chainId: SUPPORTED_CHAINS.CHILIZ_DEV,
     query: {
       enabled: !!address,
       staleTime: 30000,
