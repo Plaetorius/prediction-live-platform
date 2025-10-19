@@ -33,10 +33,14 @@ function bettingReducer(state: BettingContextState, action: BettingContextAction
     case 'SET_ERROR':
       return { ...state, error: action.payload }
 
-    case 'ADD_MARKET':
-      const newMap = new Map(state.markets)
-      newMap.set(action.payload.id, { ...action.payload, amountA: 0, amountB: 0 })
+    case 'ADD_MARKET': {
+      const newMarketEntry: [string, MarketWithAmounts] = [
+        action.payload.id,
+        { ...action.payload, amountA: 0, amountB: 0 }
+      ]
+      const newMap = new Map([newMarketEntry, ...Array.from(state.markets.entries())])
       return { ...state, markets: newMap }
+    }
   
     case 'UPDATE_MARKET_AMOUNTS':
       const updatedMap = new Map(state.markets)
@@ -108,7 +112,6 @@ export function BettingProvider({ children }: { children: ReactNode }) {
     }, [state.markets]),
 
     onNewMarket: useCallback((payload: any) => {
-      console.log("NEW MARKET", payload)
       const newMarket: Market = {
         id: payload.id as string,
         question: payload.question as string,
