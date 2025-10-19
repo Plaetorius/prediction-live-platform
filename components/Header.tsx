@@ -6,6 +6,7 @@ import { SidebarTrigger } from './ui/sidebar'
 import { Button } from './ui/button'
 import { CoinsIcon, SearchIcon } from 'lucide-react'
 import { useProfile } from '@/providers/ProfileProvider'
+import { toast } from 'sonner'
 
 export default function Header() {
   const { isConnected: isWeb3AuthConnected, loading: connectLoading, error: connectError } = useWeb3AuthConnect()
@@ -23,6 +24,7 @@ export default function Header() {
           setBalance(balanceResult)
         } catch (error) {
           console.error("Failed to fetch balance:", error)
+          toast.error("Error retrieving balance.")
           setBalance('0.00')
         } finally {
           setBalanceLoading(false)
