@@ -72,76 +72,132 @@ export default function Home() {
     },
   ]
 
-  const sampleStreams = [
+  const games = [
     {
-      id: "1",
-      platform: "twitch",
-      name: "otplol_",
-      viewers: 15653,
-      title: "League of Legends - Ranked Games"
+      id: "lol",
+      name: "League of Legends",
+      image: "/categories/league-of-legends.png",
+      badges: ["MOBA", "Strategy", "Competitive"],
+      streams: [
+        {
+          id: "1",
+          platform: "twitch",
+          name: "otplol_",
+          viewers: 15653,
+          title: "League of Legends - Ranked Games"
+        },
+        {
+          id: "2", 
+          platform: "twitch",
+          name: "faker",
+          viewers: 45230,
+          title: "T1 vs Gen.G - LCK Spring"
+        },
+        {
+          id: "3",
+          platform: "twitch", 
+          name: "caps",
+          viewers: 12890,
+          title: "G2 Esports - LEC Practice"
+        },
+        {
+          id: "4",
+          platform: "twitch",
+          name: "doublelift",
+          viewers: 8750,
+          title: "100 Thieves - LCS Analysis"
+        },
+        {
+          id: "5",
+          platform: "twitch",
+          name: "bjergsen",
+          viewers: 12340,
+          title: "TSM - Team Practice Session"
+        }
+      ]
     },
     {
-      id: "2", 
-      platform: "twitch",
-      name: "faker",
-      viewers: 45230,
-      title: "T1 vs Gen.G - LCK Spring"
-    },
-    {
-      id: "3",
-      platform: "twitch", 
-      name: "caps",
-      viewers: 12890,
-      title: "G2 Esports - LEC Practice"
-    },
-    {
-      id: "4",
-      platform: "twitch",
-      name: "doublelift",
-      viewers: 8750,
-      title: "100 Thieves - LCS Analysis"
-    },
-    {
-      id: "5",
-      platform: "twitch",
-      name: "bjergsen",
-      viewers: 12340,
-      title: "TSM - Team Practice Session"
+      id: "csgo",
+      name: "Counter-Strike: Global Offensive",
+      image: "/categories/csgo.svg",
+      badges: ["FPS", "Tactical", "Competitive"],
+      streams: [
+        {
+          id: "6",
+          platform: "twitch",
+          name: "s1mple",
+          viewers: 25430,
+          title: "NAVI - Practice & Analysis"
+        },
+        {
+          id: "7",
+          platform: "twitch",
+          name: "shroud",
+          viewers: 18750,
+          title: "CS:GO Ranked Games"
+        },
+        {
+          id: "8",
+          platform: "twitch",
+          name: "flusha",
+          viewers: 12340,
+          title: "CS:GO Pro Analysis"
+        },
+        {
+          id: "9",
+          platform: "twitch",
+          name: "olofmeister",
+          viewers: 9870,
+          title: "CS:GO Tournament Watch"
+        },
+        {
+          id: "10",
+          platform: "twitch",
+          name: "device",
+          viewers: 15680,
+          title: "Astralis - Team Practice"
+        }
+      ]
     }
   ]
 
   return (
-    <main className="min-h-screen bg-brand-black-4 p-2">
-      <section className="w-full bg-brand-black-3 grid grid-cols-4 p-4 gap-4">
-        {/* Category info section - col-span-1 */}
-        <div className="flex flex-col h-full gap-2">
-          <Image
-            src="/categories/league-of-legends.png"
-            height={100}
-            width={250}
-            alt="League Of Legends"
-          />
-          <h5 className="font-semibold text-white">
-            League Of Legends
-          </h5>
-          <div className="flex flex-row flex-wrap gap-1">
-            <Badge className="bg-brand-purple text-white">
-              MOBA
-            </Badge>
-            <Badge className="bg-brand-pink text-white">
-              Strategy
-            </Badge>
-            <Badge className="bg-blue-600 text-white">
-              Competitive
-            </Badge>
+    <main className="min-h-screen bg-brand-black-4 p-2 space-y-4">
+      {games.map((game) => (
+        <section key={game.id} className="w-full bg-brand-black-3 grid grid-cols-4 p-4 gap-4">
+          {/* Category info section - col-span-1 */}
+          <div className="flex flex-col h-full gap-2">
+            <Image
+              src={game.image}
+              height={100}
+              width={250}
+              alt={game.name}
+            />
+            <h5 className="font-semibold text-white">
+              {game.name}
+            </h5>
+            <div className="flex flex-row flex-wrap gap-1">
+              {game.badges.map((badge, index) => (
+                <Badge 
+                  key={index}
+                  className={`${
+                    index === 0 ? 'bg-brand-purple' : 
+                    index === 1 ? 'bg-brand-pink' : 
+                    'bg-blue-600'
+                  } text-white`}
+                >
+                  {badge}
+                </Badge>
+              ))}
+            </div>
           </div>
-        </div>
-        
-        {/* Streams gallery section - col-span-3 */}
-        <div className="col-span-3">
-          <StreamHorizontalGallery streams={sampleStreams} />
-        </div>
-      </section>
+          
+          {/* Streams gallery section - col-span-3 */}
+          <div className="col-span-3">
+            <StreamHorizontalGallery streams={game.streams} />
+          </div>
+        </section>
+      ))}
     </main>
   )
 }
