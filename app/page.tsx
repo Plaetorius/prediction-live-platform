@@ -158,6 +158,47 @@ export default function Home() {
           title: "Astralis - Team Practice"
         }
       ]
+    },
+    {
+      id: "valorant",
+      name: "VALORANT",
+      image: "/categories/valorant.svg",
+      badges: ["FPS", "Tactical", "5v5"],
+      streams: [
+        { id: "11", platform: "twitch", name: "tenz", viewers: 22110, title: "Ranked & Scrims" },
+        { id: "12", platform: "twitch", name: "aspas", viewers: 15430, title: "Practice Session" },
+        { id: "13", platform: "twitch", name: "mixwell", viewers: 9876, title: "Agent Practice" }
+      ]
+    },
+    {
+      id: "apex",
+      name: "Apex Legends",
+      image: "/categories/apex-legends.svg",
+      badges: ["BR", "FPS", "Trios"],
+      streams: [
+        { id: "14", platform: "twitch", name: "imperialhal", viewers: 20120, title: "Ranked Grind" },
+        { id: "15", platform: "twitch", name: "nicewigg", viewers: 11200, title: "Road to Predator" }
+      ]
+    },
+    {
+      id: "ea-fc-26",
+      name: "EA SPORTS FC 26",
+      image: "/categories/ea-fc-26.svg",
+      badges: ["Sports", "Football", "Competitive"],
+      streams: [
+        { id: "16", platform: "twitch", name: "castro_1021", viewers: 17200, title: "Ultimate Team" },
+        { id: "17", platform: "twitch", name: "bateson87", viewers: 9800, title: "Pack Opening" }
+      ]
+    },
+    {
+      id: "rocket-league",
+      name: "Rocket League",
+      image: "/categories/rocket-league.svg",
+      badges: ["Sports", "Cars", "3v3"],
+      streams: [
+        { id: "18", platform: "twitch", name: "garrettg", viewers: 8200, title: "Ranked 3v3" },
+        { id: "19", platform: "twitch", name: "jstn", viewers: 9400, title: "Mechanics Practice" }
+      ]
     }
   ]
 
