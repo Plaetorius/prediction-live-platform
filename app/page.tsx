@@ -205,14 +205,15 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-brand-black-4 p-2 space-y-4">
       {games.map((game) => (
-        <section key={game.id} className="w-full bg-brand-black-3 grid grid-cols-4 p-4 gap-4">
-          {/* Category info section - col-span-1 */}
-          <div className="flex flex-col h-full gap-2">
+        <section key={game.id} className="w-full bg-brand-black-3 flex p-4 gap-4">
+          {/* Category info section - fixed width */}
+          <div className="flex flex-col w-64 flex-shrink-0 gap-2">
             <Image
               src={game.image}
               height={100}
               width={250}
               alt={game.name}
+              className="object-cover rounded"
             />
             <h5 className="font-semibold text-white">
               {game.name}
@@ -233,8 +234,8 @@ export default function Home() {
             </div>
           </div>
           
-          {/* Streams gallery section - col-span-3 */}
-          <div className="col-span-3">
+          {/* Streams gallery section - takes remaining space */}
+          <div className="flex-1 min-w-0">
             <StreamHorizontalGallery streams={game.streams} />
           </div>
         </section>

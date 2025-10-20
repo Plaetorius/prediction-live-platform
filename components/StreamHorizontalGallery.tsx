@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { UserIcon, Twitch } from "lucide-react";
 import { getEmbedUrl } from "@/lib/utils";
+import Link from "next/link";
 
 interface StreamData {
   id: string;
@@ -27,16 +28,18 @@ export default function StreamHorizontalGallery({
         {streams.map((stream) => (
           <div
             key={stream.id}
-            className="flex-shrink-0 w-[40vw] bg-brand-black-2 rounded-lg p-4 space-y-3"
+            className="flex-shrink-0 w-96 bg-brand-black-2 rounded-lg p-4 space-y-4"
           >
             {/* Stream header with platform button and viewer count */}
             <div className="flex justify-between items-center">
               <Button 
                 size="sm" 
-                className="bg-brand-purple hover:bg-brand-purple-dark font-medium text-xs"
+                className="bg-brand-pink hover:bg-brand-pink-dark font-medium text-xs"
+                asChild
               >
-                <Twitch strokeWidth={2.5} size={16} className="h-3 w-3 mr-1" />
-                {stream.platform} / {stream.name}
+                <Link href={`/streams/${stream.platform}/${stream.name}`}>
+                  {stream.platform} / {stream.name}
+                </Link>
               </Button>
               <div className="flex items-center text-brand-pink font-semibold text-sm">
                 <UserIcon className="h-3 w-3 mr-1" />
@@ -54,7 +57,7 @@ export default function StreamHorizontalGallery({
                 allowFullScreen
                 className="w-full h-full"
                 title={`${stream.platform} stream - ${stream.name}`}
-              />
+                />
             </div>
 
             {/* Stream title or additional info */}
