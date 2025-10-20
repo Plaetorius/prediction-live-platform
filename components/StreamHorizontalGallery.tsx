@@ -28,7 +28,7 @@ export default function StreamHorizontalGallery({
         {streams.map((stream) => (
           <div
             key={stream.id}
-            className="flex-shrink-0 w-96 bg-brand-black-2 rounded-lg p-4 space-y-4"
+            className="flex-shrink-0 w-[40rem] bg-brand-black-2 rounded-lg p-5 space-y-4"
           >
             {/* Stream header with platform button and viewer count */}
             <div className="flex justify-between items-center">
