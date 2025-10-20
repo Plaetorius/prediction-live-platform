@@ -64,8 +64,8 @@ export default function MarketResolutionModal({ market }: MarketResolutionModalP
           poolId, // PoolId generated from marketId
           isAnswerA ? 1 : 2 // 1 = Resolution.A, 2 = Resolution.B (0 = Pending)
         ],
-        gas: BigInt(200000), // Gas limit optimisé pour Chiliz
-        gasPrice: BigInt(1000000000), // 1 gwei pour Chiliz
+        gas: BigInt(800000), // Gas limit très élevé pour Chiliz
+        gasPrice: BigInt(5000000000), // 5 gwei pour Chiliz (très élevé)
       })
 
       setTxStep('confirming')

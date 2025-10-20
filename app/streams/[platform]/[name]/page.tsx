@@ -15,6 +15,7 @@ import { getEmbedUrl } from '@/lib/utils'
 import { usePlatformStatus } from '@/hooks/usePlatformStatus'
 import { useStreamFollows } from '@/providers/StreamFollowsProvider'
 import { toast } from 'sonner'
+import { calculateWinnings, formatWinnings, formatProfit } from '@/lib/betting/calculateWinnings'
 
 export default function StreamPage() {
   const [loading, setLoading] = useState<boolean>(false)
@@ -163,6 +164,28 @@ export default function StreamPage() {
     if (!result || !showResultAnimation) return null;
 
     const isWin = result.correct;
+    
+    // Calculate winnings if not already calculated
+    let winningsInfo = null;
+    if (result.winnings === undefined || result.profit === undefined) {
+      // Get market info for calculation
+      const market = markets.get(result.marketId);
+      if (market) {
+        const poolInfo = {
+          totalAmountA: market.amountA || 0,
+          totalAmountB: market.amountB || 0,
+          resolution: result.isAnswerA ? 'A' : 'B' as 'A' | 'B'
+        };
+        
+        const betInfo = {
+          amount: result.amount,
+          side: result.isAnswerA ? 'A' : 'B' as 'A' | 'B'
+        };
+        
+        winningsInfo = calculateWinnings(betInfo, poolInfo);
+      }
+    }
+    
     const bgColor = isWin ? 'from-green-500/20 to-emerald-600/20' : 'from-red-500/20 to-rose-600/20';
     const borderColor = isWin ? 'border-green-400' : 'border-red-400';
     const textColor = isWin ? 'text-green-400' : 'text-red-400';
@@ -196,8 +219,16 @@ export default function StreamPage() {
               {isWin ? 'VICTORY!' : 'DEFEAT!'}
             </h3>
             <p className={`text-lg ${textColor} font-semibold animate-in slide-in-from-bottom-2 duration-700 delay-200`}>
-              {/* {isWin ? `+${result.exitAmount} tokens` : `-${result.amount} tokens`} */}
+              {isWin && winningsInfo ? 
+                `+${formatWinnings(winningsInfo.winnings)} ETH` : 
+                `-${result.amount} ETH`
+              }
             </p>
+            {isWin && winningsInfo && (
+              <p className={`text-sm ${textColor} animate-in slide-in-from-bottom-2 duration-700 delay-300`}>
+                Profit: {formatProfit(winningsInfo.profit)} ETH
+              </p>
+            )}
             <p className="text-sm text-gray-300 animate-in slide-in-from-bottom-2 duration-700 delay-300">
               Market: {result.marketId.slice(0, 8)}...
             </p>
@@ -320,8 +351,16 @@ export default function StreamPage() {
                   {result.correct ? 'WIN' : 'LOSE'}
                 </div>
                 <div className="text-sm text-gray-300">
-                  {/* {result.correct ? `+${result.exitAmount} tokens` : `-${result.amount} tokens`} */}
+                  {result.correct ? 
+                    `+${formatWinnings(result.winnings || 0)} ETH` : 
+                    `-${result.amount} ETH`
+                  }
                 </div>
+                {result.correct && result.profit !== undefined && (
+                  <div className="text-xs text-gray-400">
+                    Profit: {formatProfit(result.profit)} ETH
+                  </div>
+                )}
               </div>
             </div>
           )}

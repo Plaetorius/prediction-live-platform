@@ -9,6 +9,8 @@ import { toast } from "sonner"
 
 type BetResult = Bet & {
   correct: boolean
+  winnings?: number
+  profit?: number
 }
 
 interface BettingContextState {
