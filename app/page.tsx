@@ -119,7 +119,7 @@ export default function Home() {
     {
       id: "csgo",
       name: "Counter-Strike: Global Offensive",
-      image: "/categories/csgo.svg",
+      image: "/categories/csgo.png",
       badges: ["FPS", "Tactical", "Competitive"],
       streams: [
         {
