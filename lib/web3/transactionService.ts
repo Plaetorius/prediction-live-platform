@@ -33,7 +33,9 @@ export function preparePlaceBetTransaction({
       ],
       value: parseEther(amount.toString()),
       account,
-      chain: undefined
+      chain: undefined,
+      gas: BigInt(300000), // Gas limit optimisé pour Chiliz
+      gasPrice: BigInt(1000000000), // 1 gwei pour Chiliz
     }
     return {
       success: true,

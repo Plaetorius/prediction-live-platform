@@ -162,7 +162,7 @@ export default function Home() {
     {
       id: "valorant",
       name: "VALORANT",
-      image: "/categories/valorant.png",
+      image: "/categories/valorant.svg",
       badges: ["FPS", "Tactical", "5v5"],
       streams: [
         { id: "11", platform: "twitch", name: "tenz", viewers: 22110, title: "Ranked & Scrims" },
@@ -173,7 +173,7 @@ export default function Home() {
     {
       id: "apex",
       name: "Apex Legends",
-      image: "/categories/apex-legends.jpg",
+      image: "/categories/apex-legends.svg",
       badges: ["BR", "FPS", "Trios"],
       streams: [
         { id: "14", platform: "twitch", name: "imperialhal", viewers: 20120, title: "Ranked Grind" },
@@ -183,7 +183,7 @@ export default function Home() {
     {
       id: "ea-fc-26",
       name: "EA SPORTS FC 26",
-      image: "/categories/ea-fc-26.jpg",
+      image: "/categories/ea-fc-26.svg",
       badges: ["Sports", "Football", "Competitive"],
       streams: [
         { id: "16", platform: "twitch", name: "castro_1021", viewers: 17200, title: "Ultimate Team" },
@@ -193,7 +193,7 @@ export default function Home() {
     {
       id: "rocket-league",
       name: "Rocket League",
-      image: "/categories/rocket-league.jpg",
+      image: "/categories/rocket-league.svg",
       badges: ["Sports", "Cars", "3v3"],
       streams: [
         { id: "18", platform: "twitch", name: "garrettg", viewers: 8200, title: "Ranked 3v3" },
