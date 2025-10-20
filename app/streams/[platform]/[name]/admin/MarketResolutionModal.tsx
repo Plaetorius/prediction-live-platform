@@ -12,7 +12,7 @@ import { useAccount, useWriteContract, useWaitForTransactionReceipt, useSwitchCh
 import { keccak256, toHex } from 'viem'
 import { BettingPoolABI, BETTING_POOL_ADDRESS } from '@/lib/contracts/BettingPoolABI'
 import { SUPPORTED_CHAINS } from '@/providers/ProfileProvider'
-import { useResult } from '@/providers/ResultProvider'
+import { useBetting } from '@/providers/BettingProvider'
 
 interface MarketResolutionModalProps {
   market: Market
@@ -24,7 +24,7 @@ export default function MarketResolutionModal({ market }: MarketResolutionModalP
   const [txStep, setTxStep] = useState<'idle' | 'sending' | 'confirming' | 'success'>('idle')
   const [pendingResolution, setPendingResolution] = useState<boolean | null>(null)
   
-  const { sendResult } = useResult()
+  const { sendResult } = useBetting()
 
   const { isConnected, chainId } = useAccount()
   const { writeContract, data: hash, error, isPending } = useWriteContract()
@@ -93,7 +93,7 @@ export default function MarketResolutionModal({ market }: MarketResolutionModalP
       sendResult(payload)
       setPendingResolution(null)
     }
-  }, [isSuccess, hash, market.id, pendingResolution])
+  }, [isSuccess, hash, market.id, pendingResolution, sendResult])
 
   // Handle transaction error
   useEffect(() => {

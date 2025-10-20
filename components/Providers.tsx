@@ -5,7 +5,6 @@ import { ProfileProvider } from '@/providers/ProfileProvider'
 import { SidebarInset, SidebarProvider } from './ui/sidebar'
 import { AppSidebar } from './app-sidebar'
 import Web3AuthAutoSync from './Web3AuthAutoSync'
-import { ResultProvider } from '@/providers/ResultProvider'
 import { StreamFollowsProvider } from '@/providers/StreamFollowsProvider'
 
 export default function Providers({
@@ -17,16 +16,14 @@ export default function Providers({
     <>
       <Web3AuthProviderWrapper>
         <ProfileProvider>
-          <ResultProvider>
-            <StreamFollowsProvider>
-              <SidebarProvider>
-                <AppSidebar variant='sidebar' />
-                  <SidebarInset>
-                    {children}
-                  </SidebarInset>
-                </SidebarProvider>
-              </StreamFollowsProvider>
-            </ResultProvider>
+          <StreamFollowsProvider>
+            <SidebarProvider>
+              <AppSidebar variant='sidebar' />
+                <SidebarInset>
+                  {children}
+                </SidebarInset>
+              </SidebarProvider>
+            </StreamFollowsProvider>
           </ProfileProvider>
         <Web3AuthAutoSync />
       </Web3AuthProviderWrapper>

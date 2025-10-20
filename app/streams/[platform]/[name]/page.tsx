@@ -15,11 +15,10 @@ import { getEmbedUrl } from '@/lib/utils'
 import { usePlatformStatus } from '@/hooks/usePlatformStatus'
 import { useStreamFollows } from '@/providers/StreamFollowsProvider'
 import { toast } from 'sonner'
-import { useResult } from '@/providers/ResultProvider'
 
 export default function StreamPage() {
   const [loading, setLoading] = useState<boolean>(false)
-  const { markets, setMarkets } = useBetting()
+  const { markets, setMarkets, result } = useBetting()
   const stream = useStream()
   const streamLink = stream?.platform && stream?.name 
     ? `https://${stream.platform}${stream.platform === "twitch" ? ".tv" : ".com"}/${stream.name}`
@@ -37,7 +36,6 @@ export default function StreamPage() {
 
   const { follows, addFollowing, removeFollowing, loading: followingLoading, error: followingError} = useStreamFollows()
   const isFollowing = follows.find((streamId) => streamId === stream?.id) ? true : false
-  const { result } = useResult()
 
   useEffect(() => {
     const fetchOngoingMarkets = async (streamId: string | undefined) => {
