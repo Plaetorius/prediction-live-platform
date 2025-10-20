@@ -220,13 +220,13 @@ export default function StreamPage() {
             </h3>
             <p className={`text-lg ${textColor} font-semibold animate-in slide-in-from-bottom-2 duration-700 delay-200`}>
               {isWin && winningsInfo ? 
-                `+${formatWinnings(winningsInfo.winnings)} ETH` : 
-                `-${result.amount} ETH`
+                `+${formatWinnings(winningsInfo.winnings)} CHZ` : 
+                `-${result.amount} CHZ`
               }
             </p>
             {isWin && winningsInfo && (
               <p className={`text-sm ${textColor} animate-in slide-in-from-bottom-2 duration-700 delay-300`}>
-                Profit: {formatProfit(winningsInfo.profit)} ETH
+                Profit: {formatProfit(winningsInfo.profit)} CHZ
               </p>
             )}
             <p className="text-sm text-gray-300 animate-in slide-in-from-bottom-2 duration-700 delay-300">
@@ -352,13 +352,13 @@ export default function StreamPage() {
                 </div>
                 <div className="text-sm text-gray-300">
                   {result.correct ? 
-                    `+${formatWinnings(result.winnings || 0)} ETH` : 
-                    `-${result.amount} ETH`
+                    `+${formatWinnings(result.winnings || 0)} CHZ` : 
+                    `-${result.amount} CHZ`
                   }
                 </div>
                 {result.correct && result.profit !== undefined && (
                   <div className="text-xs text-gray-400">
-                    Profit: {formatProfit(result.profit)} ETH
+                    Profit: {formatProfit(result.profit)} CHZ
                   </div>
                 )}
               </div>
