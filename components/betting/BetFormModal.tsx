@@ -2,7 +2,6 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { createBetClient } from "@/lib/bets/insertClient"
 import { BetPayload } from "@/lib/types"
 import { useBetting } from "@/providers/BettingProvider"
 import { SUPPORTED_CHAINS, useProfile } from "@/providers/ProfileProvider"
@@ -11,14 +10,11 @@ import { useEffect, useState, useCallback } from "react"
 import { SubmitHandler, useForm } from "react-hook-form"
 import { toast } from "sonner"
 import z from "zod"
-import { useWaitForTransactionReceipt, useChainId, useSwitchChain, useAccount, useWriteContract } from "wagmi"
+import { useWaitForTransactionReceipt, useChainId, useSwitchChain, useAccount, useWriteContract, useCall } from "wagmi"
 import { useWeb3AuthConnect } from "@web3auth/modal/react"
-import { parseEther, keccak256, toHex } from "viem"
-import { BettingPoolABI, BETTING_POOL_ADDRESS } from "@/lib/contracts/BettingPoolABI"
 import { createSupabaseClient } from "@/lib/supabase/client"
-import { betTxErrorMessages } from "@/lib/errors"
-import { validateBettingPrerequisites } from "@/lib/betting/validation"
 import { createBetPayload, handleTransactionError, processBettingRequest } from "@/lib/betting/bettingService"
+import { mapBetSupaToTS } from "@/lib/mappings"
 
 interface BetFormModalProps {
   isModalOpen: boolean
@@ -41,7 +37,7 @@ export default function BetFormModal({
   isAnswerA,
   teamName
 }: BetFormModalProps) {
-  const { profile } = useProfile()
+  const { profile, setConfirmedBets } = useProfile()
   const [loading, setLoading] = useState<boolean>(false)
   const [txStep, setTxStep] = useState<'idle' | 'sending' | 'confirming' | 'confirmed' | 'error'>('idle')
 
@@ -69,10 +65,13 @@ export default function BetFormModal({
   const updateBetStatus = useCallback(async (betId: string, status: string) => {
     try {
       const supabase = createSupabaseClient()
-      await supabase
+      const { data, error } = await supabase
         .from('bets')
         .update({ status })
         .eq('id', betId)
+        .select()
+        .single()
+      return mapBetSupaToTS(data)
     } catch (error) {
       console.error("Error updating bet status:", error)
     }
@@ -83,6 +82,8 @@ export default function BetFormModal({
       if (!profile) return
 
       setLoading(true)
+      setTxStep('idle')
+
       const result = await processBettingRequest({
         marketId,
         profileId: profile.id,
@@ -103,14 +104,13 @@ export default function BetFormModal({
         } else {
           toast.error(result.error || "Error placing bet.")
         }
+        setLoading(false)
         return
       }
 
       setTxStep('sending')
             
       try {
-
-        // Appel de la fonction placeBet du smart contract
         await writeContract(result.transactionParams!)
         
         setTxStep('confirming')
@@ -124,8 +124,10 @@ export default function BetFormModal({
           result.bet!.id,
           isAnswerA
         ))
+
       } catch (writeContractError) {
         setTxStep('error')
+        setLoading(false)
         console.error("Transaction failed:", writeContractError)
         
 
@@ -140,11 +142,10 @@ export default function BetFormModal({
 
     } catch (error) {
       setTxStep('error')
+      setLoading(false)
       console.error("Error placing bet:", error)
       toast.error("An unexpected error occured. Please try again.")
-    } finally {
-      setLoading(false)
-    } 
+    }
   }, [marketId, profile, isConnected, chainId, connect, switchChain, writeContract, isAnswerA, updateBetStatus])
 
   const onError = (errors: Record<string, { message?: string }>) => {
@@ -167,48 +168,67 @@ export default function BetFormModal({
   }, [switchChain])
 
   useEffect(() => {
-    if (isConfirming) {
-      setTxStep('confirming')
-    }
-    if (isConfirmed && txStep !== 'confirmed') {
-      setTxStep('confirmed')
-      setLoading(false)
-      toast.success("Bet placed successfully! Transaction confirmed.")
-    
-      if (pendingBetPayload) {
-        const betPayload: BetPayload = {
-          marketId: pendingBetPayload.marketId,
-          profileId: pendingBetPayload.profileId,
-          amount: pendingBetPayload.amount,
-          createdAt: pendingBetPayload.createdAt,
-          betId: pendingBetPayload.betId,
-          isAnswerA: pendingBetPayload.isAnswerA,
-        }
-
-        if (pendingBetPayload.isAnswerA) {
-          sendBetTeam1(betPayload)
-        } else {
-          sendBetTeam2(betPayload)
-        }
-
-        updateBetStatus(pendingBetPayload.betId, 'confirmed')
-        setPendingBetPayload(null)
+    const confirmBet = async () => {
+      if (isConfirming) {
+        setTxStep('confirming')
+        return
       }
-      setIsModalOpen(false)
-    }
-    if (txError) {
-      setTxStep('error')
-      setLoading(false)
-      
-      const errorHandling = handleTransactionError(txError, pendingBetPayload)
-      toast.error(`Transaction failed; ${errorHandling.userMessage}`)
-      
 
-      if (pendingBetPayload && errorHandling.shouldUpdateBetStatus) {
-        updateBetStatus(pendingBetPayload.betId, 'error');
-        setPendingBetPayload(null);
+      if (isConfirmed && txStep !== 'confirmed' && pendingBetPayload) {
+        try {
+          setTxStep('confirmed')
+          setLoading(false)
+          toast.success("Bet placed successfully! Transaction confirmed.")
+        
+          const betPayload: BetPayload = {
+            marketId: pendingBetPayload.marketId,
+            profileId: pendingBetPayload.profileId,
+            amount: pendingBetPayload.amount,
+            createdAt: pendingBetPayload.createdAt,
+            betId: pendingBetPayload.betId,
+            isAnswerA: pendingBetPayload.isAnswerA,
+          }
+
+          if (pendingBetPayload.isAnswerA) {
+            sendBetTeam1(betPayload)
+          } else {
+            sendBetTeam2(betPayload)
+          }
+
+          const bet = await updateBetStatus(pendingBetPayload.betId, 'confirmed')
+
+          if (bet) {
+            setConfirmedBets((prev) => {
+              const newMap = new Map(prev)
+              newMap.set(bet.marketId, bet)
+              return newMap
+            })
+          }
+
+          setPendingBetPayload(null)
+          setIsModalOpen(false)
+        } catch (error) {
+          console.error("Error confirming bet:", error)
+          toast.error("Error confirming bet. Please check your bets.")
+          setLoading(false)
+        }
+      }
+
+      if (txError) {
+        setTxStep('error')
+        setLoading(false)
+        
+        const errorHandling = handleTransactionError(txError, pendingBetPayload)
+        toast.error(`Transaction failed; ${errorHandling.userMessage}`)
+
+        if (pendingBetPayload && errorHandling.shouldUpdateBetStatus) {
+          await updateBetStatus(pendingBetPayload.betId, 'error');
+          setPendingBetPayload(null);
+        }
       }
     }
+
+    confirmBet()
   }, [isConfirming, isConfirmed, txError, pendingBetPayload, sendBetTeam1, sendBetTeam2, updateBetStatus])
 
   useEffect(() => {
@@ -219,10 +239,25 @@ export default function BetFormModal({
     }
   }, [isModalOpen])
 
+  const resetModalState = useCallback(() => {
+    setLoading(false)
+    setTxStep('idle')
+    setPendingBetPayload(null)
+  }, [])
+
+  useEffect(() => {
+    if (isModalOpen) {
+      form.reset({
+        amount: 1,
+      })
+      resetModalState()
+    }
+  }, [isModalOpen, resetModalState])
+
   return (
     <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
       <DialogTrigger asChild>
-        <Button variant='default'>
+        <Button variant='default' className={`w-full ${isAnswerA ? "bg-brand-pink" : "bg-brand-cyan" }`}>
           {teamName}
         </Button>
       </DialogTrigger>
@@ -346,14 +381,24 @@ export default function BetFormModal({
             <div className="flex gap-2 pt-4">
               <Button
                 type='submit'
-                disabled={loading || !isConnected || chainId !== SUPPORTED_CHAINS.CHILIZ_DEV}
+                disabled={
+                  loading || 
+                  !isConnected || 
+                  chainId !== SUPPORTED_CHAINS.CHILIZ_DEV ||
+                  txStep === "sending" ||
+                  txStep === "confirming" ||
+                  !!txHash
+                }
                 className="flex-1"
               >
-                {loading ? (
-                  txStep === 'sending' ? "Sending transaction..." :
-                  txStep === 'confirming' ? "Confirming..." :
-                  "Placing bet..."
-                ) : "Place Bet"}
+                {(() => {
+                  if (txStep === 'sending') return "Sending transaction..."
+                  if (txStep === 'confirming') return "Confirming..."
+                  if (txStep === 'confirmed') return "Bet Placed!"
+                  if (txStep === 'error') return "Retry"
+                  if (loading) return "Placing bet..."
+                  return "Place Bet"
+                })()}
               </Button>
               <Button
                 type='button'

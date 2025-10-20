@@ -144,7 +144,7 @@ export default function StreamAdmin() {
     return <Loading />
   
   return (
-    <main className='m-4'>
+    <>
       <Card>
         <CardHeader>
           <CardTitle>
@@ -195,6 +195,6 @@ export default function StreamAdmin() {
           })}
         </CardContent>
       </Card>
-    </main>
+    </>
   )
 }

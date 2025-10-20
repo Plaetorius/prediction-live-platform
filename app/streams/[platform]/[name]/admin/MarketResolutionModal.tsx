@@ -4,14 +4,15 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { createSupabaseClient } from '@/lib/supabase/client'
 import { now } from '@/lib/timezoneUtils'
-import { Market } from '@/lib/types'
+import { Market, ResultPayload } from '@/lib/types'
 import { Trophy } from 'lucide-react'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useSwitchChain } from 'wagmi'
 import { keccak256, toHex } from 'viem'
 import { BettingPoolABI, BETTING_POOL_ADDRESS } from '@/lib/contracts/BettingPoolABI'
 import { SUPPORTED_CHAINS } from '@/providers/ProfileProvider'
+import { useResult } from '@/providers/ResultProvider'
 
 interface MarketResolutionModalProps {
   market: Market
@@ -23,7 +24,9 @@ export default function MarketResolutionModal({ market }: MarketResolutionModalP
   const [txStep, setTxStep] = useState<'idle' | 'sending' | 'confirming' | 'success'>('idle')
   const [pendingResolution, setPendingResolution] = useState<boolean | null>(null)
   
-  const { address, isConnected, chainId } = useAccount()
+  const { sendResult } = useResult()
+
+  const { isConnected, chainId } = useAccount()
   const { writeContract, data: hash, error, isPending } = useWriteContract()
   const { switchChain } = useSwitchChain()
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
@@ -31,7 +34,6 @@ export default function MarketResolutionModal({ market }: MarketResolutionModalP
   })
 
   const handleResolution = async (marketId: string, isAnswerA: boolean) => {
-    const supabase = createSupabaseClient()
     try {
       // Check wallet connection
       if (!isConnected) {
@@ -77,19 +79,24 @@ export default function MarketResolutionModal({ market }: MarketResolutionModalP
   }
 
   // Handle transaction success
-  React.useEffect(() => {
+  useEffect(() => {
     if (isSuccess && hash && pendingResolution !== null) {
       setTxStep('success')
       toast.success("Pool resolved successfully!")
-      
+
       // Update database after successful transaction
       updateMarketResolution(market.id, pendingResolution)
+      const payload: ResultPayload = {
+        marketId: market.id,
+        isAnswerA: pendingResolution,
+      }
+      sendResult(payload)
       setPendingResolution(null)
     }
   }, [isSuccess, hash, market.id, pendingResolution])
 
   // Handle transaction error
-  React.useEffect(() => {
+  useEffect(() => {
     if (error) {
       toast.error("Transaction failed. Please try again.")
       setTxStep('idle')
@@ -101,7 +108,7 @@ export default function MarketResolutionModal({ market }: MarketResolutionModalP
   const updateMarketResolution = async (marketId: string, isAnswerA: boolean) => {
     const supabase = createSupabaseClient()
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('markets')
         .update({
           is_answer_a: isAnswerA,
@@ -147,8 +154,9 @@ export default function MarketResolutionModal({ market }: MarketResolutionModalP
             className={txStep === 'sending' || txStep === 'confirming' ? 'opacity-50' : ''}
           >
             {txStep === 'sending' ? 'Sending...' : 
-             txStep === 'confirming' ? 'Confirming...' : 
-             market.answerA}
+              txStep === 'confirming' ? 'Confirming...' : 
+              market.answerA
+            }
           </Button>
           <Button 
             onClick={() => handleResolution(market.id, false)} 
@@ -156,8 +164,9 @@ export default function MarketResolutionModal({ market }: MarketResolutionModalP
             className={txStep === 'sending' || txStep === 'confirming' ? 'opacity-50' : ''}
           >
             {txStep === 'sending' ? 'Sending...' : 
-             txStep === 'confirming' ? 'Confirming...' : 
-             market.answerB}
+              txStep === 'confirming' ? 'Confirming...' : 
+              market.answerB
+            }
           </Button>
         </div>
       </DialogContent>

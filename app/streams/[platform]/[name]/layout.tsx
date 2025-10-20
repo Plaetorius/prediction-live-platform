@@ -9,6 +9,19 @@ interface Props {
 }
 
 const getStream = async (platform: string, name: string) => {
+  // Validate that this looks like a real stream request, not a static asset
+  if (name.includes('.') || name.includes('/') || name.includes('\\')) {
+    console.log("Rejecting request for static asset:", name)
+    return null
+  }
+
+  // Validate platform
+  const validPlatforms = ['twitch', 'youtube', 'kick'] // Add your valid platforms
+  if (!validPlatforms.includes(platform.toLowerCase())) {
+    console.log("Invalid platform:", platform)
+    return null
+  }
+
   const supabase = await createSupabaseServerClient()
   const { data, error } = await supabase
     .from('streams')
@@ -18,7 +31,7 @@ const getStream = async (platform: string, name: string) => {
     .single()
 
   if (error) {
-    console.error("Error retrieving stream", error)
+    console.error("Error retrieving stream in layout", error)
     return null
   }
 
@@ -31,7 +44,7 @@ const getStream = async (platform: string, name: string) => {
 
 export const revalidate = 0 
 
-export default async function StreamSegmentLayout({ children, params}: Props) {
+export default async function StreamSegmentLayout({ children, params }: Props) {
   const { platform, name } = await params
   const stream = await getStream(platform, name)
 

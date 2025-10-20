@@ -40,6 +40,10 @@ export type Rank = {
   weight: number
 }
 
+export type ResultListeners = {
+  onResult?: (payload: RealtimePayload) => void;
+}
+
 export type BetListeners = {
   onTeamA?: (payload: RealtimePayload) => void;
   onTeamB?: (payload: RealtimePayload) => void;
@@ -98,6 +102,7 @@ export type Bet = {
   createdAt: Date;
   updatedAt: Date;
   amount: number;
+  exitAmount: number | null;
   status:  string; // Enum: Constants.public.Enums.bets_status
 }
 
@@ -107,7 +112,12 @@ export type BetPayload = {
   profileId: string;
   createdAt: string;
   betId: string;
-  isAnswerA: boolean
+  isAnswerA: boolean;
+}
+
+export type ResultPayload = {
+  marketId: string;
+  isAnswerA: boolean;
 }
 
 export type BalanceResult = {
@@ -116,3 +126,10 @@ export type BalanceResult = {
   symbol: string;
   value: bigint;
 } | undefined
+
+export type StreamFollows = {
+  id: string;
+  profileId: string;
+  streamId: string;
+  createdAt: Date;
+} | null

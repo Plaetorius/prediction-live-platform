@@ -1,9 +1,8 @@
 "use client"
 
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, Play, TrendingUp } from 'lucide-react'
+import { ArrowLeft, Users, TwitchIcon, Heart } from 'lucide-react'
 import React, { useEffect, useState} from 'react'
 import Loading from '@/components/Loading'
 import Link from 'next/link'
@@ -12,12 +11,33 @@ import { MarketWithAmounts } from '@/lib/types'
 import MarketDisplay from '@/components/betting/MarketDisplay'
 import { selectOpenMarkets } from '@/lib/markets/selectClient'
 import { useBetting } from '@/providers/BettingProvider'
-import { selectBetsWithMarketId } from '@/lib/bets/selectClient'
+import { getEmbedUrl } from '@/lib/utils'
+import { usePlatformStatus } from '@/hooks/usePlatformStatus'
+import { useStreamFollows } from '@/providers/StreamFollowsProvider'
+import { toast } from 'sonner'
+import { useResult } from '@/providers/ResultProvider'
 
 export default function StreamPage() {
   const [loading, setLoading] = useState<boolean>(false)
   const { markets, setMarkets } = useBetting()
   const stream = useStream()
+  const streamLink = stream?.platform && stream?.name 
+    ? `https://${stream.platform}${stream.platform === "twitch" ? ".tv" : ".com"}/${stream.name}`
+    : ""
+
+  // Get platform status with 30-second refresh
+  const { status, loading: statusLoading, error: statusError, refetch } = usePlatformStatus(
+    stream?.platform || '',
+    stream?.name || '',
+    { 
+      refreshInterval: 30000, // Refresh every 30 seconds
+      enabled: !!stream?.platform && !!stream?.name 
+    }
+  )
+
+  const { follows, addFollowing, removeFollowing, loading: followingLoading, error: followingError} = useStreamFollows()
+  const isFollowing = follows.find((streamId) => streamId === stream?.id) ? true : false
+  const { result } = useResult()
 
   useEffect(() => {
     const fetchOngoingMarkets = async (streamId: string | undefined) => {
@@ -25,45 +45,42 @@ export default function StreamPage() {
         return null
       setLoading(true)
       const marketsArray = await selectOpenMarkets(streamId) || []
-      
-      const marketsWithBets = await Promise.all(
-        marketsArray.map(async (market) => {
-          const bets = await selectBetsWithMarketId({ marketId: market.id, status: 'confirmed' })
-          let { amountA, amountB } = { amountA: 0, amountB: 0 }
-          bets?.forEach((bet) => {
-            console.log("BET", bet)
-            if (bet.isAnswerA) {
-              amountA += bet.amount
-            } else {
-              amountB += bet.amount
-            }
-            // bet.isAnswerA ? amountA += bet.amount : amountB += bet.amount
-          })
-          return { ...market, amountA, amountB }
-        })
-      )
-      
       const marketsMap = new Map<string, MarketWithAmounts>()
-      marketsWithBets.forEach(market => {
-        marketsMap.set(market.id, market)
+      marketsArray.forEach(market => {
+        marketsMap.set(market.id, {
+          ...market,
+          amountA: 0,
+          amountB: 0,
+        })
       })
-
-      console.log("MARKETS MAP", marketsMap)
 
       setMarkets(marketsMap)
       setLoading(false)
     }
     fetchOngoingMarkets(stream?.id)
-  }, [setMarkets])
+  }, [setMarkets, stream?.id])
+
+  const handleFollow = async () => {
+    if (!stream)
+      return
+    if (isFollowing) {
+      await removeFollowing(stream.id)
+    } else {
+      await addFollowing(stream.id)
+    }
+    if (followingError) {
+      toast.error(followingError)
+    }
+  }
 
   if (!stream)
     return (
-      <div className="min-h-screen p-4">
-        <div className="mb-6">
-          <Button asChild variant="ghost">
-            <Link href="/streams" className="flex items-center gap-2">
-              <ArrowLeft className="h-4 w-4" />
-              Back to Streams
+      <main className='p-4'>
+        <div className='mb-6'>
+          <Button asChild variant="outline">
+            <Link href="/">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back home
             </Link>
           </Button>
         </div>
@@ -76,118 +93,171 @@ export default function StreamPage() {
             </Link>
           </Button>
         </div>
-      </div>
+      </main>
     )
-
-  const getEmbedUrl = (platform: string, streamName: string) => {
-    // Get hostname safely (only in browser)
-    const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
-    
-    switch (platform.toLowerCase()) {
-      case 'twitch':
-        return `https://player.twitch.tv/?channel=${streamName}&parent=${hostname}`
-      case 'youtube':
-        return `https://www.youtube.com/embed/${streamName}`
-      case 'kick':
-        return `https://player.kick.com/${streamName}`
-      default:
-        return `https://player.twitch.tv/?channel=${streamName}&parent=${hostname}`
-    }
-  }
 
   if (loading)
     return <Loading />
 
+  // Helper function for formatting viewer count with locale separators (e.g., 1,234)
+  const formatViewerCount = (count: number | null) => {
+    if (count === null || count === undefined) return 'N/A';
+    return count.toLocaleString();
+  };
+
+  const formatStartTime = (startedAt: string | null) => {
+    if (!startedAt) return 'N/A';
+    const startTime = new Date(startedAt);
+    const now = new Date();
+    const diffMs = now.getTime() - startTime.getTime();
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+    
+    if (diffHours > 0) {
+      return `${diffHours}h ${diffMinutes}m ago`;
+    }
+    return `${diffMinutes}m ago`;
+  };
+
   return (
-    <div className="min-h-screen p-4">
-      <div className="mb-6">
-        <Button asChild variant="ghost">
-          <Link href="/streams" className="flex items-center gap-2">
-            <ArrowLeft className="h-4 w-4" />
-            Back to Streams
-          </Link>
-        </Button>
-      </div>
-      
-      <div className="flex flex-col lg:flex-row gap-6 items-start lg:items-center justify-between mb-8">
-        <div className="space-y-2">
-          <div className="flex items-center gap-3">
-            <Badge 
-              variant="secondary" 
-              className={`text-sm ${
-                stream.platform.toLowerCase() === 'twitch' 
-                  ? 'bg-purple-500/20 text-purple-300 border-purple-500/30'
-                  : 'bg-green-500/20 text-green-300 border-green-500/30'
-              }`}
-            >
-              {stream.platform.toUpperCase()}
-            </Badge>
-            <h1 className="text-3xl md:text-5xl font-bold">{stream.name}</h1>
+    <main className='grid grid-cols-4'>
+      <section className='col-span-3 bg-brand-black-5 w-full h-screen'>
+        {/* Stream Status Subheader */}
+        <div className='w-full p-4 bg-neutral-900 border-b border-gray-700'>
+          {/* Top row */}
+          <div className="flex items-center justify-between gap-2">
+            <div className='flex flex-items-center justify-start gap-2'>
+              <Button asChild className='bg-brand-purple hover:bg-brand-purple-dark h-8'>
+                <Link href={streamLink}>
+                  <TwitchIcon strokeWidth={2.5} />
+                  {stream.platform} / {stream.name}
+                </Link>
+              </Button>
+
+              <Button
+                className='bg-brand-pink hover:bg-brand-pink-dark h-8 w-8'
+                onClick={handleFollow}
+                disabled={followingLoading}
+              >
+                <Heart fill='white' fillOpacity={isFollowing ? 1 : 0} />
+              </Button>
+
+              {status && status.live && status.viewer_count && (
+                <div className="flex items-center text-sm text-brand-pink">
+                  <Users strokeWidth={2.5} className="h-4 w-4 mr-2" />
+                  <span className="font-medium">{formatViewerCount(status.viewer_count)}</span>
+                </div>
+              )}
+            </div>
+            
+            <div className='flex justify-center w-full'>
+              {status && status.live && status.title && (
+                <div className="text-sm text-gray-300">
+                  <span className="text-white">{status.title}</span>
+                </div>
+              )}
+            </div>
           </div>
-          <p className="text-muted-foreground text-lg">Live stream with prediction markets</p>
+        
+          {statusError && (
+            <Badge variant="destructive" className="w-full justify-center">
+              Error: {statusError}
+            </Badge>
+          )}
+        
         </div>
         
-      </div>
-
-      
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Stream Video */}
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Play className="h-5 w-5 text-red-500" />
-                Live Stream
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="aspect-video w-full bg-black rounded-lg overflow-hidden">
-                <iframe
-                  src={getEmbedUrl(stream.platform, stream.name)}
-                  width="100%"
-                  height="100%"
-                  frameBorder="0"
-                  allowFullScreen
-                  className="w-full h-full"
-                  title={`${stream.platform} stream - ${stream.name}`}
-                />
+        <div className="p-4 aspect-video w-full overflow-hidden">
+          <iframe
+            src={getEmbedUrl(stream.platform, stream.name)}
+            width="100%"
+            height="100%"
+            frameBorder="0"
+            allowFullScreen
+            className="w-full h-full"
+            title={`${stream.platform} stream - ${stream.name}`}
+          />
+        </div>
+      </section>
+      <section className='col-span-1 flex flex-col gap-2 bg-brand-black w-full p-2'>
+        <div className='flex bg-brand-black-2 justify-center items-center h-[30vh] w-full font-semibold'>
+          {
+            result
+            ? (
+              <div>
+                You won {result.exitAmount} at {result.id}!
+                {result.correct ? "WIN" : "LOSE"}
               </div>
-            </CardContent>
-          </Card>
+            )
+            : (
+              <div>
+                No result for now
+              </div>
+            )
+          }
         </div>
-
-        {/* Markets Section */}
-        <div className="space-y-6">
-          {markets.size === 0 ? (
-            <Card>
-              <CardContent className="text-center py-12">
-                <div className="mx-auto w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-6">
-                  <TrendingUp className="h-8 w-8 text-muted-foreground" />
-                </div>
-                <h3 className="text-xl font-bold mb-4">No Active Markets</h3>
-                <p className="text-muted-foreground">
-                  There are currently no prediction markets for this stream.
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-red-500" />
-                  Active Markets
-                  <Badge variant="secondary" className="ml-auto">
-                    {markets.size} market{markets.size > 1 ? 's' : ''}
-                  </Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
+        <div className='bg-brand-black-2 center h-full w-full font-semibold'>
+          {
+            markets.size === 0
+            ? (
+              <div className='flex justify-center items-center h-full'>
+                No markets
+              </div>
+            )
+            : (
+              <div className='w-full justify-center items-center'>
                 <MarketDisplay />
-              </CardContent>
-            </Card>
-          )}
+              </div>
+            )
+          }
         </div>
-      </div>
-    </div>
+      </section>
+    
+    </main>
   )
+
+  // return (
+  //   <main className='p-4'>      
+  //     <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
+  //       {/* Stream Video */}
+  //       <div className='lg:col-span-2'>
+  //         <Card>
+  //           <CardHeader>
+  //             <CardTitle className="flex items-center gap-2">
+  //               {stream.platform} / {stream.name}
+  //             </CardTitle>
+  //           </CardHeader>
+  //           <CardContent>
+  //             <div className="aspect-video w-full bg-black rounded-lg overflow-hidden">
+  //               <iframe
+  //                 src={getEmbedUrl(stream.platform, stream.name)}
+  //                 width="100%"
+  //                 height="100%"
+  //                 frameBorder="0"
+  //                 allowFullScreen
+  //                 className="w-full h-full"
+  //                 title={`${stream.platform} stream - ${stream.name}`}
+  //               />
+  //             </div>
+  //           </CardContent>
+  //         </Card>
+  //       </div>
+
+  //       {
+  //         markets.size === 0
+  //         ? (
+  //             <Card>
+  //               <CardHeader>
+  //                 <CardTitle>
+  //                   No markets
+  //                 </CardTitle>
+  //               </CardHeader>
+  //             </Card>
+  //           )
+  //         : (<MarketDisplay />)
+  //       }
+  //     </div>
+  //   </main>
+  // )
 }

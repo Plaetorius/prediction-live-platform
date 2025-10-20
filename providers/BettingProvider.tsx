@@ -5,13 +5,13 @@ import { createContext, ReactNode, useCallback, useContext, useReducer } from "r
 import { useStream } from "./StreamProvider"
 import { useBetChannel } from "@/hooks/useBetChannel"
 
-interface BettingState {
+interface BettingContextState {
   markets: Map<string, MarketWithAmounts>
   loading: boolean
   error: string | null
 }
 
-type BettingAction =
+type BettingContextAction =
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_ERROR'; payload: string | null }
   | { type: 'ADD_MARKET'; payload: Market }
@@ -19,13 +19,13 @@ type BettingAction =
   | { type: 'REMOVE_MARKET'; payload: string }
   | { type: 'SET_MARKETS'; payload: Map<string, MarketWithAmounts> }
 
-const initialState: BettingState = {
+const initialState: BettingContextState = {
   markets: new Map(),
   loading: false,
   error: null
 }
 
-function bettingReducer(state: BettingState, action: BettingAction): BettingState {
+function bettingReducer(state: BettingContextState, action: BettingContextAction): BettingContextState {
   switch (action.type) {
     case 'SET_LOADING':
       return { ...state, loading: action.payload }
@@ -33,10 +33,14 @@ function bettingReducer(state: BettingState, action: BettingAction): BettingStat
     case 'SET_ERROR':
       return { ...state, error: action.payload }
 
-    case 'ADD_MARKET':
-      const newMap = new Map(state.markets)
-      newMap.set(action.payload.id, { ...action.payload, amountA: 0, amountB: 0 })
+    case 'ADD_MARKET': {
+      const newMarketEntry: [string, MarketWithAmounts] = [
+        action.payload.id,
+        { ...action.payload, amountA: 0, amountB: 0 }
+      ]
+      const newMap = new Map([newMarketEntry, ...Array.from(state.markets.entries())])
       return { ...state, markets: newMap }
+    }
   
     case 'UPDATE_MARKET_AMOUNTS':
       const updatedMap = new Map(state.markets)
@@ -108,7 +112,6 @@ export function BettingProvider({ children }: { children: ReactNode }) {
     }, [state.markets]),
 
     onNewMarket: useCallback((payload: any) => {
-      console.log("NEW MARKET", payload)
       const newMarket: Market = {
         id: payload.id as string,
         question: payload.question as string,

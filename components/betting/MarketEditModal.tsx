@@ -23,7 +23,6 @@ export default function MarketEditModal({ market, stream } : MarketEditModalProp
 
   const onSubmit: SubmitHandler<MarketFormSchema> = async (data) => {
     try {
-      console.log("DATA BLOB", data)
       const supabase = createSupabaseClient()
       setLoading(true)
       const { data: marketData, error: marketError } = await supabase

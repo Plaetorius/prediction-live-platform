@@ -1,95 +1,72 @@
 "use client"
 
-import React from 'react'
-import { Button } from './ui/button'
-import Link from 'next/link'
+import React, { useEffect, useState } from 'react'
 import { useWeb3AuthConnect } from "@web3auth/modal/react"
-import { User, Users, Home, TrendingUp } from 'lucide-react'
-import GlassSurface from './GlassSurface'
+import { SidebarTrigger } from './ui/sidebar'
+import { Button } from './ui/button'
+import { CoinsIcon, SearchIcon } from 'lucide-react'
+import { useProfile } from '@/providers/ProfileProvider'
+import { toast } from 'sonner'
 
 export default function Header() {
-  const { isConnected } = useWeb3AuthConnect()
-
+  const { isConnected: isWeb3AuthConnected, loading: connectLoading, error: connectError } = useWeb3AuthConnect()
+  const { profile, isConnected: isProfileConnected, getBalance } = useProfile()
+  const [balance, setBalance] = useState<string | null>(null)
+  const [balanceLoading, setBalanceLoading] = useState(false)
+  const isConnected = isWeb3AuthConnected && isProfileConnected
+  
+  useEffect(() => {
+    const getProfileBalance = async () => {
+      if (isConnected && profile) {
+        setBalanceLoading(true)
+        try {
+          const balanceResult = await getBalance()
+          setBalance(balanceResult)
+        } catch (error) {
+          console.error("Failed to fetch balance:", error)
+          toast.error("Error retrieving balance.")
+          setBalance('0.00')
+        } finally {
+          setBalanceLoading(false)
+        }
+      } else {
+        setBalance(null)
+        setBalanceLoading(false)
+      }
+    }
+    getProfileBalance()
+  }, [profile, isConnected, getBalance])
+  
   return (
-    <header className="border-b border-white/10 bg-black/50 backdrop-blur-sm px-4 py-3">
-      <nav className="flex items-center gap-2">
-        <GlassSurface 
-          width={120} 
-          height={40}
-          borderRadius={12}
-          backgroundOpacity={0.1}
-          className="hover:scale-105 transition-transform duration-200"
-        >
-          <Button asChild variant="ghost" className="w-full h-full bg-transparent hover:bg-white/10 text-white border-0">
-            <Link href="/" className="flex items-center gap-2 text-sm font-medium tracking-wider uppercase">
-              <Home className="h-4 w-4" />
-              Home
-            </Link>
-          </Button>
-        </GlassSurface>
-        
-        <GlassSurface 
-          width={120} 
-          height={40}
-          borderRadius={12}
-          backgroundOpacity={0.15}
-          className="hover:scale-105 transition-transform duration-200"
-        >
-          <Button asChild variant="ghost" className="w-full h-full bg-transparent hover:bg-white/10 text-white border-0">
-            <Link href="/streams" className="flex items-center gap-2 text-sm font-medium tracking-wider uppercase">
-              <TrendingUp className="h-4 w-4" />
-              Streams
-            </Link>
-          </Button>
-        </GlassSurface>
-        
-        {isConnected && (
-          <GlassSurface 
-            width={140} 
-            height={40}
-            borderRadius={12}
-            backgroundOpacity={0.1}
-            className="hover:scale-105 transition-transform duration-200"
-          >
-            <Button asChild variant="ghost" className="w-full h-full bg-transparent hover:bg-white/10 text-white border-0">
-              <Link href="/profile" className="flex items-center gap-2 text-sm font-medium tracking-wider uppercase">
-                <User className="h-4 w-4" />
-                My Profile
-              </Link>
+    <header className="flex items-center justify-between border-b bg-background px-4 py-3">
+      <SidebarTrigger className='h-8 w-8' />
+      <div className='flex items-center gap-2 px-2 py-1 text-brand-pink-dark rounded-xl border-2 border-brand-pink-dark flex-1 max-w-md mx-4'>
+        <SearchIcon width={20} height={20} />
+        Search...
+      </div>
+      <div>
+        {isConnected
+        ? (
+          <div className='flex items-center gap-2'>
+            {balance && !balanceLoading ? (
+              <div className='flex flex-row items-center gap-1'>
+                <div className='font-semibold'>
+                  {parseFloat(balance).toFixed(2)} 
+              </div>
+              <CoinsIcon className='h-4 w-4' />
+              </div>
+            ) : balanceLoading ? (
+              <div className='font-semibold text-gray-400'>Loading...</div>
+            ): null}
+            <Button>
+              Buy Tokens
             </Button>
-          </GlassSurface>
+          </div>
+        )
+        : (
+          <></>
         )}
-        
-        <GlassSurface 
-          width={140} 
-          height={40}
-          borderRadius={12}
-          backgroundOpacity={0.1}
-          className="hover:scale-105 transition-transform duration-200"
-        >
-          <Button asChild variant="ghost" className="w-full h-full bg-transparent hover:bg-white/10 text-white border-0">
-            <Link href="/profiles" className="flex items-center gap-2 text-sm font-medium tracking-wider uppercase">
-              <Users className="h-4 w-4" />
-              All Profiles
-            </Link>
-          </Button>
-        </GlassSurface>
-        
-        <GlassSurface 
-          width={120} 
-          height={40}
-          borderRadius={12}
-          backgroundOpacity={0.1}
-          className="hover:scale-105 transition-transform duration-200"
-        >
-          <Button asChild variant="ghost" className="w-full h-full bg-transparent hover:bg-white/10 text-white border-0">
-            <Link href="/ranking" className="flex items-center gap-2 text-sm font-medium tracking-wider uppercase">
-              <TrendingUp className="h-4 w-4" />
-              Ranking
-            </Link>
-          </Button>
-        </GlassSurface>
-      </nav>
+      </div>
     </header>
   )
 }

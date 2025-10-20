@@ -1,7 +1,16 @@
 import { type NextRequest, NextResponse } from "next/server";
 
 export async function middleware(request: NextRequest) {
-  // Let everything pass through for testing/debugging
+  const { pathname } = request.nextUrl;
+  
+  // Block static asset requests from reaching stream routes
+  if (pathname.startsWith('/streams/') && pathname.includes('.')) {
+    // This is likely a static asset request being caught by the dynamic route
+    // (e.g., source maps from embedded Twitch/YouTube players)
+    return new NextResponse('Not Found', { status: 404 });
+  }
+  
+  // Let everything else pass through
   return NextResponse.next();
 }
 
