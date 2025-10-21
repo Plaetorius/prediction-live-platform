@@ -178,7 +178,7 @@ export default function BetFormModal({
         try {
           setTxStep('confirmed')
           setLoading(false)
-          toast.success("Bet placed successfully! Transaction confirmed.")
+          toast.success("Prediction placed successfully! Transaction confirmed.")
         
           const betPayload: BetPayload = {
             marketId: pendingBetPayload.marketId,
@@ -264,7 +264,7 @@ export default function BetFormModal({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            Bet creation
+            Prediction creation
           </DialogTitle>
           <DialogDescription>
             Place a bet for <span className='font-semibold'>{teamName}</span>
@@ -368,7 +368,7 @@ export default function BetFormModal({
                   <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                   <div className="flex-1">
                     <p className="text-sm font-medium text-green-200">
-                      Bet placed successfully!
+                      Prediction placed successfully!
                     </p>
                     <p className="text-xs text-green-300/70">
                       Your prediction is now active
@@ -394,10 +394,10 @@ export default function BetFormModal({
                 {(() => {
                   if (txStep === 'sending') return "Sending transaction..."
                   if (txStep === 'confirming') return "Confirming..."
-                  if (txStep === 'confirmed') return "Bet Placed!"
+                  if (txStep === 'confirmed') return "Prediction Placed!"
                   if (txStep === 'error') return "Retry"
                   if (loading) return "Placing bet..."
-                  return "Place Bet"
+                  return "Place Prediction"
                 })()}
               </Button>
               <Button

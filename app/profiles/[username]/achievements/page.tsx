@@ -14,7 +14,7 @@ const ACHIEVEMENTS: Achievement[] = [
   // Onboarding & Habits
   {
     id: 'first-bet',
-    name: 'First Bet',
+    name: 'First Predict',
     description: 'Place your first bet',
     icon: '🎯',
     category: 'onboarding',
@@ -24,7 +24,7 @@ const ACHIEVEMENTS: Achievement[] = [
   {
     id: 'week-1',
     name: 'Week 1',
-    description: 'Bet at least once per week for 1 consecutive week',
+    description: 'Predict at least once per week for 1 consecutive week',
     icon: '📅',
     category: 'onboarding',
     requirement: 1,
@@ -33,7 +33,7 @@ const ACHIEVEMENTS: Achievement[] = [
   {
     id: 'week-4',
     name: 'Week 4',
-    description: 'Bet at least once per week for 4 consecutive weeks',
+    description: 'Predict at least once per week for 4 consecutive weeks',
     icon: '📆',
     category: 'onboarding',
     requirement: 4,
@@ -42,7 +42,7 @@ const ACHIEVEMENTS: Achievement[] = [
   {
     id: 'week-12',
     name: 'Week 12',
-    description: 'Bet at least once per week for 12 consecutive weeks',
+    description: 'Predict at least once per week for 12 consecutive weeks',
     icon: '🗓️',
     category: 'onboarding',
     requirement: 12,
@@ -275,7 +275,7 @@ const ACHIEVEMENTS: Achievement[] = [
   {
     id: 'games-3',
     name: 'Esports Globetrotter (Bronze)',
-    description: 'Bet on 3 different games',
+    description: 'Predict on 3 different games',
     icon: '🌍',
     category: 'diversity',
     requirement: 3,
@@ -284,7 +284,7 @@ const ACHIEVEMENTS: Achievement[] = [
   {
     id: 'games-5',
     name: 'Esports Globetrotter (Silver)',
-    description: 'Bet on 5 different games',
+    description: 'Predict on 5 different games',
     icon: '🌎',
     category: 'diversity',
     requirement: 5,
@@ -293,7 +293,7 @@ const ACHIEVEMENTS: Achievement[] = [
   {
     id: 'games-8',
     name: 'Esports Globetrotter (Gold)',
-    description: 'Bet on 8 different games',
+    description: 'Predict on 8 different games',
     icon: '🌏',
     category: 'diversity',
     requirement: 8,
@@ -389,7 +389,7 @@ const ACHIEVEMENTS: Achievement[] = [
   {
     id: 'team-player',
     name: 'Team Player',
-    description: 'Bet via Twitch overlay at least 10 times',
+    description: 'Predict via Twitch overlay at least 10 times',
     icon: '👥',
     category: 'social',
     requirement: 10,
