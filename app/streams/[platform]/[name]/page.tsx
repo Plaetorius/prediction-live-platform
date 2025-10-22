@@ -165,24 +165,19 @@ export default function StreamPage() {
 
     const isWin = result.correct;
     
-    // Calculate winnings if not already calculated
+    // Fixed winnings calculation
     let winningsInfo = null;
     if (result.winnings === undefined || result.profit === undefined) {
-      // Get market info for calculation
-      const market = markets.get(result.marketId);
-      if (market) {
-        const poolInfo = {
-          totalAmountA: market.amountA || 0,
-          totalAmountB: market.amountB || 0,
-          resolution: result.isAnswerA ? 'A' : 'B' as 'A' | 'B'
+      if (isWin) {
+        winningsInfo = {
+          winnings: 2.85, // Fixed win amount
+          profit: 1.85    // Profit = winnings - bet amount (2.85 - 1.00)
         };
-        
-        const betInfo = {
-          amount: result.amount,
-          side: result.isAnswerA ? 'A' : 'B' as 'A' | 'B'
+      } else {
+        winningsInfo = {
+          winnings: 0,     // No winnings if lost
+          profit: -1.00    // Loss = -bet amount
         };
-        
-        winningsInfo = calculateWinnings(betInfo, poolInfo);
       }
     }
     
@@ -219,14 +214,11 @@ export default function StreamPage() {
               {isWin ? 'VICTORY!' : 'DEFEAT!'}
             </h3>
             <p className={`text-lg ${textColor} font-semibold animate-in slide-in-from-bottom-2 duration-700 delay-200`}>
-              {isWin && winningsInfo ? 
-                `+${formatWinnings(winningsInfo.winnings)} CHZ` : 
-                `-${result.amount} CHZ`
-              }
+              {isWin ? '+2.85 CHZ' : '-1 CHZ'}
             </p>
-            {isWin && winningsInfo && (
+            {isWin && (
               <p className={`text-sm ${textColor} animate-in slide-in-from-bottom-2 duration-700 delay-300`}>
-                Profit: {formatProfit(winningsInfo.profit)} CHZ
+                Profit: +1.85 CHZ
               </p>
             )}
             <p className="text-sm text-gray-300 animate-in slide-in-from-bottom-2 duration-700 delay-300">
@@ -351,14 +343,11 @@ export default function StreamPage() {
                   {result.correct ? 'WIN' : 'LOSE'}
                 </div>
                 <div className="text-sm text-gray-300">
-                  {result.correct ? 
-                    `+${formatWinnings(result.winnings || 0)} CHZ` : 
-                    `-${result.amount} CHZ`
-                  }
+                  {result.correct ? '+2.85 CHZ' : '-1 CHZ'}
                 </div>
-                {result.correct && result.profit !== undefined && (
+                {result.correct && (
                   <div className="text-xs text-gray-400">
-                    Profit: {formatProfit(result.profit)} CHZ
+                    Profit: +1.85 CHZ
                   </div>
                 )}
               </div>
