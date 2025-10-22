@@ -214,11 +214,11 @@ export default function StreamPage() {
               {isWin ? 'VICTORY!' : 'DEFEAT!'}
             </h3>
             <p className={`text-lg ${textColor} font-semibold animate-in slide-in-from-bottom-2 duration-700 delay-200`}>
-              {isWin ? '+2.85 CHZ' : '-1 CHZ'}
+              {isWin ? '+2.85 SOL' : '-1 SOL'}
             </p>
             {isWin && (
               <p className={`text-sm ${textColor} animate-in slide-in-from-bottom-2 duration-700 delay-300`}>
-                Profit: +1.85 CHZ
+                Profit: +1.85 SOL
               </p>
             )}
             <p className="text-sm text-gray-300 animate-in slide-in-from-bottom-2 duration-700 delay-300">

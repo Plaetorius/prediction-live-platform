@@ -125,33 +125,40 @@ export default function Home() {
         {
           id: "6",
           platform: "twitch",
+          name: "eslcs",
+          viewers: 45000,
+          title: "ESL Counter-Strike - Live Tournament"
+        },
+        {
+          id: "7",
+          platform: "twitch",
           name: "s1mple",
           viewers: 25430,
           title: "NAVI - Practice & Analysis"
         },
         {
-          id: "7",
+          id: "8",
           platform: "twitch",
           name: "shroud",
           viewers: 18750,
           title: "CS:GO Ranked Games"
         },
         {
-          id: "8",
+          id: "9",
           platform: "twitch",
           name: "flusha",
           viewers: 12340,
           title: "CS:GO Pro Analysis"
         },
         {
-          id: "9",
+          id: "10",
           platform: "twitch",
           name: "olofmeister",
           viewers: 9870,
           title: "CS:GO Tournament Watch"
         },
         {
-          id: "10",
+          id: "11",
           platform: "twitch",
           name: "device",
           viewers: 15680,
@@ -165,9 +172,9 @@ export default function Home() {
       image: "/categories/valorant.png",
       badges: ["FPS", "Tactical", "5v5"],
       streams: [
-        { id: "11", platform: "twitch", name: "tenz", viewers: 22110, title: "Ranked & Scrims" },
-        { id: "12", platform: "twitch", name: "aspas", viewers: 15430, title: "Practice Session" },
-        { id: "13", platform: "twitch", name: "mixwell", viewers: 9876, title: "Agent Practice" }
+        { id: "12", platform: "twitch", name: "tenz", viewers: 22110, title: "Ranked & Scrims" },
+        { id: "13", platform: "twitch", name: "aspas", viewers: 15430, title: "Practice Session" },
+        { id: "14", platform: "twitch", name: "mixwell", viewers: 9876, title: "Agent Practice" }
       ]
     },
     {
@@ -176,8 +183,8 @@ export default function Home() {
       image: "/categories/apex-legends.jpg",
       badges: ["BR", "FPS", "Trios"],
       streams: [
-        { id: "14", platform: "twitch", name: "imperialhal", viewers: 20120, title: "Ranked Grind" },
-        { id: "15", platform: "twitch", name: "nicewigg", viewers: 11200, title: "Road to Predator" }
+        { id: "15", platform: "twitch", name: "imperialhal", viewers: 20120, title: "Ranked Grind" },
+        { id: "16", platform: "twitch", name: "nicewigg", viewers: 11200, title: "Road to Predator" }
       ]
     },
     {
@@ -186,8 +193,8 @@ export default function Home() {
       image: "/categories/ea-fc-26.jpg",
       badges: ["Sports", "Football", "Competitive"],
       streams: [
-        { id: "16", platform: "twitch", name: "castro_1021", viewers: 17200, title: "Ultimate Team" },
-        { id: "17", platform: "twitch", name: "bateson87", viewers: 9800, title: "Pack Opening" }
+        { id: "17", platform: "twitch", name: "castro_1021", viewers: 17200, title: "Ultimate Team" },
+        { id: "18", platform: "twitch", name: "bateson87", viewers: 9800, title: "Pack Opening" }
       ]
     },
     {
@@ -196,8 +203,8 @@ export default function Home() {
       image: "/categories/rocket-league.jpg",
       badges: ["Sports", "Cars", "3v3"],
       streams: [
-        { id: "18", platform: "twitch", name: "garrettg", viewers: 8200, title: "Ranked 3v3" },
-        { id: "19", platform: "twitch", name: "jstn", viewers: 9400, title: "Mechanics Practice" }
+        { id: "19", platform: "twitch", name: "garrettg", viewers: 8200, title: "Ranked 3v3" },
+        { id: "20", platform: "twitch", name: "jstn", viewers: 9400, title: "Mechanics Practice" }
       ]
     }
   ]
