@@ -25,9 +25,9 @@ export default function Providers({
                 <ResultProvider>
                   <SidebarProvider>
                     <AppSidebar variant='sidebar' />
-                      <SidebarInset>
-                        {children}
-                      </SidebarInset>
+                    <SidebarInset>
+                      {children}
+                    </SidebarInset>
                   </SidebarProvider>
                 </ResultProvider>
               </BetsProvider>
