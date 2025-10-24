@@ -22,6 +22,36 @@
  * });
  */
 
+// Rate limiting configuration
+const RATE_LIMIT_CONFIG = {
+  twitch: {
+    maxRequestsPerMinute: 30, // Conservative limit
+    delayBetweenRequests: 2000, // 2 seconds between requests
+    retryAttempts: 3,
+    retryDelay: 5000, // 5 seconds base delay
+  },
+  kick: {
+    maxRequestsPerMinute: 60,
+    delayBetweenRequests: 1000, // 1 second between requests
+    retryAttempts: 3,
+    retryDelay: 3000,
+  }
+};
+
+// Track rate limiting state
+const rateLimitState = {
+  twitch: {
+    lastRequestTime: 0,
+    requestCount: 0,
+    resetTime: 0,
+  },
+  kick: {
+    lastRequestTime: 0,
+    requestCount: 0,
+    resetTime: 0,
+  }
+};
+
 export interface PlatformStatus {
   live: boolean;
   game: string | null;
@@ -34,6 +64,66 @@ export interface PlatformStatusOptions {
   twitchClientId?: string;
   twitchToken?: string;
   kickToken?: string;
+}
+
+/**
+ * Rate limiting utility functions
+ */
+async function waitForRateLimit(platform: 'twitch' | 'kick'): Promise<void> {
+  const config = RATE_LIMIT_CONFIG[platform];
+  const state = rateLimitState[platform];
+  const now = Date.now();
+
+  // Reset counter if a minute has passed
+  if (now - state.resetTime > 60000) {
+    state.requestCount = 0;
+    state.resetTime = now;
+  }
+
+  // Check if we've hit the rate limit
+  if (state.requestCount >= config.maxRequestsPerMinute) {
+    const waitTime = 60000 - (now - state.resetTime);
+    if (waitTime > 0) {
+      console.log(`Rate limit reached for ${platform}, waiting ${waitTime}ms`);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+      state.requestCount = 0;
+      state.resetTime = Date.now();
+    }
+  }
+
+  // Ensure minimum delay between requests
+  const timeSinceLastRequest = now - state.lastRequestTime;
+  if (timeSinceLastRequest < config.delayBetweenRequests) {
+    const waitTime = config.delayBetweenRequests - timeSinceLastRequest;
+    await new Promise(resolve => setTimeout(resolve, waitTime));
+  }
+
+  state.lastRequestTime = Date.now();
+  state.requestCount++;
+}
+
+/**
+ * Retry function with exponential backoff
+ */
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  platform: 'twitch' | 'kick',
+  attempt: number = 1
+): Promise<T> {
+  const config = RATE_LIMIT_CONFIG[platform];
+  
+  try {
+    await waitForRateLimit(platform);
+    return await fn();
+  } catch (error) {
+    if (attempt < config.retryAttempts && error instanceof Error && error.message.includes('429')) {
+      const delay = config.retryDelay * Math.pow(2, attempt - 1);
+      console.log(`Retrying ${platform} request in ${delay}ms (attempt ${attempt + 1}/${config.retryAttempts})`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+      return retryWithBackoff(fn, platform, attempt + 1);
+    }
+    throw error;
+  }
 }
 
 /**
@@ -79,7 +169,7 @@ async function getTwitchStatus(
     return getDefaultOfflineStatus();
   }
 
-  try {
+  return retryWithBackoff(async () => {
     // Check live status
     const res = await fetch(
       `https://api.twitch.tv/helix/streams?user_login=${encodeURIComponent(streamName)}`,
@@ -105,6 +195,8 @@ async function getTwitchStatus(
       // Fetch game information if game_id is available
       if (liveEntry.game_id) {
         try {
+          // Use rate limiting for the game info request too
+          await waitForRateLimit('twitch');
           const gameRes = await fetch(
             `https://api.twitch.tv/helix/games?id=${liveEntry.game_id}`,
             {
@@ -135,10 +227,10 @@ async function getTwitchStatus(
     } else {
       return getDefaultOfflineStatus();
     }
-  } catch (error) {
+  }, 'twitch').catch((error) => {
     console.error(`Twitch status check failed for ${streamName}:`, error);
     return getDefaultOfflineStatus();
-  }
+  });
 }
 
 /**
@@ -153,7 +245,7 @@ async function getKickStatus(
     return getDefaultOfflineStatus();
   }
 
-  try {
+  return retryWithBackoff(async () => {
     // Get user_id from username
     const userRes = await fetch(
       `https://api.kick.com/public/v1/channels?slug=${encodeURIComponent(streamName)}`,
@@ -167,7 +259,7 @@ async function getKickStatus(
     );
 
     if (!userRes.ok) {
-      return getDefaultOfflineStatus();
+      throw new Error(`Kick API error: ${userRes.status}`);
     }
 
     const userData = await userRes.json();
@@ -190,7 +282,7 @@ async function getKickStatus(
     );
 
     if (!streamRes.ok) {
-      return getDefaultOfflineStatus();
+      throw new Error(`Kick API error: ${streamRes.status}`);
     }
 
     const streamData = await streamRes.json();
@@ -207,10 +299,10 @@ async function getKickStatus(
     } else {
       return getDefaultOfflineStatus();
     }
-  } catch (error) {
+  }, 'kick').catch((error) => {
     console.error(`Kick status check failed for ${streamName}:`, error);
     return getDefaultOfflineStatus();
-  }
+  });
 }
 
 /**
@@ -238,22 +330,21 @@ export async function getBatchPlatformStatus(
 ): Promise<Record<string, PlatformStatus>> {
   const results: Record<string, PlatformStatus> = {};
 
-  await Promise.all(
-    streams.map(async (stream) => {
-      if (!stream) return;
-      
-      try {
-        results[stream.id] = await getPlatformStatus(
-          stream.platform,
-          stream.name,
-          options
-        );
-      } catch (error) {
-        console.error(`Status check failed for ${stream.platform}/${stream.name}:`, error);
-        results[stream.id] = getDefaultOfflineStatus();
-      }
-    })
-  );
+  // Process streams sequentially to avoid rate limiting
+  for (const stream of streams) {
+    if (!stream) continue;
+    
+    try {
+      results[stream.id] = await getPlatformStatus(
+        stream.platform,
+        stream.name,
+        options
+      );
+    } catch (error) {
+      console.error(`Status check failed for ${stream.platform}/${stream.name}:`, error);
+      results[stream.id] = getDefaultOfflineStatus();
+    }
+  }
 
   return results;
 }
