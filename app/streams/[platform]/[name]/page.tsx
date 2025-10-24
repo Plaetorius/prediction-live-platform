@@ -170,13 +170,13 @@ export default function StreamPage() {
     if (result.winnings === undefined || result.profit === undefined) {
       if (isWin) {
         winningsInfo = {
-          winnings: 2.85, // Fixed win amount
-          profit: 1.85    // Profit = winnings - bet amount (2.85 - 1.00)
+          winnings: 0.0285, // Fixed win amount
+          profit: 0.0185   // Profit = winnings - bet amount (2.85 - 1.00)
         };
       } else {
         winningsInfo = {
           winnings: 0,     // No winnings if lost
-          profit: -1.00    // Loss = -bet amount
+          profit: -0.01   // Loss = -bet amount
         };
       }
     }
@@ -214,11 +214,11 @@ export default function StreamPage() {
               {isWin ? 'VICTORY!' : 'DEFEAT!'}
             </h3>
             <p className={`text-lg ${textColor} font-semibold animate-in slide-in-from-bottom-2 duration-700 delay-200`}>
-              {isWin ? '+2.85 ETH' : '-1 ETH'}
+              {isWin ? '+0.0285 ETH' : '-0.01 ETH'}
             </p>
             {isWin && (
               <p className={`text-sm ${textColor} animate-in slide-in-from-bottom-2 duration-700 delay-300`}>
-                Profit: +1.85 ETH
+                Profit: +0.0185 ETH
               </p>
             )}
             <p className="text-sm text-gray-300 animate-in slide-in-from-bottom-2 duration-700 delay-300">
