@@ -1,14 +1,12 @@
 "use client"
 
 import {
-  BellIcon,
-  CreditCardIcon,
-  LogInIcon,
   LogOutIcon,
   MoreVerticalIcon,
   UserCircleIcon,
   UserIcon,
 } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 
 import {
   Avatar,
@@ -37,7 +35,7 @@ import Link from "next/link"
 
 export function NavUser() {
   const { isMobile } = useSidebar()
-  const { disconnect, loading: disconnectLoading, error: disconnectError } = useWeb3AuthDisconnect();
+  const { disconnect, loading: disconnectLoading } = useWeb3AuthDisconnect();
   const { profile } = useProfile()
   const { connect, isConnected } = useWeb3AuthConnect()
 
@@ -68,9 +66,14 @@ export function NavUser() {
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{profile.username}</span>
-                <span className="truncate text-xs text-muted-foreground">
-                  {profile.email}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="truncate text-xs text-muted-foreground">
+                    {profile.email}
+                  </span>
+                  <Badge variant="secondary" className="text-xs">
+                    {profile.role}
+                  </Badge>
+                </div>
               </div>
               <MoreVerticalIcon className="ml-auto size-4" />
             </SidebarMenuButton>
@@ -89,9 +92,14 @@ export function NavUser() {
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">{profile.username}</span>
-                  <span className="truncate text-xs text-muted-foreground">
-                    {profile.email}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="truncate text-xs text-muted-foreground">
+                      {profile.email}
+                    </span>
+                    <Badge variant="secondary" className="text-xs">
+                      {profile.role}
+                    </Badge>
+                  </div>
                 </div>
               </div>
             </DropdownMenuLabel>

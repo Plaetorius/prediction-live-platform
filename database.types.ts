@@ -194,6 +194,7 @@ export type Database = {
           email: string | null
           id: string
           picture_url: string | null
+          role: 'admin' | 'croupier' | 'user' | 'anon'
           updated_at: string
           username: string
           wallet_address: string | null
@@ -207,6 +208,7 @@ export type Database = {
           email?: string | null
           id?: string
           picture_url?: string | null
+          role?: 'admin' | 'croupier' | 'user' | 'anon'
           updated_at?: string
           username: string
           wallet_address?: string | null
@@ -220,6 +222,7 @@ export type Database = {
           email?: string | null
           id?: string
           picture_url?: string | null
+          role?: 'admin' | 'croupier' | 'user' | 'anon'
           updated_at?: string
           username?: string
           wallet_address?: string | null

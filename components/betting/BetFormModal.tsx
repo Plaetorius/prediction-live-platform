@@ -5,12 +5,13 @@ import { Input } from "@/components/ui/input"
 import { BetPayload } from "@/lib/types"
 import { useBetting } from "@/providers/BettingProvider"
 import { SUPPORTED_CHAINS, useProfile } from "@/providers/ProfileProvider"
+import { useBets } from "@/providers/BetsProvider"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useEffect, useState, useCallback } from "react"
 import { SubmitHandler, useForm } from "react-hook-form"
 import { toast } from "sonner"
 import z from "zod"
-import { useWaitForTransactionReceipt, useChainId, useSwitchChain, useAccount, useWriteContract, useCall } from "wagmi"
+import { useWaitForTransactionReceipt, useChainId, useSwitchChain, useAccount, useWriteContract } from "wagmi"
 import { useWeb3AuthConnect } from "@web3auth/modal/react"
 import { createSupabaseClient } from "@/lib/supabase/client"
 import { createBetPayload, handleTransactionError, processBettingRequest } from "@/lib/betting/bettingService"
@@ -37,7 +38,8 @@ export default function BetFormModal({
   isAnswerA,
   teamName
 }: BetFormModalProps) {
-  const { profile, setConfirmedBets } = useProfile()
+  const { profile } = useProfile()
+  const { addBet, refreshBets } = useBets()
   const [loading, setLoading] = useState<boolean>(false)
   const [txStep, setTxStep] = useState<'idle' | 'sending' | 'confirming' | 'confirmed' | 'error'>('idle')
 
@@ -131,7 +133,7 @@ export default function BetFormModal({
         console.error("Transaction failed:", writeContractError)
         
 
-        const errorHandling = handleTransactionError(writeContractError, null)
+        const errorHandling = handleTransactionError(writeContractError)
         toast.error(`Transaction failed: ${errorHandling.userMessage}`)
 
         if (errorHandling.shouldUpdateBetStatus) {
@@ -198,11 +200,11 @@ export default function BetFormModal({
           const bet = await updateBetStatus(pendingBetPayload.betId, 'confirmed')
 
           if (bet) {
-            setConfirmedBets((prev) => {
-              const newMap = new Map(prev)
-              newMap.set(bet.marketId, bet)
-              return newMap
-            })
+            // Add the confirmed bet to the BetsProvider
+            addBet(bet)
+          } else {
+            // If bet update failed, refresh all bets to get latest state
+            await refreshBets()
           }
 
           setPendingBetPayload(null)
@@ -218,18 +220,20 @@ export default function BetFormModal({
         setTxStep('error')
         setLoading(false)
         
-        const errorHandling = handleTransactionError(txError, pendingBetPayload)
+        const errorHandling = handleTransactionError(txError)
         toast.error(`Transaction failed; ${errorHandling.userMessage}`)
 
         if (pendingBetPayload && errorHandling.shouldUpdateBetStatus) {
           await updateBetStatus(pendingBetPayload.betId, 'error');
           setPendingBetPayload(null);
+          // Refresh bets to get updated status
+          await refreshBets();
         }
       }
     }
 
     confirmBet()
-  }, [isConfirming, isConfirmed, txError, pendingBetPayload, sendBetTeam1, sendBetTeam2, updateBetStatus])
+  }, [isConfirming, isConfirmed, txError, pendingBetPayload, sendBetTeam1, sendBetTeam2, updateBetStatus, addBet, refreshBets])
 
   useEffect(() => {
     if (isModalOpen) {

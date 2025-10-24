@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { UserIcon, Twitch } from "lucide-react";
+import { UserIcon } from "lucide-react";
 import { getEmbedUrl } from "@/lib/utils";
 import Link from "next/link";
 

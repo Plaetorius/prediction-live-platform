@@ -6,7 +6,7 @@ import { createSupabaseClient } from '@/lib/supabase/client'
 import { useBatchPlatformStatus } from '@/hooks/usePlatformStatus'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { TicketPlus, Play, Users, Eye, TrendingUp, Clock } from 'lucide-react'
+import { TicketPlus } from 'lucide-react'
 import { toast } from 'sonner'
 import Loading from '@/components/Loading'
 import { Badge } from '@/components/ui/badge'
@@ -19,7 +19,7 @@ export default function Streams() {
   const [streamsLoaded, setStreamsLoaded] = useState<boolean>(false)
 
   // Use the hook to automatically fetch and refresh statuses
-  const { statuses, loading: statusLoading, error: statusError } = useBatchPlatformStatus(
+  const { statuses, loading: statusLoading } = useBatchPlatformStatus(
     streams.filter(stream => stream !== null).map(stream => ({
       id: stream.id,
       platform: stream.platform,

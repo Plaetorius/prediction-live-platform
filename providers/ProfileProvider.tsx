@@ -21,9 +21,9 @@ interface ProfileContextType {
   updateProfile: (update: Partial<Profile>) => Promise<Profile | null>
   clearError: () => void
 
-  confirmedBets: Map<string, Bet> | null
-  setConfirmedBets: Dispatch<SetStateAction<Map<string, Bet> | null>>
-  refreshConfirmedBets: () => Promise<void>
+  // confirmedBets: Map<string, Bet> | null
+  // setConfirmedBets: Dispatch<SetStateAction<Map<string, Bet> | null>>
+  // refreshConfirmedBets: () => Promise<void>
 
   // Web3Auth features
   address: string | undefined
@@ -59,8 +59,8 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
   const { signMessage } = useSignMessage()
   const { switchChain } = useSwitchChain()
 
-  // the string is the ASSOCIATED MARKET ID not the BET ID
-  const [confirmedBets, setConfirmedBets] = useState<Map<string, Bet> | null>(null)
+  // // the string is the ASSOCIATED MARKET ID not the BET ID
+  // const [confirmedBets, setConfirmedBets] = useState<Map<string, Bet> | null>(null)
 
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState<boolean>(true)
@@ -97,54 +97,54 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
     }
   }
 
-  const refreshConfirmedBets = async () => {
-    if (!profile) {
-      setConfirmedBets(null)
-      setLoading(false)
-      setError(null)
-      return
-    }
-    try {
-    setError(null)
-    setLoading(true) 
+  // const refreshConfirmedBets = async () => {
+  //   if (!profile) {
+  //     setConfirmedBets(null)
+  //     setLoading(false)
+  //     setError(null)
+  //     return
+  //   }
+  //   try {
+  //   setError(null)
+  //   setLoading(true) 
 
-      const supabase = createSupabaseClient()
-      const { data, error } = await supabase
-        .from('bets')
-        .select()
-        .eq('status', 'confirmed')
-        .eq('profile_id', profile.id)
+  //     const supabase = createSupabaseClient()
+  //     const { data, error } = await supabase
+  //       .from('bets')
+  //       .select()
+  //       .eq('status', 'confirmed')
+  //       .eq('profile_id', profile.id)
 
-      if (error) {
-        throw new Error(error.message)
-      }
+  //     if (error) {
+  //       throw new Error(error.message)
+  //     }
 
-      const betsMap = new Map<string, Bet>()
-      data.forEach(bet => {
-        const formattedBet = mapBetSupaToTS(bet)
-        betsMap.set(formattedBet.marketId, formattedBet)
-      })
+  //     const betsMap = new Map<string, Bet>()
+  //     data.forEach(bet => {
+  //       const formattedBet = mapBetSupaToTS(bet)
+  //       betsMap.set(formattedBet.marketId, formattedBet)
+  //     })
       
-      setConfirmedBets(betsMap)
-    } catch (error) {
-      let errorMessage: string
+  //     setConfirmedBets(betsMap)
+  //   } catch (error) {
+  //     let errorMessage: string
         
-      if (error instanceof Error) {
-        errorMessage = error.message
-      } else if (typeof error === 'string') {
-        errorMessage = error
-      } else if (error && typeof error === 'object' && 'message' in error) {
-        errorMessage = String(error.message)
-      } else {
-        errorMessage = "An unknown error occurred while fetching bets"
-      }
+  //     if (error instanceof Error) {
+  //       errorMessage = error.message
+  //     } else if (typeof error === 'string') {
+  //       errorMessage = error
+  //     } else if (error && typeof error === 'object' && 'message' in error) {
+  //       errorMessage = String(error.message)
+  //     } else {
+  //       errorMessage = "An unknown error occurred while fetching bets"
+  //     }
       
-      setError(errorMessage)
-      console.error("Error fetching bets in Result Provider:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
+  //     setError(errorMessage)
+  //     console.error("Error fetching bets in Result Provider:", error)
+  //   } finally {
+  //     setLoading(false)
+  //   }
+  // }
 
   const handleSwitchChain = async (chainId: number) => {
     try {
@@ -254,7 +254,8 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
           web3authId: data.web3auth_id || '',
           email: data.email || '',
           walletAddress: data.wallet_address || '',
-          currentChainId: data.current_chain_id || 0
+          currentChainId: data.current_chain_id || 0,
+          role: data.role || 'user'
         })
         clearError()
       }
@@ -313,7 +314,8 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
           web3authId: profileData.web3auth_id || '',
           email: profileData.email || '',
           walletAddress: profileData.wallet_address || '',
-          currentChainId: profileData.current_chain_id || 0
+          currentChainId: profileData.current_chain_id || 0,
+          role: profileData.role || 'user'
         })
         clearError()
         toast.success("Profile updated successfully!")
@@ -329,9 +331,9 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
     }
   }
 
-  useEffect(() => {
-    refreshConfirmedBets()
-  }, [profile])
+  // useEffect(() => {
+  //   refreshConfirmedBets()
+  // }, [profile])
 
   useEffect(() => {
     refreshProfile()
@@ -348,9 +350,9 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
     updateProfile,
     clearError,
 
-    confirmedBets,
-    setConfirmedBets,
-    refreshConfirmedBets,
+    // confirmedBets,
+    // setConfirmedBets,
+    // refreshConfirmedBets,
     
     address,
     isWalletConnected,
@@ -370,8 +372,8 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
     balance,
     chainId,
 
-    confirmedBets,
-    setConfirmedBets,
+    // confirmedBets,
+    // setConfirmedBets,
 
     refreshProfile,
     updateProfile,

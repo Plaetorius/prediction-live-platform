@@ -7,6 +7,8 @@ import { AppSidebar } from './app-sidebar'
 import Web3AuthAutoSync from './Web3AuthAutoSync'
 import { ResultProvider } from '@/providers/ResultProvider'
 import { StreamFollowsProvider } from '@/providers/StreamFollowsProvider'
+import { MarketProvider } from '@/providers/MarketsProvider'
+import { BetsProvider } from '@/providers/BetsProvider'
 
 export default function Providers({
   children
@@ -17,17 +19,21 @@ export default function Providers({
     <>
       <Web3AuthProviderWrapper>
         <ProfileProvider>
-          <ResultProvider>
-            <StreamFollowsProvider>
-              <SidebarProvider>
-                <AppSidebar variant='sidebar' />
-                  <SidebarInset>
-                    {children}
-                  </SidebarInset>
-                </SidebarProvider>
-              </StreamFollowsProvider>
-            </ResultProvider>
-          </ProfileProvider>
+          <StreamFollowsProvider>
+            <MarketProvider>
+              <BetsProvider>
+                <ResultProvider>
+                  <SidebarProvider>
+                    <AppSidebar variant='sidebar' />
+                      <SidebarInset>
+                        {children}
+                      </SidebarInset>
+                  </SidebarProvider>
+                </ResultProvider>
+              </BetsProvider>
+            </MarketProvider>
+          </StreamFollowsProvider>
+        </ProfileProvider>
         <Web3AuthAutoSync />
       </Web3AuthProviderWrapper>
       <Toaster richColors />

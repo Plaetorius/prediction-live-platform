@@ -1,7 +1,5 @@
-import { getRequiredNamespaces } from "@web3auth/modal"
 import { validateBettingPrerequisites } from "./validation"
 import { createBetClient } from "../bets/insertClient"
-import { success } from "zod"
 import { preparePlaceBetTransaction } from "../web3/transactionService"
 import { BetPayload } from "../types"
 import { analyzeTransactionError } from "./errorHandling"
@@ -11,6 +9,7 @@ export interface BettingServiceParams {
   profileId: string
   isAnswerA: boolean
   amount: number
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   profile: any
   isConnected: boolean
   chainId: number
@@ -21,7 +20,9 @@ export interface BettingServiceResult {
   success: boolean
   error?: string
   requiresAction?: 'connect' | 'switchChain'
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   bet?: any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   transactionParams?: any
 }
 
@@ -102,7 +103,8 @@ export function createBetPayload(
   }
 }
 
-export function handleTransactionError(error: any, pendingBetPayload: BetPayload | null) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function handleTransactionError(error: any) {
   const errorAnalysis = analyzeTransactionError(error)
 
   return {

@@ -1,77 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import { Play, Users, LogIn, LogOut, User, UserIcon, Twitch } from "lucide-react";
-import { useWeb3AuthConnect, useWeb3AuthDisconnect, useWeb3AuthUser } from "@web3auth/modal/react";
-import { useAccount } from "wagmi";
-import Web3AuthAutoSync from "@/components/Web3AuthAutoSync";
-import GradientBlinds from "@/components/GradientBlinds";
-import GlassSurface from "@/components/GlassSurface";
-import { getEmbedUrl } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import StreamHorizontalGallery from "@/components/StreamHorizontalGallery";
 
 export default function Home() {
-  const { connect, isConnected, connectorName, loading: connectLoading, error: connectError } = useWeb3AuthConnect();
-  const { disconnect, loading: disconnectLoading, error: disconnectError } = useWeb3AuthDisconnect();
-  const { userInfo } = useWeb3AuthUser();
-  const { address } = useAccount();
-
-  const topPlayers = [
-    {
-      name: "Plaetorius",
-      picture_url: "https://avatars.githubusercontent.com/u/46137705?v=4",
-      amount: 25367,
-    },
-    {
-      name: "Plaetorius",
-      picture_url: "https://avatars.githubusercontent.com/u/46137705?v=4",
-      amount: 25367,
-    },
-    {
-      name: "Plaetorius",
-      picture_url: "https://avatars.githubusercontent.com/u/46137705?v=4",
-      amount: 25367,
-    },
-    {
-      name: "Plaetorius",
-      picture_url: "https://avatars.githubusercontent.com/u/46137705?v=4",
-      amount: 25367,
-    },
-    {
-      name: "Plaetorius",
-      picture_url: "https://avatars.githubusercontent.com/u/46137705?v=4",
-      amount: 25367,
-    },
-    {
-      name: "Plaetorius",
-      picture_url: "https://avatars.githubusercontent.com/u/46137705?v=4",
-      amount: 25367,
-    },
-    {
-      name: "Plaetorius",
-      picture_url: "https://avatars.githubusercontent.com/u/46137705?v=4",
-      amount: 25367,
-    },
-    {
-      name: "Plaetorius",
-      picture_url: "https://avatars.githubusercontent.com/u/46137705?v=4",
-      amount: 25367,
-    },
-    {
-      name: "Plaetorius",
-      picture_url: "https://avatars.githubusercontent.com/u/46137705?v=4",
-      amount: 25367,
-    },
-    {
-      name: "Plaetorius",
-      picture_url: "https://avatars.githubusercontent.com/u/46137705?v=4",
-      amount: 25367,
-    },
-  ]
-
   const games = [
     {
       id: "lol",

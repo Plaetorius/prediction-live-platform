@@ -26,6 +26,7 @@ export type Profile = {
   email: string
   walletAddress: string
   currentChainId?: number
+  role: 'admin' | 'croupier' | 'user' | 'anon'
 } | null
 
 export type RankName = 'Bronze' | 'Silver' | 'Gold' | 'Diamond'

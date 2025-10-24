@@ -27,7 +27,7 @@ export async function selectBetsWithMarketId(marketId: string) : Promise<Bet[] |
       }
     })
     return bets
-  } catch (error) {
+  } catch {
     console.error("Error retrieving bets for marketId:", marketId)
     return null
   }

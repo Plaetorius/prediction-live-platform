@@ -9,7 +9,7 @@ import { useProfile } from '@/providers/ProfileProvider'
 import { toast } from 'sonner'
 
 export default function Header() {
-  const { isConnected: isWeb3AuthConnected, loading: connectLoading, error: connectError } = useWeb3AuthConnect()
+  const { isConnected: isWeb3AuthConnected } = useWeb3AuthConnect()
   const { profile, isConnected: isProfileConnected, getBalance } = useProfile()
   const [balance, setBalance] = useState<string | null>(null)
   const [balanceLoading, setBalanceLoading] = useState(false)

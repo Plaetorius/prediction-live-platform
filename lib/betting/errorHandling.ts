@@ -6,15 +6,19 @@ export interface ErrorAnalysisResult {
   shouldUpdateBetStatus: boolean
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function analyzeTransactionError(error: any): ErrorAnalysisResult {
   let errorCode: string | undefined
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const hasCause = (error: any): error is { cause: any } =>
     error && typeof error === "object" && 'cause' in error
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const hasData = (obj: any): obj is { data: any } => 
     obj && typeof obj === 'object' && 'data' in obj
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const hasCode = (obj: any): obj is { code: any } => 
     obj && typeof obj === 'object' && 'code' in obj && typeof obj.code === 'number'
 

@@ -5,7 +5,7 @@ import { Profile } from '@/lib/types'
 import { createSupabaseClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Calendar, User, Trophy, Gift, RotateCcw } from 'lucide-react'
+import { ArrowLeft, Calendar, User, Trophy, Gift } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
@@ -91,10 +91,12 @@ export default function ProfilePage() {
     try {
       // Generate random reward
       const rewardType = Math.random()
-      let lootboxData: any = {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const lootboxData: any = {
         profile_id: profile.id,
         opened_at: new Date().toISOString()
       }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let cosmeticData: any = null
       
       if (rewardType < 0.333) {
@@ -135,7 +137,7 @@ export default function ProfilePage() {
         lootboxData.type = 'void'
       }
       
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('lootboxes')
         .insert(lootboxData)
         .select()
@@ -213,6 +215,7 @@ export default function ProfilePage() {
     )
 
   // Compute level and progress from xp (float8 in DB defaults to 0)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const xp: number = Number((profile as any)?.xp ?? 0)
   const { level, currentLevelXp, nextLevelXp, progressPercent } = calculateLevel(xp)
   const rank = getRank(level)

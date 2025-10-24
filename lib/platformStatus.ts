@@ -267,11 +267,11 @@ interface TwitchStream {
   started_at?: string;
 }
 
-interface KickStream {
-  category?: {
-    name: string;
-  };
-  viewer_count?: number;
-  session_title?: string;
-  created_at?: string;
-}
+// interface KickStream {
+//   category?: {
+//     name: string;
+//   };
+//   viewer_count?: number;
+//   session_title?: string;
+//   created_at?: string;
+// }

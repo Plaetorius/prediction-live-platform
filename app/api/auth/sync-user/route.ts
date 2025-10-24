@@ -25,9 +25,11 @@ export async function POST(req: NextRequest) {
 
     // Extract user information from token
     const userInfo = {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       web3auth_id: (payload as any).userId || (payload as any).verifierId || payload.sub as string,
       email: payload.email as string,
       name: payload.name as string,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       wallets: (payload as any).wallets || []
     };
 
@@ -36,6 +38,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Get primary wallet address
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const primaryWallet = userInfo.wallets.find((wallet: any) => 
       wallet.type === "web3auth_app_key"
     );
@@ -96,6 +99,7 @@ export async function POST(req: NextRequest) {
           email: userInfo.email,
           wallet_address: walletAddress,
           xp: 0,
+          role: 'user',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })

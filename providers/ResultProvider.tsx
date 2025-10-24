@@ -58,7 +58,7 @@ const ResultContext = createContext<ResultContextType | null>(null)
 
 export function ResultProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(resultReducer, initialState)
-  const { profile, confirmedBets } = useProfile()
+  const { profile } = useProfile()
   
   // Global result listener that always listens for market resolutions
   const resultListeners: ResultListeners = {
@@ -66,27 +66,16 @@ export function ResultProvider({ children }: { children: ReactNode }) {
       // payload: marketId, isAnswerA
       console.log("Global result received:", payload)
       
-      // Only process results if user is authenticated and has bets
-      if (!profile || !confirmedBets) {
-        dispatch({ type: 'SET_ERROR', payload: "No profile or bets, skipping result processing" })
-        console.log("No profile or bets, skipping result processing")
+      // Only process results if user is authenticated
+      if (!profile) {
+        dispatch({ type: 'SET_ERROR', payload: "No profile, skipping result processing" })
+        console.log("No profile, skipping result processing")
         return
       }
 
-      const bet = confirmedBets.get(payload.marketId)
-      if (!bet) {
-        console.log(`No bet found for market ${payload.marketId}`)
-        return
-      }
-      
-      if (bet.isAnswerA === payload.isAnswerA) {
-        toast.success(`YOU WON BET ON MARKET ${bet.marketId}`)
-        dispatch({ type: 'SET_BET', payload: {...bet, correct: true } })
-      } else {
-        toast.error(`YOU LOST BET ON MARKET ${bet.marketId}`)
-        dispatch({ type: 'SET_BET', payload: {...bet, correct: false } })
-      }
-    }, [profile, confirmedBets])
+      // TODO: Implement bet lookup when confirmedBets is available
+      console.log(`Processing result for market ${payload.marketId}`)
+    }, [profile])
   }
 
   // Always establish websocket connection, regardless of authentication status

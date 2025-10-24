@@ -1,4 +1,3 @@
-import { Constants } from "@/database.types";
 import { createSupabaseServerClient } from "../supabase/server";
 import { Bet } from "../types";
 

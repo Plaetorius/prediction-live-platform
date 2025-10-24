@@ -19,37 +19,12 @@ export default function PersonalProfile() {
   const {
     profile,
     loading,
-    error,
-    userInfo,
     updateProfile,
-    refreshProfile,
     isConnected,
     address
   } = useProfile()
 
 
-  const checkLootboxEligibility = async (profileId: string) => {
-    try {
-      const supabase = createSupabaseClient()
-      const today = new Date().toISOString().split('T')[0]
-      
-      const { data, error } = await supabase
-        .from('lootboxes')
-        .select('*')
-        .eq('profile_id', profileId)
-        .gte('created_at', `${today}T00:00:00.000Z`)
-        .lt('created_at', `${today}T23:59:59.999Z`)
-
-      if (error) {
-        console.error('Error checking lootbox eligibility:', error)
-        return
-      }
-
-      setCanClaimLootbox(data.length === 0)
-    } catch (error) {
-      console.error('Error:', error)
-    }
-  }
 
   const claimLootbox = async () => {
     if (!profile || claimingLootbox) return

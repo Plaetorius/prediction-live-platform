@@ -29,6 +29,7 @@ export default function RankingPage() {
         console.error(error)
         return
       }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       setProfiles((data || []).map((p: any) => ({
         ...p,
         pictureUrl: p.picture_url,
@@ -44,6 +45,7 @@ export default function RankingPage() {
     return profiles
       .filter((p): p is NonNullable<Profile> => p !== null)
       .map((p) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const xp = Number((p as any)?.xp ?? 0)
         const { level } = calculateLevel(xp)
         const rank = getRank(level)

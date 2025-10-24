@@ -2,11 +2,10 @@
 
 import Loading from '@/components/Loading'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { BetChannelOptions, Market, Stream } from '@/lib/types'
 import { useStream } from '@/providers/StreamProvider'
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useBetChannel } from '@/hooks/useBetChannel'
 import MarketFormModal from '@/components/betting/MarketCreationModal'
 import { useBetting } from '@/providers/BettingProvider'
@@ -14,10 +13,12 @@ import { createSupabaseClient } from '@/lib/supabase/client'
 import { Database } from '@/database.types'
 import { toast } from 'sonner'
 import MarketEditModal from '@/components/betting/MarketEditModal'
-import { CloudLightning, Zap, ArrowLeft, Plus, Settings, TrendingUp, Clock, AlertCircle, CheckCircle } from 'lucide-react'
-import { getTimeRemaining, now } from '@/lib/timezoneUtils'
+import { Zap, ArrowLeft, Shield } from 'lucide-react'
+import { getTimeRemaining } from '@/lib/timezoneUtils'
 import MarketResolutionModal from './MarketResolutionModal'
 import Link from 'next/link'
+import { useProfile } from '@/providers/ProfileProvider'
+import { canManageMarkets } from '@/lib/auth'
 
 // Timer component for individual market countdown
 function MarketTimer({ 
@@ -81,7 +82,7 @@ const fetchAndSetMarkets = async (
   try {
     console.log("STREAM ID", stream?.id || "No stream ID")
     const supabase = createSupabaseClient()
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('markets')
       .select()
       .eq('stream_id', stream?.id)
@@ -121,6 +122,7 @@ export default function StreamAdmin() {
   // const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
   const { markets, setMarkets } = useBetting()
   const [loading, setLoading] = useState<boolean>(false)
+  const { profile } = useProfile()
 
   const realtimeOptions: BetChannelOptions = {
     broadcastSelf: true,
@@ -142,6 +144,22 @@ export default function StreamAdmin() {
 
   if (!stream || loading)
     return <Loading />
+
+  if (!canManageMarkets(profile)) {
+    return (
+      <div className="text-center py-12">
+        <Shield className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+        <h2 className="text-2xl font-bold text-white mb-2">Access Denied</h2>
+        <p className="text-gray-400 mb-6">You don&apos;t have permission to manage markets for this stream</p>
+        <Link href={`/streams/${stream.platform}/${stream.name}`}>
+          <Button>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Stream
+          </Button>
+        </Link>
+      </div>
+    )
+  }
   
   return (
     <>

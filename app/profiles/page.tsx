@@ -11,12 +11,15 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Badge } from '@/components/ui/badge'
 import Loading from '@/components/Loading'
 import { useWeb3AuthConnect } from "@web3auth/modal/react"
+import { useProfile } from '@/providers/ProfileProvider'
+import { canAccessAdmin } from '@/lib/auth'
 
 
 export default function Profiles() {
   const [loading, setLoading] = useState<boolean>(false)
   const [profiles, setProfiles] = useState<Profile[]>([])
   const { isConnected } = useWeb3AuthConnect()
+  const { profile } = useProfile()
 
   useEffect(() => {
     async function getProfiles() {
@@ -58,6 +61,24 @@ export default function Profiles() {
           <Shield className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-white mb-2">Admin Access Required</h2>
           <p className="text-gray-400 mb-6">Please connect your wallet to access the admin profiles page</p>
+          <Link href="/">
+            <Button>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Go to Homepage
+            </Button>
+          </Link>
+        </div>
+      </main>
+    )
+  }
+
+  if (!canAccessAdmin(profile)) {
+    return (
+      <main className='p-4'>
+        <div className="text-center py-12">
+          <Shield className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-white mb-2">Access Denied</h2>
+          <p className="text-gray-400 mb-6">You don&apos;t have admin privileges to access this page</p>
           <Link href="/">
             <Button>
               <ArrowLeft className="mr-2 h-4 w-4" />

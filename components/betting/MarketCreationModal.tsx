@@ -2,23 +2,17 @@
 
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
 import { createSupabaseClient } from '@/lib/supabase/client'
 import { Stream } from '@/lib/types'
-import { Constants } from '@/database.types'
-import { zodResolver } from '@hookform/resolvers/zod'
-import React, { useState, useEffect } from 'react'
-import { SubmitHandler, useForm } from 'react-hook-form'
+import React, { useState } from 'react'
+import { SubmitHandler } from 'react-hook-form'
 import { toast } from 'sonner'
-import { z } from 'zod'
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { formatTimestampForInput, parseInputToTimestamp, addDuration, secondsToMs, now } from '@/lib/timezoneUtils'
 import { Plus } from 'lucide-react'
 import MarketForm, { MarketFormSchema } from '../forms/MarketForm'
 
 interface MarketFormModalProps {
   stream: Stream | null
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   sendNewMarket: (payload: any) => void
 }
 

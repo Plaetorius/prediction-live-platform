@@ -1,7 +1,6 @@
 "use client"
 
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { ArrowLeft, Users, TwitchIcon, Heart } from 'lucide-react'
 import React, { useEffect, useState} from 'react'
 import Loading from '@/components/Loading'
@@ -26,7 +25,7 @@ export default function StreamPage() {
     : ""
 
   // Get platform status with 30-second refresh
-  const { status, loading: statusLoading, error: statusError, refetch } = usePlatformStatus(
+  const { status } = usePlatformStatus(
     stream?.platform || '',
     stream?.name || '',
     { 
@@ -44,7 +43,7 @@ export default function StreamPage() {
       if (!streamId)
         return null
       setLoading(true)
-      const marketsArray = await selectOpenMarkets(streamId) || []
+      const marketsArray = await selectOpenMarkets() || []
       const marketsMap = new Map<string, MarketWithAmounts>()
       marketsArray.forEach(market => {
         marketsMap.set(market.id, {
@@ -105,19 +104,6 @@ export default function StreamPage() {
     return count.toLocaleString();
   };
 
-  const formatStartTime = (startedAt: string | null) => {
-    if (!startedAt) return 'N/A';
-    const startTime = new Date(startedAt);
-    const now = new Date();
-    const diffMs = now.getTime() - startTime.getTime();
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-    const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-    
-    if (diffHours > 0) {
-      return `${diffHours}h ${diffMinutes}m ago`;
-    }
-    return `${diffMinutes}m ago`;
-  };
 
   return (
     <main className='grid grid-cols-4'>
@@ -159,11 +145,6 @@ export default function StreamPage() {
             </div>
           </div>
         
-          {statusError && (
-            <Badge variant="destructive" className="w-full justify-center">
-              Error: {statusError}
-            </Badge>
-          )}
         
         </div>
         
