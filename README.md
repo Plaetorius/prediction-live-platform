@@ -1,3 +1,3 @@
 # Prediction.Live
 
-Deployment for the Base hackathon
+Deployment for the Base hackathon, final
