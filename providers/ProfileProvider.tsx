@@ -154,7 +154,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
         throw new Error(`Unsupported chain: ${chainId}`)
       }
 
-      await switchChain({ chainId })
+      await switchChain({ chainId: chainId as 84532 })
 
       await refetchBalance()
 

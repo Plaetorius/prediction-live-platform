@@ -111,7 +111,13 @@ export default function BetFormModal({
       setTxStep('sending')
             
       try {
-        await writeContract(result.transactionParams!)
+        await writeContract({
+          address: result.transactionParams!.address,
+          abi: result.transactionParams!.abi,
+          functionName: result.transactionParams!.functionName,
+          args: result.transactionParams!.args,
+          value: result.transactionParams!.value,
+        } as any)
         
         setTxStep('confirming')
         toast.info("Transaction sent! Waiting for confirmation...")
