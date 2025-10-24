@@ -42,10 +42,10 @@ export function validateBettingPrerequisites({
     }
   }
 
-  if (chainId !== SUPPORTED_CHAINS.CHILIZ_DEV) {
+  if (chainId !== SUPPORTED_CHAINS.BASE_SEPOLIA) {
     return {
       isValid: false,
-      error: "Switching to the Spicy Testnet",
+      error: "Switching to Base Sepolia",
       requiresAction: 'switchChain'
     }
   }

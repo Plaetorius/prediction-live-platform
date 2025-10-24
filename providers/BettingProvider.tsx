@@ -1,14 +1,23 @@
 'use client'
 
-import { BetListeners, BetPayload, Market, MarketWithAmounts } from "@/lib/types"
+import { BetListeners, BetPayload, Market, MarketWithAmounts, Bet } from "@/lib/types"
 import { createContext, ReactNode, useCallback, useContext, useReducer } from "react"
 import { useStream } from "./StreamProvider"
 import { useBetChannel } from "@/hooks/useBetChannel"
+import { useProfile } from "./ProfileProvider"
+import { toast } from "sonner"
+
+type BetResult = Bet & {
+  correct: boolean
+  winnings?: number
+  profit?: number
+}
 
 interface BettingContextState {
   markets: Map<string, MarketWithAmounts>
   loading: boolean
   error: string | null
+  result: BetResult | null
 }
 
 type BettingContextAction =
@@ -18,11 +27,13 @@ type BettingContextAction =
   | { type: 'UPDATE_MARKET_AMOUNTS'; payload: { marketId: string, amountA?: number; amountB?: number } }
   | { type: 'REMOVE_MARKET'; payload: string }
   | { type: 'SET_MARKETS'; payload: Map<string, MarketWithAmounts> }
+  | { type: 'SET_BET'; payload: BetResult }
 
 const initialState: BettingContextState = {
   markets: new Map(),
   loading: false,
-  error: null
+  error: null,
+  result: null
 }
 
 function bettingReducer(state: BettingContextState, action: BettingContextAction): BettingContextState {
@@ -62,6 +73,9 @@ function bettingReducer(state: BettingContextState, action: BettingContextAction
     case 'SET_MARKETS':
       return { ...state, markets: action.payload }
 
+    case 'SET_BET':
+      return { ...state, result: action.payload }
+
     default:
       return state
   }
@@ -71,6 +85,7 @@ interface BettingContextType {
   markets: Map<string, MarketWithAmounts>
   loading: boolean
   error: string | null
+  result: BetResult | null
 
   addMarket: (market: Market) => void
   updateMarketAmounts: (marketId: string, amountA?: number, amountB?: number) => void
@@ -80,6 +95,7 @@ interface BettingContextType {
   sendBetTeam1: (payload: BetPayload) => void
   sendBetTeam2: (payload: BetPayload) => void
   sendNewMarket: (payload: any) => void
+  sendResult: (payload: any) => void
 }
 
 const BettingContext = createContext<BettingContextType | null>(null)
@@ -87,6 +103,7 @@ const BettingContext = createContext<BettingContextType | null>(null)
 export function BettingProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(bettingReducer, initialState)
   const stream = useStream()
+  const { profile, confirmedBets } = useProfile()
 
   const betListeners: BetListeners = {
     onTeamA: useCallback((payload: any) => {
@@ -127,10 +144,39 @@ export function BettingProvider({ children }: { children: ReactNode }) {
         updatedAt: new Date(payload.updatedAt as string),
       }
       dispatch({ type: 'ADD_MARKET', payload: newMarket })
-    }, [])
+    }, []),
+
+    onResult: useCallback((payload: any) => {
+      // payload: marketId, isAnswerA
+      console.log("Global result received:", payload)
+      
+      // Remove the market from the list when result is received
+      dispatch({ type: 'REMOVE_MARKET', payload: payload.marketId })
+      
+      // Only process results if user is authenticated and has bets
+      if (!profile || !confirmedBets) {
+        dispatch({ type: 'SET_ERROR', payload: "No profile or bets, skipping result processing" })
+        console.log("No profile or bets, skipping result processing")
+        return
+      }
+
+      const bet = confirmedBets.get(payload.marketId)
+      if (!bet) {
+        console.log(`No bet found for market ${payload.marketId}`)
+        return
+      }
+      
+      if (bet.isAnswerA === payload.isAnswerA) {
+        toast.success(`YOU WON BET ON MARKET ${bet.marketId}`)
+        dispatch({ type: 'SET_BET', payload: {...bet, correct: true } })
+      } else {
+        toast.error(`YOU LOST BET ON MARKET ${bet.marketId}`)
+        dispatch({ type: 'SET_BET', payload: {...bet, correct: false } })
+      }
+    }, [profile, confirmedBets])
   }
 
-  const { sendBetTeam1, sendBetTeam2, sendNewMarket } = useBetChannel(
+  const { sendBetTeam1, sendBetTeam2, sendNewMarket, sendResult } = useBetChannel(
     stream?.platform || '',
     stream?.name || '',
     betListeners,
@@ -157,13 +203,15 @@ export function BettingProvider({ children }: { children: ReactNode }) {
     markets: state.markets,
     loading: state.loading,
     error: state.error,
+    result: state.result,
     addMarket,
     updateMarketAmounts,
     removeMarket,
     setMarkets,
     sendBetTeam1,
     sendBetTeam2,
-    sendNewMarket
+    sendNewMarket,
+    sendResult
   }
 
   return (

@@ -1,21 +1,21 @@
 import { defineChain } from 'viem'
 
-export const spicy = defineChain({
-  id: 88882,
-  name: 'Spicy Testnet',
+export const baseSepolia = defineChain({
+  id: 84532,
+  name: 'Base Sepolia',
   nativeCurrency: {
     decimals: 18,
-    name: 'Chiliz',
-    symbol: 'CHZ',
+    name: 'Ethereum',
+    symbol: 'ETH',
   },
   rpcUrls: {
     default: {
-      http: ['https://spicy-rpc.chiliz.com/'],
-      webSocket: ['wss://spicy-rpc-ws.chiliz.com/'],
+      http: ['https://sepolia.base.org'],
+      webSocket: ['wss://sepolia.base.org'],
     },
   },
   blockExplorers: {
-    default: { name: 'Chiliscan', url: 'https://testnet.chiliscan.com/' },
+    default: { name: 'BaseScan', url: 'https://sepolia.basescan.org/' },
   },
   testnet: true,
 })

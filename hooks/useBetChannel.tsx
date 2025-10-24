@@ -37,6 +37,10 @@ export function useBetChannel(
       channel.on('broadcast', { event: 'new_market'}, (msg) => listeners.onNewMarket?.(msg.payload))
     }
 
+    if (listeners.onResult) {
+      channel.on('broadcast', { event: 'result' }, (msg) => listeners.onResult?.(msg.payload))
+    }
+
     channel.subscribe()
     channelRef.current = channel
 
@@ -47,7 +51,7 @@ export function useBetChannel(
       }
       channelRef.current = null
     }
-  }, [platform, name, listeners.onTeamA, listeners.onTeamB, listeners.onNewMarket, opts.kind, opts.broadcastSelf])
+  }, [platform, name, listeners.onTeamA, listeners.onTeamB, listeners.onNewMarket, listeners.onResult, opts.kind, opts.broadcastSelf])
 
   function send<T = any>(event: string, payload: T) {
     const serializedPayload = JSON.parse(JSON.stringify(payload))
@@ -66,11 +70,16 @@ export function useBetChannel(
     send('new_market', payload)
   }
 
+  function sendResult(payload: any = {}) {
+    send('result', payload)
+  }
+
   return {
     channelRef,
     send,
     sendBetTeam1,
     sendBetTeam2,
-    sendNewMarket
+    sendNewMarket,
+    sendResult
   }
 }

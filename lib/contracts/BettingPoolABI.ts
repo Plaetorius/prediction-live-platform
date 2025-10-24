@@ -49,4 +49,5 @@ export const BettingPoolABI = [
   }
 ] as const
 
+// TODO: Deploy contract to Base Sepolia and update this address
 export const BETTING_POOL_ADDRESS = "0x6160C6e7c21a97d17323397598Aca532Aa8939C3" as const

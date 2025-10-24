@@ -48,6 +48,7 @@ export type BetListeners = {
   onTeamA?: (payload: RealtimePayload) => void;
   onTeamB?: (payload: RealtimePayload) => void;
   onNewMarket?: (payload: RealtimePayload) => void;
+  onResult?: (payload: RealtimePayload) => void;
 }
 
 export type BetChannelOptions = {

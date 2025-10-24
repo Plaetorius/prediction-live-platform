@@ -1,4 +1,4 @@
-import { keccak256, parseEther, toHex, WriteContractParameters } from "viem"
+import { keccak256, parseEther, toHex } from "viem"
 import { BETTING_POOL_ADDRESS, BettingPoolABI } from "../contracts/BettingPoolABI"
 
 export interface PlaceBetTransactionParams {
@@ -11,7 +11,14 @@ export interface PlaceBetTransactionParams {
 export interface PlaceBetTransactionResult {
   success: boolean
   error?: string
-  transactionParams?: WriteContractParameters
+  transactionParams?: {
+    address: `0x${string}`
+    abi: readonly unknown[]
+    functionName: string
+    args: readonly unknown[]
+    value: bigint
+    account: `0x${string}` | null
+  }
 }
 
 export function preparePlaceBetTransaction({
@@ -23,7 +30,7 @@ export function preparePlaceBetTransaction({
   try {
     const poolId = BigInt(keccak256(toHex(marketId)).slice(0, 10))
 
-    const transactionParams: WriteContractParameters = {
+    const transactionParams = {
       address: BETTING_POOL_ADDRESS,
       abi: BettingPoolABI,
       functionName: "placeBet",
@@ -33,7 +40,6 @@ export function preparePlaceBetTransaction({
       ],
       value: parseEther(amount.toString()),
       account,
-      chain: undefined,
     }
     return {
       success: true,

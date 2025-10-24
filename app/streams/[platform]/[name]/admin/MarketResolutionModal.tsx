@@ -12,7 +12,7 @@ import { useAccount, useWriteContract, useWaitForTransactionReceipt, useSwitchCh
 import { keccak256, toHex } from 'viem'
 import { BettingPoolABI, BETTING_POOL_ADDRESS } from '@/lib/contracts/BettingPoolABI'
 import { SUPPORTED_CHAINS } from '@/providers/ProfileProvider'
-import { useResult } from '@/providers/ResultProvider'
+import { useBetting } from '@/providers/BettingProvider'
 
 interface MarketResolutionModalProps {
   market: Market
@@ -24,7 +24,7 @@ export default function MarketResolutionModal({ market }: MarketResolutionModalP
   const [txStep, setTxStep] = useState<'idle' | 'sending' | 'confirming' | 'success'>('idle')
   const [pendingResolution, setPendingResolution] = useState<boolean | null>(null)
   
-  const { sendResult } = useResult()
+  const { sendResult } = useBetting()
 
   const { isConnected, chainId } = useAccount()
   const { writeContract, data: hash, error, isPending } = useWriteContract()
@@ -42,9 +42,9 @@ export default function MarketResolutionModal({ market }: MarketResolutionModalP
       }
 
       // Check if on correct chain
-      if (chainId !== SUPPORTED_CHAINS.CHILIZ_DEV) {
-        toast.error("Switching to Spicy Testnet...")
-        await switchChain({ chainId: SUPPORTED_CHAINS.CHILIZ_DEV })
+      if (chainId !== SUPPORTED_CHAINS.BASE_SEPOLIA) {
+        toast.error("Switching to Base Sepolia...")
+        await switchChain({ chainId: SUPPORTED_CHAINS.BASE_SEPOLIA })
         return
       }
 
@@ -64,8 +64,6 @@ export default function MarketResolutionModal({ market }: MarketResolutionModalP
           poolId, // PoolId generated from marketId
           isAnswerA ? 1 : 2 // 1 = Resolution.A, 2 = Resolution.B (0 = Pending)
         ],
-        gas: BigInt(200000), // Gas limit optimisé pour Chiliz
-        gasPrice: BigInt(1000000000), // 1 gwei pour Chiliz
       })
 
       setTxStep('confirming')
@@ -95,7 +93,7 @@ export default function MarketResolutionModal({ market }: MarketResolutionModalP
       sendResult(payload)
       setPendingResolution(null)
     }
-  }, [isSuccess, hash, market.id, pendingResolution])
+  }, [isSuccess, hash, market.id, pendingResolution, sendResult])
 
   // Handle transaction error
   useEffect(() => {

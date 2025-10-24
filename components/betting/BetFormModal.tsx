@@ -25,7 +25,7 @@ interface BetFormModalProps {
 }
 
 const betFormSchema = z.object({
-  amount: z.coerce.number().min(1, "Amount is too small! (min: 1)").max(10000000, "Amount is too big! (max: 10,000,000)"),
+  amount: z.coerce.number().min(0.001, "Amount is too small! (min: 0.001 ETH)").max(100, "Amount is too big! (max: 100 ETH)"),
 })
 
 type BetFormSchema = z.infer<typeof betFormSchema>
@@ -100,7 +100,7 @@ export default function BetFormModal({
         if (result.requiresAction === 'connect') {
           await connect()
         } else if (result.requiresAction === 'switchChain') {
-          await switchChain({ chainId: SUPPORTED_CHAINS.CHILIZ_DEV })
+          await switchChain({ chainId: SUPPORTED_CHAINS.BASE_SEPOLIA })
         } else {
           toast.error(result.error || "Error placing bet.")
         }
@@ -111,7 +111,13 @@ export default function BetFormModal({
       setTxStep('sending')
             
       try {
-        await writeContract(result.transactionParams!)
+        await writeContract({
+          address: result.transactionParams!.address,
+          abi: result.transactionParams!.abi,
+          functionName: result.transactionParams!.functionName,
+          args: result.transactionParams!.args,
+          value: result.transactionParams!.value,
+        } as any)
         
         setTxStep('confirming')
         toast.info("Transaction sent! Waiting for confirmation...")
@@ -164,7 +170,7 @@ export default function BetFormModal({
   }, [connect])
 
   const handleSwitchChain = useCallback(() => {
-    switchChain({ chainId: SUPPORTED_CHAINS.CHILIZ_DEV })
+    switchChain({ chainId: SUPPORTED_CHAINS.BASE_SEPOLIA })
   }, [switchChain])
 
   useEffect(() => {
@@ -278,14 +284,14 @@ export default function BetFormModal({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>
-                    Amount
+                    Amount (ETH)
                   </FormLabel>
                   <FormControl>
                     <Input
                       id="amount"
                       type='number'
-                      step="0.01"
-                      min="1"
+                      min="0.001"
+                      step="0.001"
                       placeholder="Enter the amount to bet..."
                       {...field}
                       value={field.value?.toString() || ''}
@@ -313,10 +319,10 @@ export default function BetFormModal({
             )}
 
             {/* Chain status */}
-            {isConnected && chainId !== SUPPORTED_CHAINS.CHILIZ_DEV && (
+            {isConnected && chainId !== SUPPORTED_CHAINS.BASE_SEPOLIA && (
               <div className="p-3 bg-yellow-50 border border-yellow-200 rounded mb-4">
                 <p className="text-sm text-yellow-800">
-                  Please switch to Spicy Testnet to place bets
+                  Please switch to Base Sepolia to place bets
                 </p>
                 <Button 
                   onClick={handleSwitchChain} 
@@ -324,7 +330,7 @@ export default function BetFormModal({
                   size="sm" 
                   className="mt-2"
                 >
-                  Switch to Spicy Testnet
+                  Switch to Base Sepolia
                 </Button>
               </div>
             )}
@@ -384,7 +390,7 @@ export default function BetFormModal({
                 disabled={
                   loading || 
                   !isConnected || 
-                  chainId !== SUPPORTED_CHAINS.CHILIZ_DEV ||
+                  chainId !== SUPPORTED_CHAINS.BASE_SEPOLIA ||
                   txStep === "sending" ||
                   txStep === "confirming" ||
                   !!txHash

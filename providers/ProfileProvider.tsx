@@ -45,6 +45,7 @@ export const SUPPORTED_CHAINS = {
   SOLANA_DEV: 103,
   CHILIZ_MAIN: 88888,
   CHILIZ_DEV: 88882,
+  BASE_SEPOLIA: 84532,
 } as const
 
 type SupportedChain = keyof typeof SUPPORTED_CHAINS
@@ -70,7 +71,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
 
   const { data: balanceData, refetch: refetchBalance } = useBalance({
     address,
-    chainId: SUPPORTED_CHAINS.CHILIZ_DEV,
+    chainId: SUPPORTED_CHAINS.BASE_SEPOLIA,
     query: {
       enabled: !!address,
       staleTime: 30000,
@@ -153,7 +154,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
         throw new Error(`Unsupported chain: ${chainId}`)
       }
 
-      await switchChain({ chainId })
+      await switchChain({ chainId: chainId as 84532 })
 
       await refetchBalance()
 

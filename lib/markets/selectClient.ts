@@ -5,7 +5,7 @@ import { Market } from "../types";
 /**
  * Get all the opened markets based on the now() time and the 'est_end_time'
  * @param streamId Id of the stream to get the markets from
- * @returns Array of Market where the 'est_end_time' is greater than now()
+ * @returns Array of Market where status is 'open', start_time < now(), and est_end_time > now(), ordered by created_at desc (newest first)
  */
 export async function selectOpenMarkets(streamId: string): Promise<Market[] | null> {
   try {
@@ -15,8 +15,10 @@ export async function selectOpenMarkets(streamId: string): Promise<Market[] | nu
       .from('markets')
       .select()
       .eq('stream_id', streamId)
+      .eq('status', 'open')
       .lt('start_time', currentTime)
       .gt('est_end_time', currentTime)
+      .order('created_at', { ascending: false })
 
     if (error) {
       console.error("Error selecting open markets", error)
