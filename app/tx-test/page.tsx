@@ -62,18 +62,18 @@ export default function TxTestPage() {
   }
 
   // Check if on correct chain
-  const isCorrectChain = chainId === 88882
+  const isCorrectChain = chainId === 84532
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Send CHZ Transaction</CardTitle>
+          <CardTitle>Send ETH Transaction</CardTitle>
           <div className="text-sm text-gray-500">
             Wallet: {address?.slice(0, 6)}...{address?.slice(-4)}
           </div>
           <div className="text-sm text-gray-500">
-            Chain: {isCorrectChain ? 'Spicy Testnet ✓' : `ID: ${chainId}`}
+            Chain: {isCorrectChain ? 'Base Sepolia ✓' : `ID: ${chainId}`}
           </div>
         </CardHeader>
         
@@ -82,14 +82,14 @@ export default function TxTestPage() {
           {!isCorrectChain && (
             <div className="p-3 bg-yellow-50 border border-yellow-200 rounded">
               <p className="text-sm text-yellow-800 mb-2">
-                Switch to Spicy Testnet to send CHZ
+                Switch to Base Sepolia to send ETH
               </p>
               <Button 
-                onClick={() => switchChain({ chainId: SUPPORTED_CHAINS.CHILIZ_DEV })}
+                onClick={() => switchChain({ chainId: SUPPORTED_CHAINS.BASE_SEPOLIA })}
                 variant="outline"
                 size="sm"
               >
-                Switch to Spicy Testnet
+                Switch to Base Sepolia
               </Button>
             </div>
           )}
@@ -102,7 +102,7 @@ export default function TxTestPage() {
               onChange={(e) => setRecipient(e.target.value)}
             />
             <Input
-              placeholder="Amount (CHZ)"
+              placeholder="Amount (ETH)"
               type="number"
               step="0.000000001"
               value={amount}
@@ -113,7 +113,7 @@ export default function TxTestPage() {
               disabled={isPending || !recipient || !amount || !isCorrectChain}
               className="w-full"
             >
-              {isPending ? 'Sending...' : 'Send CHZ'}
+              {isPending ? 'Sending...' : 'Send ETH'}
             </Button>
           </div>
           

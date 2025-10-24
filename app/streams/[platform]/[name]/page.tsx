@@ -214,11 +214,11 @@ export default function StreamPage() {
               {isWin ? 'VICTORY!' : 'DEFEAT!'}
             </h3>
             <p className={`text-lg ${textColor} font-semibold animate-in slide-in-from-bottom-2 duration-700 delay-200`}>
-              {isWin ? '+2.85 SOL' : '-1 SOL'}
+              {isWin ? '+2.85 ETH' : '-1 ETH'}
             </p>
             {isWin && (
               <p className={`text-sm ${textColor} animate-in slide-in-from-bottom-2 duration-700 delay-300`}>
-                Profit: +1.85 SOL
+                Profit: +1.85 ETH
               </p>
             )}
             <p className="text-sm text-gray-300 animate-in slide-in-from-bottom-2 duration-700 delay-300">
@@ -343,11 +343,11 @@ export default function StreamPage() {
                   {result.correct ? 'WIN' : 'LOSE'}
                 </div>
                 <div className="text-sm text-gray-300">
-                  {result.correct ? '+2.85 CHZ' : '-1 CHZ'}
+                  {result.correct ? '+2.85 ETH' : '-1 ETH'}
                 </div>
                 {result.correct && (
                   <div className="text-xs text-gray-400">
-                    Profit: +1.85 CHZ
+                    Profit: +1.85 ETH
                   </div>
                 )}
               </div>
