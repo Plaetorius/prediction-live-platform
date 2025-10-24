@@ -10,10 +10,10 @@ import {
   OrbitIcon,
 } from "lucide-react"
 
-import { NavFollowing } from "@/components/nav-following"
-import { NavMain } from "@/components/nav-main"
-import { NavSecondary } from "@/components/nav-secondary"
-import { NavUser } from "@/components/nav-user"
+import { NavFollowing } from "@/components/sidebar/NavFollowing"
+import { NavMain } from "@/components/sidebar/NavMain"
+import { NavSecondary } from "@/components/sidebar/NavSecondary"
+import { NavUser } from "@/components/sidebar/NavUser"
 import {
   Sidebar,
   SidebarContent,
@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/sidebar"
 import Image from "next/image"
 import Link from "next/link"
-import { NavFeatured } from "./nav-featured"
+import { NavFeatured } from "./NavFeatured"
 
 const data = {
   navMain: [

@@ -29,7 +29,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { useWeb3AuthConnect, useWeb3AuthDisconnect } from "@web3auth/modal/react"
-import { Button } from "./ui/button"
+import { Button } from "../ui/button"
 import { useProfile } from "@/providers/ProfileProvider"
 import Link from "next/link"
 
