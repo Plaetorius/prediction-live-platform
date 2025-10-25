@@ -9,46 +9,46 @@ export function useResultChannel(listeners: ResultListeners = {}) {
   const supabase = createSupabaseClient()
   const channelRef = useRef<RealtimeChannel | null>(null)
 
-    useEffect(() => {
-      const topic = 'results'
+  useEffect(() => {
+    const topic = 'results'
 
-      const channel = supabase.channel(topic, {
-        config: {
-          broadcast: {
-            self: false
-          }
+    const channel = supabase.channel(topic, {
+      config: {
+        broadcast: {
+          self: false
         }
-      })
-
-      if (listeners.onResult) {
-        channel.on('broadcast', { event: 'result' }, (msg) => listeners.onResult?.(msg.payload))
       }
+    })
 
-      channel.subscribe()
-      channelRef.current = channel
+    if (listeners.onResult) {
+      channel.on('broadcast', { event: 'result' }, (msg) => listeners.onResult?.(msg.payload))
+    }
 
-      return () => {
-        if (channelRef.current) {
-          channelRef.current.unsubscribe()
-          supabase.removeChannel(channelRef.current)
-        }
-        channelRef.current = null
+    channel.subscribe()
+    channelRef.current = channel
+
+    return () => {
+      if (channelRef.current) {
+        channelRef.current.unsubscribe()
+        supabase.removeChannel(channelRef.current)
       }
-    }, [listeners.onResult])
-
-
-    function send<T = any>(event: string, payload: T) {
-      const serializedPayload = JSON.parse(JSON.stringify(payload))
-      channelRef.current?.send({ type: 'broadcast', event, payload: serializedPayload })
+      channelRef.current = null
     }
+  }, [listeners.onResult])
 
-    function sendResult(payload: any = {}) {
-      send('result', payload)
-    }
 
-    return {
-      channelRef,
-      send,
-      sendResult
-    }
+  function send<T = any>(event: string, payload: T) {
+    const serializedPayload = JSON.parse(JSON.stringify(payload))
+    channelRef.current?.send({ type: 'broadcast', event, payload: serializedPayload })
+  }
+
+  function sendResult(payload: any = {}) {
+    send('result', payload)
+  }
+
+  return {
+    channelRef,
+    send,
+    sendResult
+  }
 }
