@@ -213,7 +213,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
   }
 
   const refreshProfile = async () => {
-    if (!isConnected || !userInfo) {
+    if (!isConnected || !address) {
       setProfile(null)
       setLoading(false)
       clearError()
@@ -225,10 +225,12 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
       clearError()
       const supabase = createSupabaseClient()
 
+      // Find profile by wallet address (normalize to lowercase for comparison)
+      const normalizedAddress = address?.toLowerCase()
       const { data, error: fetchError } = await supabase
         .from('profiles')
         .select()
-        .eq('web3auth_id', userInfo.email || userInfo.name)
+        .eq('wallet_address', normalizedAddress)
         .single()
 
       if (fetchError) {
@@ -335,8 +337,28 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
   }, [profile])
 
   useEffect(() => {
-    refreshProfile()
-  }, [isConnected, userInfo])
+    // Add a delay to ensure sync process is complete
+    const timeoutId = setTimeout(() => {
+      refreshProfile()
+    }, 1500)
+    
+    return () => clearTimeout(timeoutId)
+  }, [isConnected, address])
+
+  // Additional retry mechanism for new profiles
+  useEffect(() => {
+    if (isConnected && address && !profile && !loading && !error) {
+      // If we're connected but no profile found, retry after a longer delay
+      const retryTimeoutId = setTimeout(() => {
+        console.log("Retrying profile fetch for new wallet...")
+        refreshProfile()
+      }, 3000)
+      
+      return () => clearTimeout(retryTimeoutId)
+    }
+  }, [isConnected, address, profile, loading, error])
+
+
 
   const value: ProfileContextType = useMemo(() => ({
     profile,

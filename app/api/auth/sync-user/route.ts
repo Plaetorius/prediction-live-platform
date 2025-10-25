@@ -18,6 +18,9 @@ export async function POST(req: NextRequest) {
       const jwks = jose.createRemoteJWKSet(new URL("https://api-auth.web3auth.io/jwks"));
       const result = await jose.jwtVerify(idToken, jwks, { algorithms: ["ES256"] });
       payload = result.payload;
+      
+      // Debug: Log the payload to understand the structure
+      console.log("JWT Payload:", JSON.stringify(payload, null, 2));
     } catch (jwtError) {
       console.error("JWT verification failed:", jwtError);
       return NextResponse.json({ error: "Invalid token format" }, { status: 400 });
@@ -26,25 +29,43 @@ export async function POST(req: NextRequest) {
     // Extract user information from token
     const userInfo = {
       web3auth_id: (payload as any).userId || (payload as any).verifierId || payload.sub as string,
-      email: payload.email as string,
-      name: payload.name as string,
+      email: payload.email as string || null,
+      name: payload.name as string || null,
       wallets: (payload as any).wallets || []
     };
-
-    if (!userInfo.web3auth_id) {
-      return NextResponse.json({ error: "Invalid token: missing user ID" }, { status: 400 });
-    }
 
     // Get primary wallet address
     const primaryWallet = userInfo.wallets.find((wallet: any) => 
       wallet.type === "web3auth_app_key"
     );
     
-    if (!primaryWallet) {
-      return NextResponse.json({ error: "No wallet found in token" }, { status: 400 });
+    let walletAddress;
+    if (primaryWallet) {
+      walletAddress = primaryWallet.public_key;
+    } else {
+      // For external wallets like Rabby, get address from wallets array
+      const externalWallet = userInfo.wallets.find((wallet: any) => 
+        wallet.type === "ethereum" || wallet.type === "external"
+      );
+      if (externalWallet) {
+        walletAddress = externalWallet.address;
+      } else {
+        // Fallback to other sources
+        walletAddress = (payload as any).address || (payload as any).wallet_address;
+      }
     }
 
-    const walletAddress = primaryWallet.public_key;
+    if (!walletAddress) {
+      return NextResponse.json({ error: "No wallet address found in token" }, { status: 400 });
+    }
+
+    // Normalize wallet address to lowercase for consistency
+    walletAddress = walletAddress.toLowerCase();
+
+    // If no web3auth_id, use wallet address as fallback
+    if (!userInfo.web3auth_id) {
+      userInfo.web3auth_id = `wallet_${walletAddress}`;
+    }
 
     // Connect to Supabase
     const supabase = await createSupabaseServerClient();
@@ -87,11 +108,37 @@ export async function POST(req: NextRequest) {
     } else {
       // Create new user
       isNewUser = true;
+      
+      // Generate username based on available data
+      let username;
+      if (userInfo.email) {
+        username = userInfo.email.split('@')[0];
+      } else if (userInfo.name) {
+        username = userInfo.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+      } else {
+        username = `user_${userInfo.web3auth_id.slice(0, 8)}`;
+      }
+      
+      // Ensure username is unique by adding suffix if needed
+      let finalUsername = username;
+      let counter = 1;
+      while (true) {
+        const { data: existingUsername } = await supabase
+          .from('profiles')
+          .select('username')
+          .eq('username', finalUsername)
+          .single();
+        
+        if (!existingUsername) break;
+        finalUsername = `${username}_${counter}`;
+        counter++;
+      }
+      
       const { data, error: insertError } = await supabase
         .from('profiles')
         .insert({
           web3auth_id: userInfo.web3auth_id,
-          username: userInfo.email?.split('@')[0] || `user_${userInfo.web3auth_id.slice(0, 8)}`,
+          username: finalUsername,
           display_name: userInfo.name || 'Anonymous User',
           email: userInfo.email,
           wallet_address: walletAddress,
