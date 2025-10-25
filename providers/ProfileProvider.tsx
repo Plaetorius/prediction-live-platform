@@ -225,13 +225,29 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
       clearError()
       const supabase = createSupabaseClient()
 
-      // Find profile by wallet address (normalize to lowercase for comparison)
-      const normalizedAddress = address?.toLowerCase()
-      const { data, error: fetchError } = await supabase
+      // Find profile by web3auth_id first, then by wallet_address as fallback
+      let { data, error: fetchError } = await supabase
         .from('profiles')
         .select()
-        .eq('wallet_address', normalizedAddress)
+        .eq('web3auth_id', userInfo?.email || userInfo?.name)
         .single()
+
+      // If not found by web3auth_id and we have a wallet address, try wallet_address
+      if (fetchError && fetchError.code === 'PGRST116' && address) {
+        const normalizedAddress = address.toLowerCase()
+        const { data: walletData, error: walletError } = await supabase
+          .from('profiles')
+          .select()
+          .eq('wallet_address', normalizedAddress)
+          .single()
+        
+        if (walletData) {
+          data = walletData
+          fetchError = null
+        } else {
+          fetchError = walletError
+        }
+      }
 
       if (fetchError) {
         if (fetchError.code === 'PGRST116') {

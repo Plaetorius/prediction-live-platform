@@ -34,12 +34,12 @@ export async function POST(req: NextRequest) {
       wallets: (payload as any).wallets || []
     };
 
-    // Get primary wallet address
+    // Get primary wallet address (if available)
     const primaryWallet = userInfo.wallets.find((wallet: any) => 
       wallet.type === "web3auth_app_key"
     );
     
-    let walletAddress;
+    let walletAddress = null;
     if (primaryWallet) {
       walletAddress = primaryWallet.public_key;
     } else {
@@ -55,16 +55,22 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    if (!walletAddress) {
-      return NextResponse.json({ error: "No wallet address found in token" }, { status: 400 });
+    // Normalize wallet address to lowercase for consistency (if available)
+    if (walletAddress) {
+      walletAddress = walletAddress.toLowerCase();
     }
 
-    // Normalize wallet address to lowercase for consistency
-    walletAddress = walletAddress.toLowerCase();
-
-    // If no web3auth_id, use wallet address as fallback
+    // If no web3auth_id, generate one based on available data
     if (!userInfo.web3auth_id) {
-      userInfo.web3auth_id = `wallet_${walletAddress}`;
+      if (walletAddress) {
+        userInfo.web3auth_id = `wallet_${walletAddress}`;
+      } else if (userInfo.email) {
+        userInfo.web3auth_id = `email_${userInfo.email}`;
+      } else if (userInfo.name) {
+        userInfo.web3auth_id = `name_${userInfo.name}`;
+      } else {
+        userInfo.web3auth_id = `user_${Date.now()}`;
+      }
     }
 
     // Connect to Supabase
