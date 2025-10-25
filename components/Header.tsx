@@ -7,6 +7,7 @@ import { Button } from './ui/button'
 import { CoinsIcon, SearchIcon } from 'lucide-react'
 import { useProfile } from '@/providers/ProfileProvider'
 import { toast } from 'sonner'
+import FundingModal from './FundingModal'
 
 export default function Header() {
   const { isConnected: isWeb3AuthConnected, loading: connectLoading, error: connectError } = useWeb3AuthConnect()
@@ -58,9 +59,11 @@ export default function Header() {
             ) : balanceLoading ? (
               <div className='font-semibold text-gray-400'>Loading...</div>
             ): null}
-            <Button>
-              Buy Tokens
-            </Button>
+            <FundingModal>
+              <Button>
+                Buy Tokens
+              </Button>
+            </FundingModal>
           </div>
         )
         : (
