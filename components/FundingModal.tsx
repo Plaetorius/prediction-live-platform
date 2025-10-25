@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useProfile } from '@/providers/ProfileProvider'
-import { useWeb3Auth } from '@web3auth/modal/react'
+import { useWalletUI } from '@web3auth/modal/react'
 import {
   CreditCard,
   QrCode,
@@ -26,7 +26,7 @@ export default function FundingModal({ children }: FundingModalProps) {
   const [copied, setCopied] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const { address, profile } = useProfile()
-  const web3auth = useWeb3Auth()
+  const { showWalletUI, loading: walletUILoading, error: walletUIError } = useWalletUI()
 
   const copyAddress = async () => {
     if (address) {
@@ -38,22 +38,13 @@ export default function FundingModal({ children }: FundingModalProps) {
   }
 
   const openWeb3AuthWalletServices = async () => {
-    if (!web3auth) {
-      toast.error('Web3Auth not initialized')
-      return
-    }
-
-    setIsLoading(true)
     try {
-      // Web3Auth Wallet Services are available via the floating widget
-      // The widget should be visible when walletServicesConfig is properly configured
-      toast.info('Wallet Services widget should be visible in the bottom-right corner!')
+      await showWalletUI()
       setIsOpen(false)
+      toast.success('Wallet Services opened successfully!')
     } catch (error) {
-      toast.error('Failed to access Wallet Services')
+      toast.error('Failed to open Wallet Services')
       console.error('Web3Auth Wallet Services error:', error)
-    } finally {
-      setIsLoading(false)
     }
   }
 
@@ -72,12 +63,12 @@ export default function FundingModal({ children }: FundingModalProps) {
         </DialogHeader>
         
         <div className="space-y-6">
-          {/* Web3Auth Wallet Services */}
+          {/* Web3Auth Wallet Services - Main Action */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Wallet className="w-5 h-5" />
-                Web3Auth Wallet Services
+                Buy Tokens with Web3Auth
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -87,10 +78,10 @@ export default function FundingModal({ children }: FundingModalProps) {
               </p>
               <Button
                 className="w-full"
-                disabled={isLoading}
+                disabled={walletUILoading}
                 onClick={openWeb3AuthWalletServices}
               >
-                {isLoading ? (
+                {walletUILoading ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     Opening Wallet Services...
@@ -98,10 +89,15 @@ export default function FundingModal({ children }: FundingModalProps) {
                 ) : (
                   <>
                     <CreditCard className="w-4 h-4 mr-2" />
-                    Open Wallet Services
+                    Buy Tokens
                   </>
                 )}
               </Button>
+              {walletUIError && (
+                <p className="text-sm text-red-500 mt-2">
+                  Error: {walletUIError.message}
+                </p>
+              )}
             </CardContent>
           </Card>
 
@@ -131,43 +127,6 @@ export default function FundingModal({ children }: FundingModalProps) {
               <p className="text-sm text-gray-300 mt-2">
                 Send crypto to this address to fund your wallet
               </p>
-            </CardContent>
-          </Card>
-
-          {/* Alternative Methods */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Alternative Funding Methods</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-brand-black-3 rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <QrCode className="w-4 h-4" />
-                    <span className="text-sm">QR Code Transfer</span>
-                  </div>
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={() => toast.info("QR Code generation coming soon!")}
-                  >
-                    Generate
-                  </Button>
-                </div>
-                <div className="flex items-center justify-between p-3 bg-brand-black-3 rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <ExternalLink className="w-4 h-4" />
-                    <span className="text-sm">External Wallet</span>
-                  </div>
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={openWalletConnect}
-                  >
-                    Connect
-                  </Button>
-                </div>
-              </div>
             </CardContent>
           </Card>
         </div>
