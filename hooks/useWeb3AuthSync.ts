@@ -14,8 +14,8 @@ export function useWeb3AuthSync() {
 
   useEffect(() => {
     const syncUser = async () => {
-      // Only sync if user is connected and we have all required data
-      if (!isConnected || !userInfo || !address) {
+      // Only sync if user is connected and we have wallet address
+      if (!isConnected || !address) {
         setIsSyncing(false)
         return
       }
@@ -30,7 +30,6 @@ export function useWeb3AuthSync() {
           setIsSyncing(false)
           return
         }
-
 
         // Sync user with Supabase
         const response = await fetch('/api/auth/sync-user', {
@@ -64,10 +63,10 @@ export function useWeb3AuthSync() {
     const timeoutId = setTimeout(syncUser, 1000)
 
     return () => clearTimeout(timeoutId)
-  }, [isConnected, userInfo, address])
+  }, [isConnected, address])
 
   return {
-    isSynced: isConnected && userInfo && address,
+    isSynced: isConnected && address,
     isSyncing
   }
 }
