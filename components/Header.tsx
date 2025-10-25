@@ -1,17 +1,17 @@
 "use client"
 
 import React, { useEffect, useState } from 'react'
-import { useWeb3AuthConnect } from "@web3auth/modal/react"
+import { useWeb3AuthConnect, useWalletUI } from "@web3auth/modal/react"
 import { SidebarTrigger } from './ui/sidebar'
 import { Button } from './ui/button'
-import { CoinsIcon, SearchIcon } from 'lucide-react'
+import { CoinsIcon, SearchIcon, Loader2 } from 'lucide-react'
 import { useProfile } from '@/providers/ProfileProvider'
 import { toast } from 'sonner'
-import FundingModal from './FundingModal'
 
 export default function Header() {
   const { isConnected: isWeb3AuthConnected, loading: connectLoading, error: connectError } = useWeb3AuthConnect()
   const { profile, isConnected: isProfileConnected, getBalance } = useProfile()
+  const { showWalletUI, loading: walletUILoading, error: walletUIError } = useWalletUI()
   const [balance, setBalance] = useState<string | null>(null)
   const [balanceLoading, setBalanceLoading] = useState(false)
   const isConnected = isWeb3AuthConnected && isProfileConnected
@@ -37,6 +37,15 @@ export default function Header() {
     }
     getProfileBalance()
   }, [profile, isConnected, getBalance])
+
+  const handleBuyTokens = async () => {
+    try {
+      await showWalletUI()
+    } catch (error) {
+      toast.error('Failed to open Wallet Services')
+      console.error('Web3Auth Wallet Services error:', error)
+    }
+  }
   
   return (
     <header className="flex items-center justify-between border-b bg-background px-4 py-3">
@@ -59,11 +68,19 @@ export default function Header() {
             ) : balanceLoading ? (
               <div className='font-semibold text-gray-400'>Loading...</div>
             ): null}
-            <FundingModal>
-              <Button>
-                Buy Tokens
-              </Button>
-            </FundingModal>
+            <Button 
+              onClick={handleBuyTokens}
+              disabled={walletUILoading}
+            >
+              {walletUILoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Opening...
+                </>
+              ) : (
+                'Wallet'
+              )}
+            </Button>
           </div>
         )
         : (
