@@ -40,13 +40,12 @@ export async function POST(req: NextRequest) {
     );
     
     let walletAddress = null;
+    let externalWallet = userInfo.wallets.find((wallet: any) => 
+      wallet.type === "ethereum" || wallet.type === "external"
+    );
     if (primaryWallet) {
       walletAddress = primaryWallet.public_key;
     } else {
-      // For external wallets like Rabby, get address from wallets array
-      const externalWallet = userInfo.wallets.find((wallet: any) => 
-        wallet.type === "ethereum" || wallet.type === "external"
-      );
       if (externalWallet) {
         walletAddress = externalWallet.address;
       } else {
@@ -98,7 +97,8 @@ export async function POST(req: NextRequest) {
         .update({
           display_name: userInfo.name || existingUser.display_name,
           email: userInfo.email || existingUser.email,
-          wallet_address: walletAddress,
+          evm_wallet_address: externalWallet || null,
+          web3auth_wallet_address: externalWallet || null,
           updated_at: new Date().toISOString()
         })
         .eq('web3auth_id', userInfo.web3auth_id)
@@ -147,7 +147,8 @@ export async function POST(req: NextRequest) {
           username: finalUsername,
           display_name: userInfo.name || 'Anonymous User',
           email: userInfo.email,
-          wallet_address: walletAddress,
+          evm_wallet_address: externalWallet || null,
+          web3auth_wallet_address: externalWallet || null,
           xp: 0,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
@@ -171,7 +172,8 @@ export async function POST(req: NextRequest) {
         username: user.username,
         display_name: user.display_name,
         email: user.email,
-        wallet_address: user.wallet_address,
+        evm_wallet_address: externalWallet || null,
+        web3auth_wallet_address: externalWallet || null,
         xp: user.xp,
         web3auth_id: user.web3auth_id
       }

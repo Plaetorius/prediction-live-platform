@@ -24,7 +24,8 @@ export type Profile = {
   xp: number
   web3authId: string
   email: string
-  walletAddress: string
+  web3authWalletAddress: string
+  evmWalletAddress: string
   currentChainId?: number
 } | null
 

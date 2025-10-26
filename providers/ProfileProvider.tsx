@@ -160,7 +160,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
 
       if (profile) {
         await updateProfile({
-          walletAddress: address,
+          evmWalletAddress: address,
           currentChainId: chainId,
         })
       }
@@ -238,7 +238,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
         const { data: walletData, error: walletError } = await supabase
           .from('profiles')
           .select()
-          .eq('wallet_address', normalizedAddress)
+          .eq('evm_wallet_address', normalizedAddress)
           .single()
         
         if (walletData) {
@@ -272,7 +272,8 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
           xp: data.xp || 0,
           web3authId: data.web3auth_id || '',
           email: data.email || '',
-          walletAddress: data.wallet_address || '',
+          web3authWalletAddress: data.web3auth_wallet_address || '',
+          evmWalletAddress: data.evm_wallet_address || '',
           currentChainId: data.current_chain_id || 0
         })
         clearError()
@@ -306,7 +307,8 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
           xp: update?.xp,
           web3auth_id: update?.web3authId,
           email: update?.email,
-          wallet_address: update?.walletAddress,
+          web3auth_wallet_address: update?.web3authWalletAddress,
+          evm_wallet_address: update?.evmWalletAddress,
           current_chain_id: update?.currentChainId,
           updated_at: new Date().toISOString(),
         })
@@ -331,7 +333,8 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
           xp: profileData.xp || 0,
           web3authId: profileData.web3auth_id || '',
           email: profileData.email || '',
-          walletAddress: profileData.wallet_address || '',
+          web3authWalletAddress: profileData.web3auth_wallet_address || '',
+          evmWalletAddress: profileData.evm_wallet_address || '',
           currentChainId: profileData.current_chain_id || 0
         })
         clearError()
