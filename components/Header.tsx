@@ -10,7 +10,7 @@ import { toast } from 'sonner'
 
 export default function Header() {
   const { isConnected: isWeb3AuthConnected, loading: connectLoading, error: connectError } = useWeb3AuthConnect()
-  const { profile, isConnected: isProfileConnected, getBalance } = useProfile()
+  const { profile, isConnected: isProfileConnected } = useProfile()
   const { showWalletUI, loading: walletUILoading, error: walletUIError } = useWalletUI()
   const [balance, setBalance] = useState<string | null>(null)
   const [balanceLoading, setBalanceLoading] = useState(false)
@@ -21,8 +21,8 @@ export default function Header() {
       if (isConnected && profile) {
         setBalanceLoading(true)
         try {
-          const balanceResult = await getBalance()
-          setBalance(balanceResult)
+          // const balanceResult = await getBalance()
+          // setBalance(balanceResult)
         } catch (error) {
           console.error("Failed to fetch balance:", error)
           toast.error("Error retrieving balance.")
@@ -36,7 +36,7 @@ export default function Header() {
       }
     }
     getProfileBalance()
-  }, [profile, isConnected, getBalance])
+  }, [profile, isConnected])
 
   const handleBuyTokens = async () => {
     try {
