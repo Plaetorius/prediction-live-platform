@@ -21,7 +21,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
       <head>
-        {/* <script src="http://localhost:8097"></script> */}
+        <script src="http://localhost:8097"></script>
       </head>
       <body suppressHydrationWarning>
         <Providers>

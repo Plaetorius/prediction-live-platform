@@ -16,7 +16,7 @@ interface ProfileContextType {
   error: string | null
   isConnected: boolean
   userInfo: any // Web3Auth user info
-  balance: string,
+  // balance: string,
   refreshProfile: () => Promise<void>
   updateProfile: (update: Partial<Profile>) => Promise<Profile | null>
   clearError: () => void
@@ -26,13 +26,13 @@ interface ProfileContextType {
   refreshConfirmedBets: () => Promise<void>
 
   // Web3Auth features
-  address: string | undefined
-  isWalletConnected: boolean
+  // address: string | undefined
+  // isWalletConnected: boolean
   connect: () => Promise<void>
   disconnect: () => Promise<void>
-  switchChain: (chainId: number) => Promise<void>
-  getBalance: () => Promise<string>
-  getCurrentChain: () => { chainId: number | undefined; chainName: string; isSupported: boolean }
+  // switchChain: (chainId: number) => Promise<void>
+  // getBalance: () => Promise<string>
+  // getCurrentChain: () => { chainId: number | undefined; chainName: string; isSupported: boolean }
   signMessage: (message: string) => Promise<void>
 }
 
@@ -55,7 +55,7 @@ const ProfileContext = createContext<ProfileContextType | undefined>(undefined)
 export function ProfileProvider({ children }: ProfileProviderProps) {
   const { userInfo } = useWeb3AuthUser()
   const { isConnected, connect } = useWeb3AuthConnect()
-  const { address, isConnected: isWalletConnected, chainId } = useAccount()
+  // const { address, isConnected: isWalletConnected, chainId } = useAccount()
   const { disconnect } = useDisconnect()
   const { signMessage } = useSignMessage()
   const { switchChain } = useSwitchChain()
@@ -69,34 +69,34 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
 
   const clearError = () => setError(null)
 
-  const { data: balanceData, refetch: refetchBalance } = useBalance({
-    address,
-    chainId: SUPPORTED_CHAINS.BASE_SEPOLIA,
-    query: {
-      enabled: !!address,
-      staleTime: 30000,
-    }
-  })
+  // const { data: balanceData, refetch: refetchBalance } = useBalance({
+  //   address,
+  //   chainId: SUPPORTED_CHAINS.BASE_SEPOLIA,
+  //   query: {
+  //     enabled: !!address,
+  //     staleTime: 30000,
+  //   }
+  // })
 
-  const balance = useMemo(() => {
-    return formatBalance(balanceData)
-  }, [balanceData?.value, balanceData?.decimals])
+  // const balance = useMemo(() => {
+  //   return formatBalance(balanceData)
+  // }, [balanceData?.value, balanceData?.decimals])
 
-  const getBalance = async () => {
-    try {
-      if (!address) {
-        console.error("No address in ProfileProvider")
-        return '0.00'
-      }
-      const result = await refetchBalance()
-      console.log("RESULT", result)
-      return formatBalance(result.data)
-    } catch (error) {
-      setError("Failed to fetch balance")
-      console.error("Balance fetch error:", error)
-      return '0.00'
-    }
-  }
+  // const getBalance = async () => {
+  //   try {
+  //     if (!address) {
+  //       console.error("No address in ProfileProvider")
+  //       return '0.00'
+  //     }
+  //     const result = await refetchBalance()
+  //     console.log("RESULT", result)
+  //     return formatBalance(result.data)
+  //   } catch (error) {
+  //     setError("Failed to fetch balance")
+  //     console.error("Balance fetch error:", error)
+  //     return '0.00'
+  //   }
+  // }
 
   const refreshConfirmedBets = async () => {
     if (!profile) {
@@ -147,40 +147,40 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
     }
   }
 
-  const handleSwitchChain = async (chainId: number) => {
-    try {
-      const supportedChainIds = Object.values(SUPPORTED_CHAINS)
-      if (!supportedChainIds.includes(chainId as any)) {
-        throw new Error(`Unsupported chain: ${chainId}`)
-      }
+  // const handleSwitchChain = async (chainId: number) => {
+  //   try {
+  //     const supportedChainIds = Object.values(SUPPORTED_CHAINS)
+  //     if (!supportedChainIds.includes(chainId as any)) {
+  //       throw new Error(`Unsupported chain: ${chainId}`)
+  //     }
 
-      await switchChain({ chainId: chainId as 84532 })
+  //     await switchChain({ chainId: chainId as 84532 })
 
-      await refetchBalance()
+  //     // await refetchBalance()
 
-      if (profile) {
-        await updateProfile({
-          evmWalletAddress: address,
-          currentChainId: chainId,
-        })
-      }
-    } catch (error) {
-      setError(`Failed to switch to chain ${chainId}`)
-      console.error("Chain switch error:", error)
-      throw error
-    }
-  }
+  //     if (profile) {
+  //       await updateProfile({
+  //         evmWalletAddress: address,
+  //         currentChainId: chainId,
+  //       })
+  //     }
+  //   } catch (error) {
+  //     setError(`Failed to switch to chain ${chainId}`)
+  //     console.error("Chain switch error:", error)
+  //     throw error
+  //   }
+  // }
 
-  const getCurrentChain = () => {
-    const chainName = Object.keys(SUPPORTED_CHAINS).find(
-      key => SUPPORTED_CHAINS[key as SupportedChain] === chainId
-    )
-    return {
-      chainId,
-      chainName: chainName || "Unknown",
-      isSupported: chainId ? Object.values(SUPPORTED_CHAINS).includes(chainId as any) : false
-    }
-  }
+  // const getCurrentChain = () => {
+  //   const chainName = Object.keys(SUPPORTED_CHAINS).find(
+  //     key => SUPPORTED_CHAINS[key as SupportedChain] === chainId
+  //   )
+  //   return {
+  //     chainId,
+  //     chainName: chainName || "Unknown",
+  //     isSupported: chainId ? Object.values(SUPPORTED_CHAINS).includes(chainId as any) : false
+  //   }
+  // }
 
   const handleConnect = async () => {
     try {
@@ -213,7 +213,8 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
   }
 
   const refreshProfile = async () => {
-    if (!isConnected || !address) {
+    console.log("IS CONNECTED", isConnected)
+    if (!isConnected) {
       setProfile(null)
       setLoading(false)
       clearError()
@@ -225,32 +226,37 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
       clearError()
       const supabase = createSupabaseClient()
 
+      console.log("USERINFO IN REFRESHPROFILE", userInfo)
+
       // Find profile by web3auth_id first, then by wallet_address as fallback
       let { data, error: fetchError } = await supabase
         .from('profiles')
         .select()
-        .eq('web3auth_id', userInfo?.email || userInfo?.name)
+        .eq('web3auth_id', userInfo?.email)
         .single()
 
-      // If not found by web3auth_id and we have a wallet address, try wallet_address
-      if (fetchError && fetchError.code === 'PGRST116' && address) {
-        const normalizedAddress = address.toLowerCase()
-        const { data: walletData, error: walletError } = await supabase
-          .from('profiles')
-          .select()
-          .eq('evm_wallet_address', normalizedAddress)
-          .single()
+      console.log("REFRESH PROFILE DATA", data)
+
+      // // If not found by web3auth_id and we have a wallet address, try wallet_address
+      // if (fetchError && fetchError.code === 'PGRST116') {
+      //   // const normalizedAddress = address.toLowerCase()
+      //   const { data: walletData, error: walletError } = await supabase
+      //     .from('profiles')
+      //     .select()
+      //     .eq('evm_wallet_address', normalizedAddress)
+      //     .single()
         
-        if (walletData) {
-          data = walletData
-          fetchError = null
-        } else {
-          fetchError = walletError
-        }
-      }
+      //   if (walletData) {
+      //     data = walletData
+      //     fetchError = null
+      //   } else {
+      //     fetchError = walletError
+      //   }
+      // }
 
       if (fetchError) {
         if (fetchError.code === 'PGRST116') {
+          console.error("Fetch Error:", fetchError)
           setError("No profile found. Please sync your account first.")
           setProfile(null)
         } else {
@@ -362,11 +368,11 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
     }, 1500)
     
     return () => clearTimeout(timeoutId)
-  }, [isConnected, address])
+  }, [isConnected, userInfo])
 
   // Additional retry mechanism for new profiles
   useEffect(() => {
-    if (isConnected && address && !profile && !loading && !error) {
+    if (isConnected && !profile && !loading && !error) {
       // If we're connected but no profile found, retry after a longer delay
       const retryTimeoutId = setTimeout(() => {
         console.log("Retrying profile fetch for new wallet...")
@@ -375,7 +381,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
       
       return () => clearTimeout(retryTimeoutId)
     }
-  }, [isConnected, address, profile, loading, error])
+  }, [isConnected, profile, loading, error, userInfo])
 
 
 
@@ -385,7 +391,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
     error,
     isConnected,
     userInfo,
-    balance,
+    // balance,
     refreshProfile,
     updateProfile,
     clearError,
@@ -394,23 +400,23 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
     setConfirmedBets,
     refreshConfirmedBets,
     
-    address,
-    isWalletConnected,
+    // address,
+    // isWalletConnected,
     connect: handleConnect,
     disconnect: handleDisconnect,
-    switchChain: handleSwitchChain,
-    getBalance,
-    getCurrentChain,
+    // switchChain: handleSwitchChain,
+    // getBalance,
+    // getCurrentChain,
     signMessage: handleSignMessage,
   }), [
     profile,
     loading,
     isConnected,
     userInfo,
-    address,
-    isWalletConnected,
-    balance,
-    chainId,
+    // address,
+    // isWalletConnected,
+    // balance,
+    // chainId,
 
     confirmedBets,
     setConfirmedBets,
@@ -421,8 +427,8 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
     handleConnect,
     handleDisconnect,
     handleSignMessage,
-    handleSwitchChain,
-    getBalance,
+    // handleSwitchChain,
+    // getBalance,
   ])
 
   return (
