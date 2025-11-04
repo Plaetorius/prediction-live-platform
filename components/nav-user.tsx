@@ -38,8 +38,8 @@ import Link from "next/link"
 export function NavUser() {
   const { isMobile } = useSidebar()
   const { disconnect, loading: disconnectLoading, error: disconnectError } = useWeb3AuthDisconnect();
-  const { profile } = useProfile()
-  const { connect, isConnected } = useWeb3AuthConnect()
+  const { profile, isConnected } = useProfile()
+  const { connect } = useWeb3AuthConnect()
 
   if (!profile || !isConnected)
     return (

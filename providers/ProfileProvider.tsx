@@ -213,18 +213,21 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
   }
 
   const refreshProfile = useCallback(async () => {
-    console.log("ProfileProvider: refreshProfile called, isConnected:", isConnected, "address:", address, "userInfo:", userInfo)
+    // Support both Web3Auth and external wallets (Rabby, MetaMask, etc.)
+    const isAnyConnected = isConnected || isWalletConnected
+    console.log("ProfileProvider: refreshProfile called, isConnected (Web3Auth):", isConnected, "isWalletConnected (external):", isWalletConnected, "address:", address, "userInfo:", userInfo)
     
-    if (!isConnected) {
+    if (!isAnyConnected) {
       setProfile(null)
       setLoading(false)
       clearError()
       return
     }
     
-    // userInfo is required to find the profile
-    if (!userInfo) {
-      console.log("ProfileProvider: userInfo not available yet, waiting...")
+    // For external wallets, we need address but not userInfo
+    // For Web3Auth, we need userInfo
+    if (!userInfo && !address) {
+      console.log("ProfileProvider: Neither userInfo nor address available, waiting...")
       setLoading(true)
       return
     }
@@ -235,81 +238,86 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
       const supabase = createSupabaseClient()
 
       // Extract web3auth_id using the same logic as sync-user route
-      // userInfo from Web3Auth may contain verifierId, userId, email, or name
-      const verifierId = (userInfo as any)?.verifierId
-      const userId = (userInfo as any)?.userId
-      const email = userInfo?.email
-      const name = userInfo?.name
+      // For Web3Auth: userInfo contains verifierId, userId, email, or name
+      // For external wallets: search by address directly
+      let web3authId: string | null = null
       
-      const web3authId = verifierId || userId || email || name
+      if (userInfo) {
+        const verifierId = (userInfo as any)?.verifierId
+        const userId = (userInfo as any)?.userId
+        const email = userInfo?.email
+        const name = userInfo?.name
+        
+        web3authId = verifierId || userId || email || name
 
-      console.log("ProfileProvider: Extracted identifiers - verifierId:", verifierId, "userId:", userId, "email:", email, "name:", name)
-      console.log("ProfileProvider: Full userInfo object:", JSON.stringify(userInfo, null, 2))
-      console.log("ProfileProvider: Looking for user with web3auth_id:", web3authId)
-
-      if (!web3authId) {
-        console.error("No web3auth_id found in userInfo:", userInfo)
-        setError("Unable to identify user")
-        setProfile(null)
-        return
+        console.log("ProfileProvider: Extracted identifiers - verifierId:", verifierId, "userId:", userId, "email:", email, "name:", name)
+        console.log("ProfileProvider: Full userInfo object:", JSON.stringify(userInfo, null, 2))
       }
 
-      // Find profile by web3auth_id first, then by wallet_address as fallback
-      // Normalize web3auth_id (trim whitespace, lowercase for email)
-      const normalizedWeb3authId = typeof web3authId === 'string' 
-        ? web3authId.trim().toLowerCase() 
-        : web3authId
-      
-      console.log("ProfileProvider: Normalized web3auth_id:", normalizedWeb3authId)
-      
-      let { data, error: fetchError } = await supabase
-        .from('profiles')
-        .select()
-        .eq('web3auth_id', normalizedWeb3authId)
-        .single()
+      console.log("ProfileProvider: Looking for user with web3auth_id:", web3authId, "or address:", address)
 
-      console.log("ProfileProvider: Query result - data:", data, "error:", fetchError)
+      let { data, error: fetchError } = { data: null, error: { code: 'PGRST116' } }
       
-      // If exact match fails, try case-insensitive search
-      if (fetchError && fetchError.code === 'PGRST116') {
-        console.log("ProfileProvider: Trying case-insensitive search...")
-        const { data: caseInsensitiveData, error: caseInsensitiveError } = await supabase
+      // Strategy 1: If we have web3auth_id (Web3Auth), search by that first
+      if (web3authId) {
+        const normalizedWeb3authId = typeof web3authId === 'string' 
+          ? web3authId.trim().toLowerCase() 
+          : web3authId
+        
+        console.log("ProfileProvider: Normalized web3auth_id:", normalizedWeb3authId)
+        
+        const result = await supabase
           .from('profiles')
           .select()
-          .ilike('web3auth_id', normalizedWeb3authId)
+          .eq('web3auth_id', normalizedWeb3authId)
           .single()
+
+        data = result.data
+        fetchError = result.error
+
+        console.log("ProfileProvider: Query by web3auth_id result - data:", data, "error:", fetchError)
         
-        if (caseInsensitiveData) {
-          console.log("ProfileProvider: Found profile with case-insensitive search")
-          data = caseInsensitiveData
-          fetchError = null
-        } else {
-          console.log("ProfileProvider: Case-insensitive search also failed:", caseInsensitiveError)
+        // If exact match fails, try case-insensitive search
+        if (fetchError && fetchError.code === 'PGRST116') {
+          console.log("ProfileProvider: Trying case-insensitive search...")
+          const caseInsensitiveResult = await supabase
+            .from('profiles')
+            .select()
+            .ilike('web3auth_id', normalizedWeb3authId)
+            .single()
+          
+          if (caseInsensitiveResult.data) {
+            console.log("ProfileProvider: Found profile with case-insensitive search")
+            data = caseInsensitiveResult.data
+            fetchError = null
+          } else {
+            console.log("ProfileProvider: Case-insensitive search also failed:", caseInsensitiveResult.error)
+          }
         }
       }
 
-      // If not found by web3auth_id and we have a wallet address, try wallet_address as fallback
+      // Strategy 2: If not found by web3auth_id and we have a wallet address, search by address
       if (fetchError && fetchError.code === 'PGRST116' && address) {
         console.log("Profile not found by web3auth_id, trying wallet address:", address)
         const normalizedAddress = address.toLowerCase()
-        // Try both with and without 0x prefix
+        // Try both with and without 0x prefix, and also try without prefix if it's a hex string
         const addressesToTry = [
           normalizedAddress,
           normalizedAddress.startsWith('0x') ? normalizedAddress.slice(2) : `0x${normalizedAddress}`,
         ]
         
         for (const addr of addressesToTry) {
-          const { data: walletData, error: walletError } = await supabase
+          const walletResult = await supabase
             .from('profiles')
             .select()
             .eq('evm_wallet_address', addr)
             .single()
           
-          console.log("ProfileProvider: Wallet query result for", addr, "- data:", walletData, "error:", walletError)
+          console.log("ProfileProvider: Wallet query result for", addr, "- data:", walletResult.data, "error:", walletResult.error)
           
-          if (walletData) {
+          if (walletResult.data) {
             console.log("Found profile by wallet address:", addr)
-            data = walletData
+            data = walletResult.data
             fetchError = null
             break
           }
@@ -318,7 +326,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
 
       if (fetchError) {
         if (fetchError.code === 'PGRST116') {
-          console.error("No profile found with web3auth_id:", web3authId)
+          console.error("No profile found with web3auth_id:", web3authId, "or address:", address)
           setError("No profile found. Please sync your account first.")
           setProfile(null)
         } else {
@@ -353,7 +361,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
     } finally {
       setLoading(false)
     }
-  }, [isConnected, userInfo])
+  }, [isConnected, isWalletConnected, userInfo, address])
 
   const updateProfile = async (update: Partial<Profile>): Promise<Profile | null> => {
     if (!profile) {
@@ -425,8 +433,11 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
 
   useEffect(() => {
     // Add a delay to ensure sync process is complete
-    // Including userInfo in dependencies so we refresh when sync completes
-    if (!isConnected || !userInfo) {
+    // Support both Web3Auth (isConnected + userInfo) and external wallets (isWalletConnected + address)
+    const isAnyConnected = isConnected || isWalletConnected
+    const hasIdentifier = userInfo || address
+    
+    if (!isAnyConnected || !hasIdentifier) {
       setProfile(null)
       setLoading(false)
       return
@@ -439,11 +450,14 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
     
     return () => clearTimeout(timeoutId)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isConnected, userInfo])
+  }, [isConnected, isWalletConnected, userInfo, address])
 
   // Additional retry mechanism for new profiles
   useEffect(() => {
-    if (isConnected && !profile && !loading && !error && userInfo) {
+    const isAnyConnected = isConnected || isWalletConnected
+    const hasIdentifier = userInfo || address
+    
+    if (isAnyConnected && !profile && !loading && !error && hasIdentifier) {
       // If we're connected but no profile found, retry after a longer delay
       const retryTimeoutId = setTimeout(() => {
         console.log("ProfileProvider: Retrying profile fetch for new wallet...")
@@ -453,15 +467,18 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
       return () => clearTimeout(retryTimeoutId)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isConnected, profile, loading, error, userInfo])
+  }, [isConnected, isWalletConnected, profile, loading, error, userInfo, address])
 
 
+
+  // Combined connection state: connected via Web3Auth OR external wallet
+  const combinedIsConnected = isConnected || isWalletConnected
 
   const value: ProfileContextType = useMemo(() => ({
     profile,
     loading,
     error,
-    isConnected,
+    isConnected: combinedIsConnected,
     userInfo,
     balance,
     refreshProfile,
@@ -483,7 +500,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
   }), [
     profile,
     loading,
-    isConnected,
+    combinedIsConnected,
     userInfo,
     address,
     isWalletConnected,
