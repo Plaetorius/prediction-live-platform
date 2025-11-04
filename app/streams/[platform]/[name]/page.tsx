@@ -16,6 +16,7 @@ import { usePlatformStatus } from '@/hooks/usePlatformStatus'
 import { useStreamFollows } from '@/providers/StreamFollowsProvider'
 import { toast } from 'sonner'
 import { calculateWinnings, formatWinnings, formatProfit } from '@/lib/betting/calculateWinnings'
+import { useIsMobile } from '@/hooks/use-mobile'
 
 export default function StreamPage() {
   const [loading, setLoading] = useState<boolean>(false)
@@ -23,6 +24,7 @@ export default function StreamPage() {
   const [showWaitingAnimation, setShowWaitingAnimation] = useState<boolean>(false)
   const { markets, setMarkets, result } = useBetting()
   const stream = useStream()
+  const isMobile = useIsMobile()
   const streamLink = stream?.platform && stream?.name 
     ? `https://${stream.platform}${stream.platform === "twitch" ? ".tv" : ".com"}/${stream.name}`
     : ""
@@ -214,11 +216,11 @@ export default function StreamPage() {
               {isWin ? 'VICTORY!' : 'DEFEAT!'}
             </h3>
             <p className={`text-lg ${textColor} font-semibold animate-in slide-in-from-bottom-2 duration-700 delay-200`}>
-              {isWin ? '+0.0285 ETH' : '-0.01 ETH'}
+              {isWin ? '+0.0285 CHZ' : '-0.01 CHZ'}
             </p>
             {isWin && (
               <p className={`text-sm ${textColor} animate-in slide-in-from-bottom-2 duration-700 delay-300`}>
-                Profit: +0.0185 ETH
+                Profit: +0.0185 CHZ
               </p>
             )}
             <p className="text-sm text-gray-300 animate-in slide-in-from-bottom-2 duration-700 delay-300">
@@ -266,9 +268,108 @@ export default function StreamPage() {
     );
   };
 
+  // Render mobile layout
+  if (isMobile) {
+    return (
+      <main className='flex h-screen w-full overflow-hidden'>
+        {/* Stream Section - Left Side */}
+        <section className='bg-brand-black-5 w-2/3 flex flex-col'>
+          {/* Stream Status Subheader */}
+          <div className='w-full p-2 bg-neutral-900 border-b border-gray-700 flex-shrink-0'>
+            <div className="flex items-center gap-1 mb-1">
+              <Button asChild className='bg-brand-purple hover:bg-brand-purple-dark h-7 text-xs flex-1'>
+                <Link href={streamLink}>
+                  <TwitchIcon strokeWidth={2} className="h-3 w-3 mr-1" />
+                  {stream.platform}
+                </Link>
+              </Button>
+
+              <Button
+                className='bg-brand-pink hover:bg-brand-pink-dark h-7 w-7 p-0'
+                onClick={handleFollow}
+                disabled={followingLoading}
+              >
+                <Heart fill='white' fillOpacity={isFollowing ? 1 : 0} className="h-3 w-3" />
+              </Button>
+
+              {status && status.live && status.viewer_count && (
+                <div className="flex items-center text-xs text-brand-pink">
+                  <Users strokeWidth={2} className="h-3 w-3 mr-1" />
+                  <span className="font-medium text-xs">{formatViewerCount(status.viewer_count)}</span>
+                </div>
+              )}
+            </div>
+            
+            {status && status.live && status.title && (
+              <div className="text-xs text-gray-300 truncate">
+                <span className="text-white">{status.title}</span>
+              </div>
+            )}
+            
+            {statusError && (
+              <Badge variant="destructive" className="w-full justify-center mt-1 text-xs">
+                Error: {statusError}
+              </Badge>
+            )}
+          </div>
+          
+          {/* Stream Video */}
+          <div className="flex-1 w-full overflow-hidden">
+            <iframe
+              src={getEmbedUrl(stream.platform, stream.name)}
+              width="100%"
+              height="100%"
+              frameBorder="0"
+              allowFullScreen
+              className="w-full h-full"
+              title={`${stream.platform} stream - ${stream.name}`}
+            />
+          </div>
+        </section>
+
+        {/* Betting Section - Right Side */}
+        <section className='flex flex-col bg-brand-black w-1/3 border-l border-gray-800 overflow-hidden'>
+          {/* Status Card */}
+          <div className='relative flex bg-brand-black-2 justify-center items-center h-12 w-full font-semibold overflow-hidden border-b border-gray-800 flex-shrink-0'>
+            {/* Animated Result Overlay */}
+            <AnimatedResult />
+            
+            {/* Waiting Animation Overlay */}
+            <WaitingAnimation />
+            
+            {/* Default Content */}
+            {!showResultAnimation && !showWaitingAnimation && result && (
+              <div className="text-center">
+                <div className={`text-[10px] font-bold ${result.correct ? 'text-green-400' : 'text-red-400'}`}>
+                  {result.correct ? 'WIN' : 'LOSE'}
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* Markets */}
+          <div className='bg-brand-black-2 flex-1 overflow-y-auto no-scrollbar'>
+            {
+              markets.size === 0
+              ? (
+                <div className='flex justify-center items-center h-full p-4'>
+                  <p className='text-gray-400 text-xs text-center'>No markets</p>
+                </div>
+              )
+              : (
+                <MarketDisplay />
+              )
+            }
+          </div>
+        </section>
+      </main>
+    )
+  }
+
+  // Render desktop layout
   return (
-    <main className='grid grid-cols-4'>
-      <section className='col-span-3 bg-brand-black-5 w-full h-screen'>
+    <main className='grid grid-cols-4 h-screen'>
+      <section className='col-span-3 bg-brand-black-5 w-full h-screen overflow-y-auto'>
         {/* Stream Status Subheader */}
         <div className='w-full p-4 bg-neutral-900 border-b border-gray-700'>
           {/* Top row */}
@@ -327,7 +428,7 @@ export default function StreamPage() {
           />
         </div>
       </section>
-      <section className='col-span-1 flex flex-col gap-2 bg-brand-black w-full p-2'>
+      <section className='col-span-1 flex flex-col gap-2 bg-brand-black w-full p-2 overflow-y-auto'>
         <div className='relative flex bg-brand-black-2 justify-center items-center h-[30vh] w-full font-semibold rounded-lg overflow-hidden'>
           {/* Animated Result Overlay */}
           <AnimatedResult />
@@ -343,11 +444,11 @@ export default function StreamPage() {
                   {result.correct ? 'WIN' : 'LOSE'}
                 </div>
                 <div className="text-sm text-gray-300">
-                  {result.correct ? '+2.85 ETH' : '-1 ETH'}
+                  {result.correct ? '+2.85 CHZ' : '-1 CHZ'}
                 </div>
                 {result.correct && (
                   <div className="text-xs text-gray-400">
-                    Profit: +1.85 ETH
+                    Profit: +1.85 CHZ
                   </div>
                 )}
               </div>

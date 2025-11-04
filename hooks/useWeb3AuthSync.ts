@@ -2,20 +2,18 @@
 
 import { useEffect, useState } from 'react'
 import { useWeb3AuthUser, useWeb3AuthConnect, useIdentityToken } from "@web3auth/modal/react"
-import { useAccount } from "wagmi"
 import { toast } from "sonner"
 
 export function useWeb3AuthSync() {
   const { userInfo } = useWeb3AuthUser()
   const { isConnected } = useWeb3AuthConnect()
-  const { address } = useAccount()
   const { getIdentityToken } = useIdentityToken()
   const [isSyncing, setIsSyncing] = useState(false)
 
   useEffect(() => {
     const syncUser = async () => {
-      // Only sync if user is connected and we have wallet address
-      if (!isConnected || !address) {
+      // Only sync if user is connected
+      if (!isConnected || !userInfo) {
         setIsSyncing(false)
         return
       }
@@ -63,10 +61,10 @@ export function useWeb3AuthSync() {
     const timeoutId = setTimeout(syncUser, 1000)
 
     return () => clearTimeout(timeoutId)
-  }, [isConnected, address])
+  }, [isConnected, userInfo, getIdentityToken])
 
   return {
-    isSynced: isConnected && address,
+    isSynced: isConnected && !!userInfo,
     isSyncing
   }
 }

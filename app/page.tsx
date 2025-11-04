@@ -221,7 +221,7 @@ export default function Home() {
             {balance ? (
               <div className="flex flex-row items-center gap-1">
                 <div className="font-semibold">
-                  {parseFloat(balance).toFixed(2)} ETH
+                  {parseFloat(balance).toFixed(2)} CHZ
                 </div>
                 <CoinsIcon className="h-4 w-4" />
               </div>

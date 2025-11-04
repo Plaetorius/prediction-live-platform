@@ -34,6 +34,8 @@ export async function POST(req: NextRequest) {
       wallets: (payload as any).wallets || []
     };
 
+    console.log("Extracted userInfo from JWT:", JSON.stringify(userInfo, null, 2));
+
     // Get primary wallet address (if available)
     const primaryWallet = userInfo.wallets.find((wallet: any) => 
       wallet.type === "web3auth_app_key"
@@ -64,7 +66,7 @@ export async function POST(req: NextRequest) {
       if (walletAddress) {
         userInfo.web3auth_id = `wallet_${walletAddress}`;
       } else if (userInfo.email) {
-        userInfo.web3auth_id = `email_${userInfo.email}`;
+        userInfo.web3auth_id = userInfo.email;
       } else if (userInfo.name) {
         userInfo.web3auth_id = `name_${userInfo.name}`;
       } else {
@@ -72,10 +74,13 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    console.log("Final web3auth_id after fallback:", userInfo.web3auth_id);
+
     // Connect to Supabase
     const supabase = await createSupabaseServerClient();
 
     // Check if user already exists
+    console.log("Checking for existing user with web3auth_id:", userInfo.web3auth_id);
     const { data: existingUser, error: fetchError } = await supabase
       .from('profiles')
       .select('*')
@@ -85,6 +90,12 @@ export async function POST(req: NextRequest) {
     if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 = no rows found
       console.error('Error fetching user:', fetchError);
       return NextResponse.json({ error: "Database error" }, { status: 500 });
+    }
+
+    if (existingUser) {
+      console.log("Found existing user:", existingUser.id);
+    } else {
+      console.log("No existing user found, creating new user");
     }
 
     let user;
@@ -97,8 +108,8 @@ export async function POST(req: NextRequest) {
         .update({
           display_name: userInfo.name || existingUser.display_name,
           email: userInfo.email || existingUser.email,
-          evm_wallet_address: externalWallet || null,
-          web3auth_wallet_address: externalWallet || null,
+          evm_wallet_address: walletAddress || existingUser.evm_wallet_address,
+          web3auth_wallet_address: walletAddress || existingUser.web3auth_wallet_address,
           updated_at: new Date().toISOString()
         })
         .eq('web3auth_id', userInfo.web3auth_id)
@@ -147,8 +158,8 @@ export async function POST(req: NextRequest) {
           username: finalUsername,
           display_name: userInfo.name || 'Anonymous User',
           email: userInfo.email,
-          evm_wallet_address: externalWallet || null,
-          web3auth_wallet_address: externalWallet || null,
+          evm_wallet_address: walletAddress || null,
+          web3auth_wallet_address: walletAddress || null,
           xp: 0,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
@@ -172,8 +183,8 @@ export async function POST(req: NextRequest) {
         username: user.username,
         display_name: user.display_name,
         email: user.email,
-        evm_wallet_address: externalWallet || null,
-        web3auth_wallet_address: externalWallet || null,
+        evm_wallet_address: walletAddress || null,
+        web3auth_wallet_address: walletAddress || null,
         xp: user.xp,
         web3auth_id: user.web3auth_id
       }
