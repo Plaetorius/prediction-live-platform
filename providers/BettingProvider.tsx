@@ -6,9 +6,8 @@ import { useStream } from "./StreamProvider"
 import { useBetChannel } from "@/hooks/useBetChannel"
 import { useProfile } from "./ProfileProvider"
 import { toast } from "sonner"
-import { readContract } from "@wagmi/core"
-import { config } from "@/lib/wagmi"
-import { keccak256, toHex } from "viem"
+import { keccak256, toHex, createPublicClient, http } from "viem"
+import { chilizTestnet } from "@/lib/chains"
 import { calculateWinnings } from "@/lib/betting/calculateWinnings"
 import { BETTING_POOL_ADDRESS, BettingPoolABI } from "@/lib/contracts/BettingPoolABI"
 
@@ -181,8 +180,14 @@ export function BettingProvider({ children }: { children: ReactNode }) {
         // Convert marketId (UUID) to poolId (same logic as in BetFormModal)
         const poolId = BigInt(keccak256(toHex(payload.marketId)).slice(0, 10))
         
+        // Create a public client to read from the contract
+        const publicClient = createPublicClient({
+          chain: chilizTestnet,
+          transport: http()
+        })
+        
         // Get pool info from smart contract
-        const poolInfo = await readContract(config, {
+        const poolInfo = await publicClient.readContract({
           address: BETTING_POOL_ADDRESS,
           abi: BettingPoolABI,
           functionName: 'getPoolInfo',

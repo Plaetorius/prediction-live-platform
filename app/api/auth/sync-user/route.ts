@@ -79,13 +79,32 @@ export async function POST(req: NextRequest) {
     // Connect to Supabase
     const supabase = await createSupabaseServerClient();
 
-    // Check if user already exists
+    // Check if user already exists by web3auth_id first
     console.log("Checking for existing user with web3auth_id:", userInfo.web3auth_id);
-    const { data: existingUser, error: fetchError } = await supabase
+    let { data: existingUser, error: fetchError } = await supabase
       .from('profiles')
       .select('*')
       .eq('web3auth_id', userInfo.web3auth_id)
       .single();
+
+    // If not found by web3auth_id and we have an email, try searching by email
+    if (fetchError && fetchError.code === 'PGRST116' && userInfo.email) {
+      console.log("User not found by web3auth_id, trying to find by email:", userInfo.email);
+      const { data: existingUserByEmail, error: emailFetchError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('email', userInfo.email)
+        .single();
+      
+      if (existingUserByEmail) {
+        console.log("Found existing user by email:", existingUserByEmail.id);
+        existingUser = existingUserByEmail;
+        fetchError = null;
+      } else if (emailFetchError && emailFetchError.code !== 'PGRST116') {
+        console.error('Error fetching user by email:', emailFetchError);
+        return NextResponse.json({ error: "Database error" }, { status: 500 });
+      }
+    }
 
     if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 = no rows found
       console.error('Error fetching user:', fetchError);
@@ -102,17 +121,25 @@ export async function POST(req: NextRequest) {
     let isNewUser = false;
     
     if (existingUser) {
-      // Update existing user
+      // Update existing user - make sure to update web3auth_id if it's different
+      const updateData: any = {
+        display_name: userInfo.name || existingUser.display_name,
+        email: userInfo.email || existingUser.email,
+        evm_wallet_address: walletAddress || existingUser.evm_wallet_address,
+        web3auth_wallet_address: walletAddress || existingUser.web3auth_wallet_address,
+        updated_at: new Date().toISOString()
+      }
+      
+      // If web3auth_id is different, update it too
+      if (existingUser.web3auth_id !== userInfo.web3auth_id) {
+        console.log("Updating web3auth_id from", existingUser.web3auth_id, "to", userInfo.web3auth_id);
+        updateData.web3auth_id = userInfo.web3auth_id;
+      }
+      
       const { data, error: updateError } = await supabase
         .from('profiles')
-        .update({
-          display_name: userInfo.name || existingUser.display_name,
-          email: userInfo.email || existingUser.email,
-          evm_wallet_address: walletAddress || existingUser.evm_wallet_address,
-          web3auth_wallet_address: walletAddress || existingUser.web3auth_wallet_address,
-          updated_at: new Date().toISOString()
-        })
-        .eq('web3auth_id', userInfo.web3auth_id)
+        .update(updateData)
+        .eq('id', existingUser.id)
         .select()
         .single();
 
@@ -168,11 +195,51 @@ export async function POST(req: NextRequest) {
         .single();
 
       if (insertError) {
-        console.error('Error creating user:', insertError);
-        return NextResponse.json({ error: "Failed to create user" }, { status: 500 });
+        // If insert fails due to duplicate email, try to find and update the existing user
+        if (insertError.code === '23505' && userInfo.email) {
+          console.log("Insert failed due to duplicate email, trying to find and update existing user");
+          const { data: existingUserByEmail, error: emailFetchError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('email', userInfo.email)
+            .single();
+          
+          if (existingUserByEmail) {
+            console.log("Found existing user by email, updating:", existingUserByEmail.id);
+            const { data: updatedUser, error: updateError } = await supabase
+              .from('profiles')
+              .update({
+                web3auth_id: userInfo.web3auth_id,
+                display_name: userInfo.name || existingUserByEmail.display_name,
+                evm_wallet_address: walletAddress || existingUserByEmail.evm_wallet_address,
+                web3auth_wallet_address: walletAddress || existingUserByEmail.web3auth_wallet_address,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', existingUserByEmail.id)
+              .select()
+              .single();
+            
+            if (updateError) {
+              console.error('Error updating existing user:', updateError);
+              return NextResponse.json({ error: "Failed to update user" }, { status: 500 });
+            }
+            
+            user = updatedUser;
+            isNewUser = false; // It's not a new user, just an update
+          } else if (emailFetchError && emailFetchError.code !== 'PGRST116') {
+            console.error('Error fetching user by email:', emailFetchError);
+            return NextResponse.json({ error: "Database error" }, { status: 500 });
+          } else {
+            console.error('Error creating user:', insertError);
+            return NextResponse.json({ error: "Failed to create user" }, { status: 500 });
+          }
+        } else {
+          console.error('Error creating user:', insertError);
+          return NextResponse.json({ error: "Failed to create user" }, { status: 500 });
+        }
+      } else {
+        user = data;
       }
-
-      user = data;
     }
 
     return NextResponse.json({

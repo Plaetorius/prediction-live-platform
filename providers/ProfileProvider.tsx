@@ -2,7 +2,7 @@
 
 import { createSupabaseClient } from "@/lib/supabase/client";
 import { Bet, Profile } from "@/lib/types";
-import { useWeb3AuthConnect, useWeb3AuthUser } from "@web3auth/modal/react";
+import { useWeb3AuthConnect, useWeb3AuthUser, useIdentityToken } from "@web3auth/modal/react";
 import { createContext, useContext, useState, useEffect, useMemo, useCallback, SetStateAction, Dispatch } from "react";
 import { toast } from "sonner";
 import { useAccount, useDisconnect, useSignMessage, useBalance, useSwitchChain } from "wagmi";
@@ -56,6 +56,7 @@ const ProfileContext = createContext<ProfileContextType | undefined>(undefined)
 export function ProfileProvider({ children }: ProfileProviderProps) {
   const { userInfo } = useWeb3AuthUser()
   const { isConnected, connect } = useWeb3AuthConnect()
+  const { getIdentityToken } = useIdentityToken()
   const { address, isConnected: isWalletConnected, chainId } = useAccount()
   const { disconnect } = useDisconnect()
   const { signMessage } = useSignMessage()
@@ -272,7 +273,8 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
 
       console.log("ProfileProvider: Looking for user with web3auth_id:", web3authId, "or address:", address)
 
-      let { data, error: fetchError } = { data: null, error: { code: 'PGRST116' } }
+      let data: any = null
+      let fetchError: { code: string } | null = null
       
       // Strategy 1: If we have web3auth_id (Web3Auth), search by that first
       if (web3authId) {
@@ -308,15 +310,17 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
             fetchError = null
           } else {
             console.log("ProfileProvider: Case-insensitive search also failed:", caseInsensitiveResult.error)
+            fetchError = caseInsensitiveResult.error
           }
         }
       }
 
-      // Strategy 2: If not found by web3auth_id and we have a wallet address, search by address
-      if (fetchError && fetchError.code === 'PGRST116' && address) {
-        console.log("Profile not found by web3auth_id, trying wallet address:", address)
+      // Strategy 2: If not found by web3auth_id (or no web3auth_id), and we have a wallet address, search by address
+      // This handles both: Web3Auth fallback AND external wallets (Rabby, MetaMask, etc.)
+      if ((!data || (fetchError && fetchError.code === 'PGRST116')) && address) {
+        console.log("Profile not found by web3auth_id (or no web3auth_id), trying wallet address:", address)
         const normalizedAddress = address.toLowerCase()
-        // Try both with and without 0x prefix, and also try without prefix if it's a hex string
+        // Try both with and without 0x prefix
         const addressesToTry = [
           normalizedAddress,
           normalizedAddress.startsWith('0x') ? normalizedAddress.slice(2) : `0x${normalizedAddress}`,
@@ -338,22 +342,172 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
             break
           }
         }
+        
+        // If still not found, set fetchError to indicate no profile found
+        if (!data) {
+          fetchError = { code: 'PGRST116' }
+        }
       }
 
       if (fetchError) {
         if (fetchError.code === 'PGRST116') {
-          console.error("No profile found with web3auth_id:", web3authId, "or address:", address)
-          setError("No profile found. Please sync your account first.")
-          setProfile(null)
+          // Profile not found - try to create it
+          console.log("No profile found, attempting to create one...")
+          
+          // For Web3Auth users, call sync-user API
+          if (isConnected && userInfo && web3authId) {
+            try {
+              const token = await getIdentityToken()
+              if (token) {
+                console.log("ProfileProvider: Calling sync-user API for Web3Auth user...")
+                const syncResponse = await fetch('/api/auth/sync-user', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                  }
+                })
+                
+                const syncData = await syncResponse.json()
+                
+                if (syncData.success) {
+                  console.log("ProfileProvider: Profile created via sync-user API, refreshing...")
+                  // Retry fetching the profile
+                  const retryResult = await supabase
+                    .from('profiles')
+                    .select()
+                    .eq('web3auth_id', web3authId.toLowerCase())
+                    .single()
+                  
+                  if (retryResult.data) {
+                    data = retryResult.data
+                    fetchError = null
+                    if (syncData.isNewUser) {
+                      toast.success(`Welcome to Prediction.Live, ${syncData.user.display_name}! 🎉`)
+                    }
+                  }
+                } else {
+                  console.error("ProfileProvider: Failed to sync user:", syncData.error)
+                  setError("Failed to create profile. Please try again.")
+                  setProfile(null)
+                  return
+                }
+              } else {
+                console.error("ProfileProvider: No identity token available for sync")
+                setError("No profile found. Please sync your account first.")
+                setProfile(null)
+                return
+              }
+            } catch (syncError) {
+              console.error("ProfileProvider: Error syncing user:", syncError)
+              setError("Failed to create profile. Please try again.")
+              setProfile(null)
+              return
+            }
+          } 
+          // For external wallets, create profile directly
+          else if (isWalletConnected && address && !web3authId) {
+            try {
+              console.log("ProfileProvider: Creating profile for external wallet...")
+              
+              // Generate username from address
+              const username = `wallet_${address.slice(2, 10).toLowerCase()}`
+              
+              // Ensure username is unique
+              let finalUsername = username
+              let counter = 1
+              while (true) {
+                const { data: existingUsername } = await supabase
+                  .from('profiles')
+                  .select('username')
+                  .eq('username', finalUsername)
+                  .single()
+                
+                if (!existingUsername) break
+                finalUsername = `${username}_${counter}`
+                counter++
+              }
+              
+              const normalizedAddress = address.toLowerCase()
+              const insertResult = await supabase
+                .from('profiles')
+                .insert({
+                  web3auth_id: `wallet_${normalizedAddress}`,
+                  username: finalUsername,
+                  display_name: `Wallet ${address.slice(0, 6)}...${address.slice(-4)}`,
+                  email: null,
+                  evm_wallet_address: normalizedAddress,
+                  web3auth_wallet_address: normalizedAddress,
+                  xp: 0,
+                  current_chain_id: chainId || SUPPORTED_CHAINS.CHILIZ_DEV,
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString()
+                })
+                .select()
+                .single()
+              
+              if (insertResult.data) {
+                console.log("ProfileProvider: Profile created for external wallet")
+                data = insertResult.data
+                fetchError = null
+                toast.success(`Welcome to Prediction.Live! 🎉`)
+              } else {
+                console.error("ProfileProvider: Failed to create profile:", insertResult.error)
+                setError("Failed to create profile. Please try again.")
+                setProfile(null)
+                return
+              }
+            } catch (createError) {
+              console.error("ProfileProvider: Error creating profile:", createError)
+              setError("Failed to create profile. Please try again.")
+              setProfile(null)
+              return
+            }
+          } else {
+            console.error("No profile found with web3auth_id:", web3authId, "or address:", address)
+            setError("No profile found. Please sync your account first.")
+            setProfile(null)
+            return
+          }
         } else {
           setError("Failed to load profile. Please try again.")
           console.error("Error fetching profile:", fetchError)
           setProfile(null)
+          return
         }
-        return
       }
 
       if (data) {
+        // If we have an address from Wagmi but it's not in the profile, update it
+        const profileAddress = data.evm_wallet_address || data.web3auth_wallet_address
+        const normalizedProfileAddress = profileAddress ? profileAddress.toLowerCase() : null
+        const normalizedCurrentAddress = address ? address.toLowerCase() : null
+        
+        // If address is available but not in profile, update it
+        if (normalizedCurrentAddress && normalizedCurrentAddress !== normalizedProfileAddress) {
+          console.log("ProfileProvider: Updating wallet address in profile from", normalizedProfileAddress, "to", normalizedCurrentAddress)
+          try {
+            const updateResult = await supabase
+              .from('profiles')
+              .update({
+                evm_wallet_address: normalizedCurrentAddress,
+                web3auth_wallet_address: normalizedCurrentAddress,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', data.id)
+              .select()
+              .single()
+            
+            if (updateResult.data) {
+              data = updateResult.data
+              console.log("ProfileProvider: Successfully updated wallet address in profile")
+            }
+          } catch (updateError) {
+            console.error("ProfileProvider: Error updating wallet address:", updateError)
+            // Continue with existing data even if update fails
+          }
+        }
+        
         setProfile({
           id: data.id,
           username: data.username,
