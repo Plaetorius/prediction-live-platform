@@ -7,7 +7,7 @@ import { useBetChannel } from "@/hooks/useBetChannel"
 import { useProfile } from "./ProfileProvider"
 import { toast } from "sonner"
 import { keccak256, toHex, createPublicClient, http } from "viem"
-import { chilizTestnet } from "@/lib/chains"
+import { baseSepolia } from "@/lib/chains"
 import { calculateWinnings } from "@/lib/betting/calculateWinnings"
 import { BETTING_POOL_ADDRESS, BettingPoolABI } from "@/lib/contracts/BettingPoolABI"
 
@@ -182,7 +182,7 @@ export function BettingProvider({ children }: { children: ReactNode }) {
         
         // Create a public client to read from the contract
         const publicClient = createPublicClient({
-          chain: chilizTestnet,
+          chain: baseSepolia,
           transport: http()
         })
         
@@ -209,7 +209,7 @@ export function BettingProvider({ children }: { children: ReactNode }) {
                 side: bet.isAnswerA ? 'A' : 'B'
               },
               {
-                totalAmountA: Number(totalAmountA) / 1e18, // Convert from wei to CHZ
+                totalAmountA: Number(totalAmountA) / 1e18, // Convert from wei to ETH
                 totalAmountB: Number(totalAmountB) / 1e18,
                 resolution: resolutionSide
               }
@@ -236,7 +236,7 @@ export function BettingProvider({ children }: { children: ReactNode }) {
       }
       
       if (isWinner) {
-        toast.success(`YOU WON BET ON MARKET ${bet.marketId.slice(0, 8)}... (+${profit.toFixed(4)} CHZ)`)
+        toast.success(`YOU WON BET ON MARKET ${bet.marketId.slice(0, 8)}... (+${profit.toFixed(4)} ETH)`)
         dispatch({ type: 'SET_BET', payload: {...bet, correct: true, winnings, profit } })
         
         // Auto-refresh balance after a short delay to allow transaction to be confirmed
@@ -256,7 +256,7 @@ export function BettingProvider({ children }: { children: ReactNode }) {
           }, delay)
         })
       } else {
-        toast.error(`YOU LOST BET ON MARKET ${bet.marketId.slice(0, 8)}... (-${bet.amount.toFixed(4)} CHZ)`)
+        toast.error(`YOU LOST BET ON MARKET ${bet.marketId.slice(0, 8)}... (-${bet.amount.toFixed(4)} ETH)`)
         dispatch({ type: 'SET_BET', payload: {...bet, correct: false, winnings: 0, profit: -bet.amount } })
       }
     }, [profile, confirmedBets, refreshBalance])

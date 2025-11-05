@@ -219,13 +219,13 @@ export default function StreamPage() {
             
             <div className="space-y-1">
               <p className={`text-xl ${textColor} font-semibold drop-shadow-md animate-scale-in`} style={{ animationDelay: '0.4s' }}>
-                {isWin ? `+${winnings.toFixed(4)} CHZ` : `-${result.amount.toFixed(4)} CHZ`}
+                {isWin ? `+${winnings.toFixed(4)} ETH` : `-${result.amount.toFixed(4)} ETH`}
               </p>
               
               {isWin && profit > 0 && (
                 <div className="animate-scale-in" style={{ animationDelay: '0.6s' }}>
                   <p className={`text-sm ${textColor}/90 font-medium`}>
-                    Profit: +{profit.toFixed(4)} CHZ
+                    Profit: +{profit.toFixed(4)} ETH
                   </p>
                 </div>
               )}
@@ -484,11 +484,11 @@ export default function StreamPage() {
                   {result.correct ? 'WIN' : 'LOSE'}
                 </div>
                 <div className="text-sm text-gray-300">
-                  {result.correct ? `+${(result.winnings ?? 0).toFixed(4)} CHZ` : `-${result.amount.toFixed(4)} CHZ`}
+                  {result.correct ? `+${(result.winnings ?? 0).toFixed(4)} ETH` : `-${result.amount.toFixed(4)} ETH`}
                 </div>
                 {result.correct && (result.profit ?? 0) > 0 && (
                   <div className="text-xs text-gray-400">
-                    Profit: +{(result.profit ?? 0).toFixed(4)} CHZ
+                    Profit: +{(result.profit ?? 0).toFixed(4)} ETH
                   </div>
                 )}
               </div>

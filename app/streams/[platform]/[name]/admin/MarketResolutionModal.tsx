@@ -42,9 +42,9 @@ export default function MarketResolutionModal({ market }: MarketResolutionModalP
       }
 
       // Check if on correct chain
-      if (chainId !== SUPPORTED_CHAINS.CHILIZ_DEV) {
-        toast.error("Switching to Chiliz Testnet...")
-        await switchChain({ chainId: SUPPORTED_CHAINS.CHILIZ_DEV })
+      if (chainId !== SUPPORTED_CHAINS.BASE_SEPOLIA) {
+        toast.error("Switching to Base Sepolia...")
+        await switchChain({ chainId: SUPPORTED_CHAINS.BASE_SEPOLIA })
         return
       }
 

@@ -73,7 +73,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
 
   const { data: balanceData, refetch: refetchBalance } = useBalance({
     address,
-    chainId: SUPPORTED_CHAINS.CHILIZ_DEV,
+    chainId: SUPPORTED_CHAINS.BASE_SEPOLIA,
     query: {
       enabled: !!address,
       staleTime: 5000, // Reduced from 30s to 5s for faster updates
@@ -171,7 +171,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
         throw new Error(`Unsupported chain: ${chainId}`)
       }
 
-      await switchChain({ chainId: chainId as 88882 })
+      await switchChain({ chainId: chainId as 84532 })
 
       await refetchBalance()
 
@@ -439,7 +439,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
                   evm_wallet_address: normalizedAddress,
                   web3auth_wallet_address: normalizedAddress,
                   xp: 0,
-                  current_chain_id: chainId || SUPPORTED_CHAINS.CHILIZ_DEV,
+                  current_chain_id: chainId || SUPPORTED_CHAINS.BASE_SEPOLIA,
                   created_at: new Date().toISOString(),
                   updated_at: new Date().toISOString()
                 })
