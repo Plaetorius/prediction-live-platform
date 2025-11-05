@@ -15,7 +15,7 @@ import { getEmbedUrl } from '@/lib/utils'
 import { usePlatformStatus } from '@/hooks/usePlatformStatus'
 import { useStreamFollows } from '@/providers/StreamFollowsProvider'
 import { toast } from 'sonner'
-import { calculateWinnings, formatWinnings, formatProfit } from '@/lib/betting/calculateWinnings'
+// calculateWinnings is now used in BettingProvider, not here
 import { useIsMobile } from '@/hooks/use-mobile'
 
 export default function StreamPage() {
@@ -167,97 +167,137 @@ export default function StreamPage() {
 
     const isWin = result.correct;
     
-    // Fixed winnings calculation
-    let winningsInfo = null;
-    if (result.winnings === undefined || result.profit === undefined) {
-      if (isWin) {
-        winningsInfo = {
-          winnings: 0.0285, // Fixed win amount
-          profit: 0.0185   // Profit = winnings - bet amount (2.85 - 1.00)
-        };
-      } else {
-        winningsInfo = {
-          winnings: 0,     // No winnings if lost
-          profit: -0.01   // Loss = -bet amount
-        };
-      }
-    }
+    // Use real winnings from smart contract calculation
+    const winnings = result.winnings ?? 0
+    const profit = result.profit ?? (isWin ? 0 : -result.amount)
     
-    const bgColor = isWin ? 'from-green-500/20 to-emerald-600/20' : 'from-red-500/20 to-rose-600/20';
-    const borderColor = isWin ? 'border-green-400' : 'border-red-400';
+    const bgGradient = isWin 
+      ? 'from-green-500/20 via-emerald-500/10 to-teal-500/20' 
+      : 'from-red-500/20 via-rose-500/10 to-pink-500/20';
+    const borderColor = isWin ? 'border-green-400/40' : 'border-red-400/40';
     const textColor = isWin ? 'text-green-400' : 'text-red-400';
-    const iconColor = isWin ? 'text-green-400' : 'text-red-400';
+    const iconColor = isWin ? 'text-emerald-400' : 'text-red-400';
+    const glowColor = isWin ? 'bg-emerald-500' : 'bg-red-500';
 
     return (
-      <div className={`absolute inset-0 bg-gradient-to-br ${bgColor} ${borderColor} border-2 rounded-lg flex flex-col items-center justify-center z-10 animate-in fade-in-0 zoom-in-95 duration-500`}>
+      <div className={`absolute inset-0 bg-gradient-to-br ${bgGradient} ${borderColor} border-2 rounded-lg flex flex-col items-center justify-center z-10 overflow-hidden animate-in fade-in-0 zoom-in-95 duration-500`}>
+        {/* Subtle animated background glow effects - contained */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className={`absolute top-1/2 left-1/3 w-40 h-40 ${glowColor} rounded-full blur-3xl opacity-12 animate-pulse-glow`} style={{ transform: 'translateY(-50%)' }} />
+          <div className={`absolute bottom-1/2 right-1/3 w-40 h-40 ${glowColor} rounded-full blur-3xl opacity-12 animate-pulse-glow`} style={{ animationDelay: '1.5s', transform: 'translateY(50%)' }} />
+        </div>
+
         {/* Close button */}
         <button
           onClick={() => setShowResultAnimation(false)}
-          className="absolute top-2 right-2 text-gray-400 hover:text-white transition-colors z-20"
+          className="absolute top-3 right-3 text-gray-400 hover:text-white transition-colors z-30 bg-black/20 rounded-full p-1.5 backdrop-blur-sm"
         >
           <X className="h-4 w-4" />
         </button>
         
-        <div className="text-center space-y-4">
-          {/* Animated Icon with enhanced effects */}
-          <div className={`${iconColor} animate-bounce relative`}>
+        <div className="text-center space-y-4 relative z-20 px-4 py-3">
+          {/* Animated Icon with modern effects - contained within bounds */}
+          <div className={`${iconColor} relative`} style={{ transform: 'translateY(0px)' }}>
+            <div className={`absolute inset-0 ${glowColor} rounded-full blur-xl opacity-20 animate-pulse-glow`} style={{ width: '90%', height: '90%', margin: '5%' }} />
             {isWin ? (
-              <Trophy className="h-16 w-16 mx-auto drop-shadow-lg" />
+              <Trophy className="h-14 w-14 mx-auto drop-shadow-xl animate-scale-in relative z-10" />
             ) : (
-              <X className="h-16 w-16 mx-auto drop-shadow-lg" />
+              <X className="h-14 w-14 mx-auto drop-shadow-xl animate-scale-in relative z-10" />
             )}
-            {/* Glow effect */}
-            <div className={`absolute inset-0 ${isWin ? 'bg-green-400' : 'bg-red-400'} rounded-full blur-lg opacity-30 animate-ping`} />
+            {/* Subtle rotating rings - contained */}
+            <div className={`absolute inset-0 border ${isWin ? 'border-emerald-400/20' : 'border-red-400/20'} rounded-full animate-spin-slow`} style={{ width: '90%', height: '90%', margin: '5%' }} />
           </div>
           
-          {/* Result Text with staggered animation */}
-          <div className="space-y-2">
-            <h3 className={`text-2xl font-bold ${textColor} animate-pulse drop-shadow-lg`}>
-              {isWin ? 'VICTORY!' : 'DEFEAT!'}
+          {/* Result Text with modern typography */}
+          <div className="space-y-1.5">
+            <h3 className={`text-2xl font-bold ${textColor} drop-shadow-lg animate-scale-in tracking-tight`} style={{ 
+              animationDelay: '0.2s',
+              textShadow: `0 2px 8px ${isWin ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`
+            }}>
+              {isWin ? 'VICTORY' : 'DEFEAT'}
             </h3>
-            <p className={`text-lg ${textColor} font-semibold animate-in slide-in-from-bottom-2 duration-700 delay-200`}>
-              {isWin ? '+0.0285 CHZ' : '-0.01 CHZ'}
-            </p>
-            {isWin && (
-              <p className={`text-sm ${textColor} animate-in slide-in-from-bottom-2 duration-700 delay-300`}>
-                Profit: +0.0185 CHZ
+            
+            <div className="space-y-1">
+              <p className={`text-xl ${textColor} font-semibold drop-shadow-md animate-scale-in`} style={{ animationDelay: '0.4s' }}>
+                {isWin ? `+${winnings.toFixed(4)} CHZ` : `-${result.amount.toFixed(4)} CHZ`}
               </p>
-            )}
-            <p className="text-sm text-gray-300 animate-in slide-in-from-bottom-2 duration-700 delay-300">
-              Market: {result.marketId.slice(0, 8)}...
-            </p>
+              
+              {isWin && profit > 0 && (
+                <div className="animate-scale-in" style={{ animationDelay: '0.6s' }}>
+                  <p className={`text-sm ${textColor}/90 font-medium`}>
+                    Profit: +{profit.toFixed(4)} CHZ
+                  </p>
+                </div>
+              )}
+              
+              <p className="text-xs text-gray-400/80 mt-2 animate-scale-in font-mono" style={{ animationDelay: '0.8s' }}>
+                {result.marketId.slice(0, 8)}...
+              </p>
+            </div>
           </div>
 
-          {/* Enhanced Animated Particles */}
-          <div className="absolute inset-0 pointer-events-none">
-            {[...Array(8)].map((_, i) => (
-              <div
-                key={i}
-                className={`absolute w-2 h-2 ${isWin ? 'bg-green-400' : 'bg-red-400'} rounded-full`}
-                style={{
-                  left: `${15 + i * 8}%`,
-                  top: `${25 + (i % 4) * 15}%`,
-                  animationDelay: `${i * 0.15}s`,
-                  animationDuration: '3s',
-                  animation: 'ping 3s cubic-bezier(0, 0, 0.2, 1) infinite'
-                }}
-              />
-            ))}
-          </div>
-
-          {/* Confetti effect for wins */}
-          {isWin && (
-            <div className="absolute inset-0 pointer-events-none">
-              {[...Array(12)].map((_, i) => (
+          {/* Subtle animated particles - kept within bounds */}
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            {[...Array(12)].map((_, i) => {
+              const angle = (i * 360) / 12;
+              const distance = 35 + (i % 2) * 10;
+              const x = 50 + Math.cos(angle * Math.PI / 180) * distance;
+              const y = 50 + Math.sin(angle * Math.PI / 180) * distance;
+              
+              return (
                 <div
-                  key={`confetti-${i}`}
-                  className="absolute w-1 h-1 bg-yellow-400 rounded-full"
+                  key={i}
+                  className={`absolute w-1.5 h-1.5 ${isWin ? 'bg-emerald-400/60' : 'bg-red-400/60'} rounded-full`}
                   style={{
-                    left: `${10 + i * 7}%`,
-                    top: `${20 + (i % 3) * 20}%`,
-                    animationDelay: `${i * 0.1}s`,
-                    animationDuration: '2s',
-                    animation: 'ping 2s cubic-bezier(0, 0, 0.2, 1) infinite'
+                    left: `${Math.max(5, Math.min(95, x))}%`,
+                    top: `${Math.max(5, Math.min(95, y))}%`,
+                    animationDelay: `${i * 0.15}s`,
+                    animation: 'float 3s ease-in-out infinite',
+                  }}
+                />
+              );
+            })}
+          </div>
+
+          {/* Modern confetti effect for wins - subtle and contained */}
+          {isWin && (
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+              {[...Array(12)].map((_, i) => {
+                const colors = ['#10b981', '#34d399', '#6ee7b7', '#a7f3d0'];
+                const color = colors[i % colors.length];
+                const left = `${15 + (i * 6)}%`;
+                const delay = (i * 0.2) % 2;
+                
+                return (
+                  <div
+                    key={`confetti-${i}`}
+                    className="absolute w-1 h-1 rounded-full"
+                    style={{
+                      backgroundColor: color,
+                      left,
+                      top: '0px',
+                      animationDelay: `${delay}s`,
+                      animation: 'confetti-fall 2.5s linear infinite',
+                      opacity: 0.5
+                    }}
+                  />
+                );
+              })}
+            </div>
+          )}
+
+          {/* Subtle defeat effect */}
+          {!isWin && (
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+              {[...Array(8)].map((_, i) => (
+                <div
+                  key={`fragment-${i}`}
+                  className="absolute w-1 h-1 bg-red-400/40 rounded-full"
+                  style={{
+                    left: `${40 + (i % 3) * 10}%`,
+                    top: `${40 + Math.floor(i / 3) * 10}%`,
+                    animationDelay: `${i * 0.15}s`,
+                    animation: 'float 2s ease-in-out infinite',
                   }}
                 />
               ))}
@@ -444,11 +484,11 @@ export default function StreamPage() {
                   {result.correct ? 'WIN' : 'LOSE'}
                 </div>
                 <div className="text-sm text-gray-300">
-                  {result.correct ? '+2.85 CHZ' : '-1 CHZ'}
+                  {result.correct ? `+${(result.winnings ?? 0).toFixed(4)} CHZ` : `-${result.amount.toFixed(4)} CHZ`}
                 </div>
-                {result.correct && (
+                {result.correct && (result.profit ?? 0) > 0 && (
                   <div className="text-xs text-gray-400">
-                    Profit: +1.85 CHZ
+                    Profit: +{(result.profit ?? 0).toFixed(4)} CHZ
                   </div>
                 )}
               </div>

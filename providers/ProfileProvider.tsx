@@ -18,6 +18,7 @@ interface ProfileContextType {
   userInfo: any // Web3Auth user info
   balance: string,
   refreshProfile: () => Promise<void>
+  refreshBalance: () => Promise<void>
   updateProfile: (update: Partial<Profile>) => Promise<Profile | null>
   clearError: () => void
 
@@ -74,7 +75,8 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
     chainId: SUPPORTED_CHAINS.CHILIZ_DEV,
     query: {
       enabled: !!address,
-      staleTime: 30000,
+      staleTime: 5000, // Reduced from 30s to 5s for faster updates
+      refetchInterval: 10000, // Auto-refresh every 10 seconds when connected
     }
   })
 
@@ -97,6 +99,20 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
       return '0.00'
     }
   }
+
+  const refreshBalance = useCallback(async () => {
+    try {
+      if (!address) {
+        console.log("No address, skipping balance refresh")
+        return
+      }
+      console.log("Refreshing balance...")
+      await refetchBalance()
+      console.log("Balance refreshed successfully")
+    } catch (error) {
+      console.error("Error refreshing balance:", error)
+    }
+  }, [address, refetchBalance])
 
   const refreshConfirmedBets = async () => {
     if (!profile) {
@@ -482,6 +498,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
     userInfo,
     balance,
     refreshProfile,
+    refreshBalance,
     updateProfile,
     clearError,
 
@@ -511,6 +528,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
     setConfirmedBets,
 
     refreshProfile,
+    refreshBalance,
     updateProfile,
     clearError,
     handleConnect,
