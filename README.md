@@ -2,7 +2,7 @@
 
 **Don't watch e-sport. Predict it.**
 
-Prediction.Live is a decentralized prediction market platform that allows users to bet on esports streams in real-time. Built for the Base hackathon, this platform combines live streaming integration, Web3 authentication, and blockchain-based betting pools to create an engaging prediction experience.
+Prediction.Live is a decentralized prediction market platform that allows users to bet on esports streams in real-time. This platform combines live streaming integration, Web3 authentication, and blockchain-based betting pools to create an engaging prediction experience.
 
 ## Table of Contents
 
@@ -571,4 +571,3 @@ For issues, questions, or contributions, please open an issue on the GitHub repo
 
 ---
 
-**Built with ❤️ for the Base Hackathon**
