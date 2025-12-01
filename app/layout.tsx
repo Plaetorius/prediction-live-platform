@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Providers from "@/components/Providers";
-import Header from "@/components/Header";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -25,7 +24,6 @@ export default function RootLayout({
       </head>
       <body suppressHydrationWarning>
         <Providers>
-          <Header />
           {children}
         </Providers>
       </body>

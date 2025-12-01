@@ -12,15 +12,12 @@ import GlassSurface from "@/components/GlassSurface";
 import { getEmbedUrl } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import StreamHorizontalGallery from "@/components/StreamHorizontalGallery";
-import { useProfile } from "@/providers/ProfileProvider";
-import { CoinsIcon } from "lucide-react";
 
 export default function Home() {
   const { connect, isConnected, connectorName, loading: connectLoading, error: connectError } = useWeb3AuthConnect();
   const { disconnect, loading: disconnectLoading, error: disconnectError } = useWeb3AuthDisconnect();
   const { userInfo } = useWeb3AuthUser();
   const { address } = useAccount();
-  const { profile, balance, getBalance } = useProfile();
 
   const topPlayers = [
     {
@@ -214,24 +211,6 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-brand-black-4 p-2 space-y-4">
-      {/* Balance display for connected users */}
-      {profile && isConnected && (
-        <div className="w-full bg-brand-black-3 flex p-4 gap-4 items-center justify-center">
-          <div className="flex items-center gap-2 text-white">
-            {balance ? (
-              <div className="flex flex-row items-center gap-1">
-                <div className="font-semibold">
-                  {parseFloat(balance).toFixed(2)} CHZ
-                </div>
-                <CoinsIcon className="h-4 w-4" />
-              </div>
-            ) : (
-              <div className="font-semibold text-gray-400">Loading...</div>
-            )}
-          </div>
-        </div>
-      )}
-      
       {games.map((game) => (
         <section key={game.id} className="w-full bg-brand-black-3 flex p-4 gap-4">
           {/* Category info section - fixed width */}

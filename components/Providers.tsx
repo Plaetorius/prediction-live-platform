@@ -6,6 +6,7 @@ import { SidebarInset, SidebarProvider } from './ui/sidebar'
 import { AppSidebar } from './app-sidebar'
 import Web3AuthAutoSync from './Web3AuthAutoSync'
 import { StreamFollowsProvider } from '@/providers/StreamFollowsProvider'
+import Header from './Header'
 
 export default function Providers({
   children
@@ -20,6 +21,7 @@ export default function Providers({
             <SidebarProvider>
               <AppSidebar variant='sidebar' />
                 <SidebarInset>
+                  <Header />
                   {children}
                 </SidebarInset>
               </SidebarProvider>
