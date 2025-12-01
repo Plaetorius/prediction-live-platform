@@ -25,7 +25,7 @@ interface BetFormModalProps {
 }
 
 const betFormSchema = z.object({
-  amount: z.coerce.number().min(0.001, "Amount is too small! (min: 0.001 ETH)").max(100, "Amount is too big! (max: 100 ETH)"),
+  amount: z.coerce.number().min(0.001, "Amount is too small! (min: 0.001 CHZ)").max(100, "Amount is too big! (max: 100 CHZ)"),
 })
 
 type BetFormSchema = z.infer<typeof betFormSchema>
@@ -100,7 +100,7 @@ export default function BetFormModal({
         if (result.requiresAction === 'connect') {
           await connect()
         } else if (result.requiresAction === 'switchChain') {
-          await switchChain({ chainId: SUPPORTED_CHAINS.BASE_SEPOLIA })
+          await switchChain({ chainId: SUPPORTED_CHAINS.CHILIZ_DEV })
         } else {
           toast.error(result.error || "Error placing bet.")
         }
@@ -170,7 +170,7 @@ export default function BetFormModal({
   }, [connect])
 
   const handleSwitchChain = useCallback(() => {
-    switchChain({ chainId: SUPPORTED_CHAINS.BASE_SEPOLIA })
+    switchChain({ chainId: SUPPORTED_CHAINS.CHILIZ_DEV })
   }, [switchChain])
 
   useEffect(() => {
@@ -284,7 +284,7 @@ export default function BetFormModal({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>
-                    Amount (ETH)
+                    Amount (CHZ)
                   </FormLabel>
                   <FormControl>
                     <Input
@@ -319,10 +319,10 @@ export default function BetFormModal({
             )}
 
             {/* Chain status */}
-            {isConnected && chainId !== SUPPORTED_CHAINS.BASE_SEPOLIA && (
+            {isConnected && chainId !== SUPPORTED_CHAINS.CHILIZ_DEV && (
               <div className="p-3 bg-yellow-50 border border-yellow-200 rounded mb-4">
                 <p className="text-sm text-yellow-800">
-                  Please switch to Base Sepolia to place bets
+                  Please switch to Chiliz Testnet to place bets
                 </p>
                 <Button 
                   onClick={handleSwitchChain} 
@@ -330,7 +330,7 @@ export default function BetFormModal({
                   size="sm" 
                   className="mt-2"
                 >
-                  Switch to Base Sepolia
+                  Switch to Chiliz Testnet
                 </Button>
               </div>
             )}
@@ -390,7 +390,7 @@ export default function BetFormModal({
                 disabled={
                   loading || 
                   !isConnected || 
-                  chainId !== SUPPORTED_CHAINS.BASE_SEPOLIA ||
+                  chainId !== SUPPORTED_CHAINS.CHILIZ_DEV ||
                   txStep === "sending" ||
                   txStep === "confirming" ||
                   !!txHash

@@ -13,5 +13,22 @@ export const web3AuthContextConfig: Web3AuthContextConfig = {
   web3AuthOptions: {
     clientId,
     web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET,
+    walletServicesConfig: {
+      modalZIndex: 99999,
+      enableKeyExport: false,
+      whiteLabel: {
+        showWidgetButton: true,
+        buttonPosition: "bottom-right",
+        hideNftDisplay: false,
+        hideTokenDisplay: false,
+        hideTransfers: false,
+        hideTopup: false,
+        hideReceive: false,
+        hideSwap: false,
+        hideShowAllTokens: false,
+        hideWalletConnect: false,
+        defaultPortfolio: "token",
+      },
+    },
   }
 };

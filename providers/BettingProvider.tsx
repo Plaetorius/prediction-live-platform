@@ -6,6 +6,10 @@ import { useStream } from "./StreamProvider"
 import { useBetChannel } from "@/hooks/useBetChannel"
 import { useProfile } from "./ProfileProvider"
 import { toast } from "sonner"
+import { keccak256, toHex, createPublicClient, http } from "viem"
+import { chilizTestnet } from "@/lib/chains"
+import { calculateWinnings } from "@/lib/betting/calculateWinnings"
+import { BETTING_POOL_ADDRESS, BettingPoolABI } from "@/lib/contracts/BettingPoolABI"
 
 type BetResult = Bet & {
   correct: boolean
@@ -103,7 +107,7 @@ const BettingContext = createContext<BettingContextType | null>(null)
 export function BettingProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(bettingReducer, initialState)
   const stream = useStream()
-  const { profile, confirmedBets } = useProfile()
+  const { profile, confirmedBets, refreshBalance } = useProfile()
 
   const betListeners: BetListeners = {
     onTeamA: useCallback((payload: any) => {
@@ -146,7 +150,7 @@ export function BettingProvider({ children }: { children: ReactNode }) {
       dispatch({ type: 'ADD_MARKET', payload: newMarket })
     }, []),
 
-    onResult: useCallback((payload: any) => {
+    onResult: useCallback(async (payload: any) => {
       // payload: marketId, isAnswerA
       console.log("Global result received:", payload)
       
@@ -166,14 +170,96 @@ export function BettingProvider({ children }: { children: ReactNode }) {
         return
       }
       
-      if (bet.isAnswerA === payload.isAnswerA) {
-        toast.success(`YOU WON BET ON MARKET ${bet.marketId}`)
-        dispatch({ type: 'SET_BET', payload: {...bet, correct: true } })
-      } else {
-        toast.error(`YOU LOST BET ON MARKET ${bet.marketId}`)
-        dispatch({ type: 'SET_BET', payload: {...bet, correct: false } })
+      const isWinner = bet.isAnswerA === payload.isAnswerA
+      
+      // Calculate real winnings from smart contract
+      let winnings = 0
+      let profit = 0
+      
+      try {
+        // Convert marketId (UUID) to poolId (same logic as in BetFormModal)
+        const poolId = BigInt(keccak256(toHex(payload.marketId)).slice(0, 10))
+        
+        // Create a public client to read from the contract
+        const publicClient = createPublicClient({
+          chain: chilizTestnet,
+          transport: http()
+        })
+        
+        // Get pool info from smart contract
+        const poolInfo = await publicClient.readContract({
+          address: BETTING_POOL_ADDRESS,
+          abi: BettingPoolABI,
+          functionName: 'getPoolInfo',
+          args: [poolId]
+        }) as [bigint, bigint, bigint, bigint, number, boolean]
+        
+        const [totalAmountA, totalAmountB, , , resolution, resolved] = poolInfo
+        
+        if (resolved) {
+          // Convert resolution enum to 'A' or 'B'
+          // 0 = Pending, 1 = A, 2 = B
+          const resolutionSide = resolution === 1 ? 'A' : resolution === 2 ? 'B' : null
+          
+          if (resolutionSide) {
+            // Calculate winnings using the same logic as the contract
+            const winningsResult = calculateWinnings(
+              {
+                amount: bet.amount,
+                side: bet.isAnswerA ? 'A' : 'B'
+              },
+              {
+                totalAmountA: Number(totalAmountA) / 1e18, // Convert from wei to CHZ
+                totalAmountB: Number(totalAmountB) / 1e18,
+                resolution: resolutionSide
+              }
+            )
+            
+            winnings = winningsResult.winnings
+            profit = winningsResult.profit
+            
+            console.log("Calculated winnings:", { winnings, profit, isWinner })
+          }
+        }
+      } catch (error) {
+        console.error("Error calculating winnings from contract:", error)
+        // Fallback to simple calculation if contract read fails
+        if (isWinner) {
+          // Use a simple estimate if we can't read from contract
+          // This shouldn't happen, but it's a fallback
+          profit = bet.amount * 0.5 // Estimate 50% profit
+          winnings = bet.amount + profit
+        } else {
+          winnings = 0
+          profit = -bet.amount
+        }
       }
-    }, [profile, confirmedBets])
+      
+      if (isWinner) {
+        toast.success(`YOU WON BET ON MARKET ${bet.marketId.slice(0, 8)}... (+${profit.toFixed(4)} CHZ)`)
+        dispatch({ type: 'SET_BET', payload: {...bet, correct: true, winnings, profit } })
+        
+        // Auto-refresh balance after a short delay to allow transaction to be confirmed
+        // The contract automatically distributes winnings, so we wait a bit before refreshing
+        // We do multiple refreshes to ensure the balance is updated even if the transaction takes time
+        const refreshAttempts = [3000, 6000, 10000] // Refresh at 3s, 6s, and 10s
+        
+        refreshAttempts.forEach((delay, index) => {
+          setTimeout(async () => {
+            try {
+              console.log(`Auto-refreshing balance after win (attempt ${index + 1}/${refreshAttempts.length})...`)
+              await refreshBalance()
+              console.log(`Balance refreshed after win (attempt ${index + 1})`)
+            } catch (error) {
+              console.error(`Error auto-refreshing balance after win (attempt ${index + 1}):`, error)
+            }
+          }, delay)
+        })
+      } else {
+        toast.error(`YOU LOST BET ON MARKET ${bet.marketId.slice(0, 8)}... (-${bet.amount.toFixed(4)} CHZ)`)
+        dispatch({ type: 'SET_BET', payload: {...bet, correct: false, winnings: 0, profit: -bet.amount } })
+      }
+    }, [profile, confirmedBets, refreshBalance])
   }
 
   const { sendBetTeam1, sendBetTeam2, sendNewMarket, sendResult } = useBetChannel(

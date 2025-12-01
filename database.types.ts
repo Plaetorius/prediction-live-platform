@@ -192,12 +192,15 @@ export type Database = {
           current_chain_id: number | null
           display_name: string
           email: string | null
+          evm_wallet_address: string | null
           id: string
           picture_url: string | null
+          role: Database["public"]["Enums"]["profile_roles"]
+          sol_wallet_address: string | null
           updated_at: string
           username: string
-          wallet_address: string | null
           web3auth_id: string | null
+          web3auth_wallet_address: string | null
           xp: number | null
         }
         Insert: {
@@ -205,12 +208,15 @@ export type Database = {
           current_chain_id?: number | null
           display_name: string
           email?: string | null
+          evm_wallet_address?: string | null
           id?: string
           picture_url?: string | null
+          role?: Database["public"]["Enums"]["profile_roles"]
+          sol_wallet_address?: string | null
           updated_at?: string
           username: string
-          wallet_address?: string | null
           web3auth_id?: string | null
+          web3auth_wallet_address?: string | null
           xp?: number | null
         }
         Update: {
@@ -218,12 +224,15 @@ export type Database = {
           current_chain_id?: number | null
           display_name?: string
           email?: string | null
+          evm_wallet_address?: string | null
           id?: string
           picture_url?: string | null
+          role?: Database["public"]["Enums"]["profile_roles"]
+          sol_wallet_address?: string | null
           updated_at?: string
           username?: string
-          wallet_address?: string | null
           web3auth_id?: string | null
+          web3auth_wallet_address?: string | null
           xp?: number | null
         }
         Relationships: []
@@ -316,6 +325,7 @@ export type Database = {
         | "error"
         | "voided"
         | "resolved"
+      profile_roles: "admin" | "croupier" | "user" | "anon"
       rarity: "common" | "rare" | "epic" | "legendary"
     }
     CompositeTypes: {
@@ -463,6 +473,7 @@ export const Constants = {
         "voided",
         "resolved",
       ],
+      profile_roles: ["admin", "croupier", "user", "anon"],
       rarity: ["common", "rare", "epic", "legendary"],
     },
   },
